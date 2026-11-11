@@ -256,6 +256,50 @@ run(async () => {
     !('--dock-rim' in plain.vars) && !('glassDim' in plain) && !('cstyle' in plain.attrs),
     'by default the rim follows the panel, the glass keeps its tint and the clock is text, with no new keys in the reply'
   );
+  // type: a weight per kind of text, the spacing of large text, the optical size, and a variable font that covers every weight
+  const typed = themeMod.resolve(
+    themeMod.normalize(
+      {
+        type: {
+          fontFile: 'inter.woff2',
+          variable: true,
+          opsz: 'display',
+          weightTitle: 600,
+          weightText: 450.4,
+          weightLabel: 1000,
+          weightClock: 500,
+          tracking: 0,
+        },
+        clock: { scale: 0.43 },
+      },
+      'typed',
+      themeMod.DEFAULTS,
+      path.join(tdir, 'lounge')
+    )
+  );
+  ok(
+    typed.vars['--w-title'] === '600' &&
+      typed.vars['--w-text'] === '450' &&
+      typed.vars['--w-label'] === '900' &&
+      typed.vars['--w-clock'] === '500' &&
+      typed.vars['--track'] === '0em' &&
+      typed.vars['--fvs'] === '"opsz" 32' &&
+      typed.vars['--fvs-s'] === '"opsz" 14' &&
+      typed.vars['--clock-s'] === '0.43' &&
+      typed.font &&
+      typed.font.file === 'inter.woff2' &&
+      typed.font.variable === true,
+    'the weights (rounded, clamped), the spacing, the optical size, a small clock and a variable font reach the pages'
+  );
+  const statFont = themeMod.resolve(
+    themeMod.normalize({ type: { fontFile: 'inter.woff2' } }, 'stat', themeMod.DEFAULTS, path.join(tdir, 'lounge'))
+  );
+  ok(
+    ['--w-title', '--w-text', '--w-label', '--w-clock', '--track', '--fvs', '--fvs-s'].every(k => !(k in plain.vars)) &&
+      statFont.font &&
+      !('variable' in statFont.font),
+    "by default the pages keep their own weights, spacing and optical size, and a theme's font is not taken as variable"
+  );
   const rowed = themeMod.resolve(
     themeMod.normalize({ dock: { anchor: 'bottom' }, grid: { scroll: 'row', clipTop: 120, dockUp: 140 } }, 'rowed')
   );

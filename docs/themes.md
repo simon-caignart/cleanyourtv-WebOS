@@ -40,7 +40,7 @@ folder of the GitHub repository (the `main` branch):
 | Couch | After [couch-tv](https://github.com/Seagey/couch-tv): five landscapes take turns every 20 seconds behind a large glass clock, the scenery in front of the digits; the date above the clock, round buttons top right, the apps on glass at the bottom; cards on frosted glass. Uses `clock.style`, `effects.scenes` and `cards.style`. |
 | Lock Screen | A phone-style lock screen: a greeting and a big clock top left, and a small, translucent dock low in the corner over a calm blue landscape, so the picture fills the screen. Down moves the dock up and shows all apps below it. Turn Wallpapers on for your own photos. It has slots for cards (Customise > Cards): the greeting is one, and there is a place under the clock. |
 | Moon | A moonlit autumn landscape with a four-app glass dock, warm focus, app-colour rails and places for cards around the clock. |
-| Lounge | A streaming-box home screen: six wide icons on a glass platter over the Couch landscapes (or your Wallpapers photos), smooth focus with a soft light and shadow, the app's name under it in the grid, a glass pill clock, and a first grid row that peeks at the bottom. Uses `effects.motion`, `tile.label`, `grid.peek`, `grid.scroll` and `effects.scenesYield`. |
+| Lounge | A streaming-box home screen: six wide icons on a glass platter over the Couch landscapes (or your Wallpapers photos), smooth focus with a soft light and shadow, the app's name under it in the grid, a glass pill clock, and a first grid row that peeks at the bottom. Uses `effects.motion`, `tile.label`, `grid.peek`, `grid.scroll`, `effects.scenesYield` and the Inter 4 variable font set like SF Pro (`type.variable`, `type.opsz`, the `type.weight` keys). |
 
 ![Classic, Compact, Large print and Midnight](screenshots/themes-1.jpg)
 
@@ -65,6 +65,9 @@ Themes live in the repository, so a new one is a pull request:
 4. If it uses a wallpaper, add the image to the same folder (`.jpg`, `.png` or `.webp`, at most 1.5 MB, 1920 x 1080) and name it in
    `effects.wallpaper`. A typeface goes in the folder too, named in `type.fontFile`, with its licence file. A wallpaper or typeface
    must be your own work or under a licence that allows redistribution; say which in the pull request.
+   A variable font (one file with a weight axis) needs `type.variable` true, or the browser thickens its regular for bold text and shows the regular for medium.
+   With a variable font, `type.weightTitle`, `type.weightText`, `type.weightLabel` and `type.weightClock` set the weight of each kind of text.
+   For a font with an optical size axis (Inter 4), `type.opsz` `display` uses its Display design for text from 20 px up (every TV, including webOS 5, whose browser does not choose it from the size), and `type.tracking` 0 drops the tighter spacing the pages give large text for typefaces without one.
 5. Run `node tools/theme-index.js` to update `themes/index.json`, then `node tools/test.js theme`: it checks every theme folder against the
    schema, that the screenshot is there, and that the index is up to date.
 6. Open the pull request. Once it is merged into `main`, every TV can download the theme; no release is needed.
@@ -160,6 +163,13 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `type.font` | `default`, `serif`, `mono` | `default` | The typeface: the TV's own, a serif or a monospace. |
 | `type.fontFile` | a file name | none | A typeface of the theme: a file in the theme's folder, `.woff2`, `.woff`, `.ttf` or `.otf`, at most 400 KB, used for all text. Characters it lacks come from `type.font`. Its licence must allow redistribution; put the licence file in the folder too. |
 | `type.scale` | 0.8 to 1.3 | `1` | Scale of the text of buttons, menus and tiles. |
+| `type.variable` | `true` or `false` | `false` | The `type.fontFile` is a variable font with a weight axis (`wght`): each text takes its weight from the font instead of a thickened regular. |
+| `type.opsz` | `auto`, `display` | `auto` | The optical size of a `type.fontFile` with an `opsz` axis. `auto`: the browser's choice (from the size of the text on newer TVs, the font's default on webOS 5); `display`: optical size 32 for text from 20 px up and 14 below, on every TV (Inter 4's Display and Text designs; a font clamps them to its own range). |
+| `type.weightTitle` | 100 to 900 or empty | empty | Weight of titles: menus, the shelf's name, the Inputs list's headings. Empty: the page's own (700, 600). |
+| `type.weightText` | 100 to 900 or empty | empty | Weight of menu rows and other running text. Empty: the page's own (500). |
+| `type.weightLabel` | 100 to 900 or empty | empty | Weight of names on and under tiles, of the top buttons' labels and of the inputs in the Inputs list. Empty: the page's own (500 to 700). |
+| `type.weightClock` | 100 to 900 or empty | empty | Weight of the time. Empty: the page's own (600). |
+| `type.tracking` | -0.05 to 0.05 or empty | empty | Letter spacing of large text (the time, titles, the shelf's name), in em. Empty: the page's own (-0.02 to -0.028), which suits typefaces without a Display design. |
 | **clock** | | | |
 | `clock.show` | `true` or `false` | `true` | Show the clock. |
 | `clock.date` | `true` or `false` | `true` | Show the date beside or under the time. |
@@ -169,7 +179,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `clock.align` | `left`, `center`, `right` | `left` | Which side `clock.x` counts from; `center` centres it. |
 | `clock.x` | 0 to 900 | `96` | Distance from that side, in px (on a 1920 x 1080 canvas). Not used when centred. |
 | `clock.y` | 0 to 900 | `54` | Distance from the top or bottom edge, in px. |
-| `clock.scale` | 0.6 to 2.5 | `1` | Scale of the time. |
+| `clock.scale` | 0.4 to 2.5 | `1` | Scale of the time. |
 | `clock.dateScale` | 0.6 to 2 | `1` | Scale of the date. |
 | `clock.style` | `text`, `glass`, `pill` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a capsule of the glass of the dock panel, as tall as the top buttons (see `surface.ink`); place and size it with the other clock settings. |
 | **bar** | | | |

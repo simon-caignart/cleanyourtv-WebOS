@@ -75,6 +75,43 @@ const SCHEMA = [
     "A typeface of the theme: a file in the theme's folder, `.woff2`, `.woff`, `.ttf` or `.otf`, at most 400 KB, used for all text. Characters it lacks come from `type.font`. Its licence must allow redistribution; put the licence file in the folder too.",
   ],
   ['type.scale', 'num', [0.8, 1.3], 1, 'Scale of the text of buttons, menus and tiles.'],
+  [
+    'type.variable',
+    'bool',
+    null,
+    false,
+    'The `type.fontFile` is a variable font with a weight axis (`wght`): each text takes its weight from the font instead of a thickened regular.',
+  ],
+  [
+    'type.opsz',
+    'enum',
+    ['auto', 'display'],
+    'auto',
+    "The optical size of a `type.fontFile` with an `opsz` axis. `auto`: the browser's choice (from the size of the text on newer TVs, the font's default on webOS 5); `display`: optical size 32 for text from 20 px up and 14 below, on every TV (Inter 4's Display and Text designs; a font clamps them to its own range).",
+  ],
+  [
+    'type.weightTitle',
+    'num?',
+    [100, 900],
+    null,
+    "Weight of titles: menus, the shelf's name, the Inputs list's headings. Empty: the page's own (700, 600).",
+  ],
+  ['type.weightText', 'num?', [100, 900], null, "Weight of menu rows and other running text. Empty: the page's own (500)."],
+  [
+    'type.weightLabel',
+    'num?',
+    [100, 900],
+    null,
+    "Weight of names on and under tiles, of the top buttons' labels and of the inputs in the Inputs list. Empty: the page's own (500 to 700).",
+  ],
+  ['type.weightClock', 'num?', [100, 900], null, "Weight of the time. Empty: the page's own (600)."],
+  [
+    'type.tracking',
+    'num?',
+    [-0.05, 0.05],
+    null,
+    "Letter spacing of large text (the time, titles, the shelf's name), in em. Empty: the page's own (-0.02 to -0.028), which suits typefaces without a Display design.",
+  ],
   ['clock.show', 'bool', null, true, 'Show the clock.'],
   ['clock.date', 'bool', null, true, 'Show the date beside or under the time.'],
   [
@@ -89,7 +126,7 @@ const SCHEMA = [
   ['clock.align', 'enum', POS, 'left', 'Which side `clock.x` counts from; `center` centres it.'],
   ['clock.x', 'int', [0, 900], 96, 'Distance from that side, in px (on a 1920 x 1080 canvas). Not used when centred.'],
   ['clock.y', 'int', [0, 900], 54, 'Distance from the top or bottom edge, in px.'],
-  ['clock.scale', 'num', [0.6, 2.5], 1, 'Scale of the time.'],
+  ['clock.scale', 'num', [0.4, 2.5], 1, 'Scale of the time.'],
   ['clock.dateScale', 'num', [0.6, 2], 1, 'Scale of the date.'],
   [
     'clock.style',
@@ -719,6 +756,20 @@ function resolve(t, accent) {
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
+  // the weights, spacing and optical size of the text: set only by a theme that changes them, read by the launcher and the Inputs list
+  [
+    ['type.weightTitle', '--w-title'],
+    ['type.weightText', '--w-text'],
+    ['type.weightLabel', '--w-label'],
+    ['type.weightClock', '--w-clock'],
+  ].forEach(r => {
+    if (v[r[0]] !== null) vars[r[1]] = String(Math.round(v[r[0]]));
+  });
+  if (v['type.tracking'] !== null) vars['--track'] = v['type.tracking'] + 'em';
+  if (v['type.opsz'] === 'display') {
+    vars['--fvs'] = '"opsz" 32';
+    vars['--fvs-s'] = '"opsz" 14';
+  }
   if (v['tile.launch'] !== 'dim') {
     attrs.launch = v['tile.launch'];
     vars['--launch-sd'] = String(Math.round(v['dock.focusScale'] * 130) / 100);
@@ -776,7 +827,10 @@ function resolve(t, accent) {
   // only a theme that lines the name up with the dock carries this; the dock's own width at a given app count is worked out on the page
   // (the number of apps shown, not dock.count), so the name tracks the dock's left edge however many apps are present
   if (v['shelf.dockAlign']) out.shelf = { dock: true, align: v['dock.align'], x: v['dock.x'], w: v['dock.w'], gap: v['dock.gap'], pad };
-  if (v['type.fontFile']) out.font = { id: v.fontTheme || t.id, file: v['type.fontFile'] };
+  if (v['type.fontFile']) {
+    out.font = { id: v.fontTheme || t.id, file: v['type.fontFile'] };
+    if (v['type.variable']) out.font.variable = true;
+  }
   return out;
 }
 
