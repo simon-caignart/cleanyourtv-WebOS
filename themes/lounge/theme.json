@@ -76,7 +76,8 @@
     "panelPad": 40,
     "iconScale": 1.14,
     "panelRim": 0.35,
-    "chevron": true
+    "chevron": true,
+    "glass": true
   },
   "grid": {
     "mode": "push",
