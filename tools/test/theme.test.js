@@ -159,6 +159,29 @@ run(async () => {
       'the room a name takes under a row: the grown tile, the gap and one line; none without names'
     );
   }
+  // effects.motion, tile.highlight and tile.shadow: the motion and the focus look of a streaming box, only in the themes that use them
+  const box = themeMod.resolve(
+    themeMod.normalize(
+      { effects: { motion: 'smooth' }, tile: { highlight: 'focus', rim: 0.7, shadow: 'soft', shadowStrength: 0.6 } },
+      'box'
+    )
+  );
+  ok(
+    box.attrs.motion === 'smooth' &&
+      box.attrs.hl === 'focus' &&
+      box.attrs.tshadow === 'soft' &&
+      box.vars['--rim'] === '0.7' &&
+      box.vars['--shadow-k'] === '0.6',
+    'smooth motion, the highlight on the focused tile and soft shadows reach the launcher'
+  );
+  ok(
+    !('motion' in plain.attrs) &&
+      !('hl' in plain.attrs) &&
+      !('tshadow' in plain.attrs) &&
+      !('--rim' in plain.vars) &&
+      !('--shadow-k' in plain.vars),
+    'by default the spring motion, the gloss on every tile and the focus shadow, with no new keys in the reply'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

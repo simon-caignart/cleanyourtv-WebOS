@@ -19,13 +19,13 @@ function tile(a) {
   hit(d);
   if (a.sys) {
     d.innerHTML = svg(a.icon) + '<div class="slab">' + 'LG Home' + '</div>';
-    return d;
+    return shade(d);
   }
   if (a.input) {
     d.innerHTML = svg('hdmi') + '<div class="slab"></div><div class="slab sub"></div>';
     var f = hsl2rgb(hashHue(a.id), 0.3, 0.3);
     paint(d, { c: f, b: hsl2rgb(hashHue(a.id), 0.3, 0.16) });
-    return inputTile(d, a);
+    return inputTile(shade(d), a);
   }
   var known = colors[a.id];
   if (known) {
@@ -75,6 +75,14 @@ function tile(a) {
   i.src = a.id === '__live' && !a.iv ? LIVE_ICON : API + '/icon/' + encodeURIComponent(a.id) + (a.iv ? '?v=' + a.iv : '');
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
+  return shade(d);
+}
+/* the focused tile's soft shadow (tile.shadow soft): its own layer, so it fades in with the focus and grows with the tile instead of
+   switching on at once. Last child, so the tile's other children keep their places (inputTile counts them). */
+function shade(d) {
+  var s = document.createElement('i');
+  s.className = 'tsh';
+  d.appendChild(s);
   return d;
 }
 

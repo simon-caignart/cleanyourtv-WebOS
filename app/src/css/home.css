@@ -557,6 +557,87 @@ body {
 #grid .tile.f {
   transform: scale(var(--grid-fs));
 }
+/* effects.motion smooth: no bounce. The new tile grows quickly (--t-grow), the old one shrinks back more slowly (--t-shrink): the
+   transition of the state being entered applies, so .f carries the grow and the plain tile the shrink. Held keys shorten both. */
+[data-motion="smooth"] {
+  --t-grow: 0.25s;
+  --t-shrink: 0.5s;
+}
+[data-motion="smooth"] .tile,
+[data-motion="smooth"] .pill {
+  transition: transform calc(var(--t-shrink) * var(--spd)) cubic-bezier(0.4, 0, 0.3, 1);
+}
+[data-motion="smooth"] .tile.f,
+[data-motion="smooth"] .pill.f {
+  transition-duration: calc(var(--t-grow) * var(--spd));
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-motion="smooth"].snap .tile,
+[data-motion="smooth"].snap .pill {
+  transition-duration: calc(0.08s * var(--spd));
+}
+/* tile.shadow soft: a faint shadow under every tile, and the focused tile's deeper one on its own layer (.tsh, tiles.js) that fades in
+   while the tile grows, so it grows with it. The layer sits under the tile's content; an outer shadow is never drawn under its own box. */
+.tsh {
+  display: none;
+}
+[data-tshadow="soft"] .tsh {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 !important;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+}
+[data-tshadow="soft"] .tile.f .tsh {
+  opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+}
+[data-tshadow="soft"] .tile,
+[data-tshadow="soft"] .tile.f {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--tile-border)),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
+}
+[data-tshadow="soft"] .tile.fill.f {
+  box-shadow:
+    0 0 0 var(--ring-w) var(--focus),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
+}
+/* a Full tile crops its picture with rounded corners of its own instead of overflow, which would cut the shadow off */
+[data-tshadow="soft"] .tile.fill {
+  overflow: visible;
+}
+[data-tshadow="soft"] .tile.fill img {
+  border-radius: inherit;
+}
+/* tile.highlight focus: the gloss only on the focused tile, a soft light spot centred a third of the way along its top edge, and a thin
+   bright rim strongest at the top and left; it fades in with the focus. */
+[data-hl="focus"] .tile::after {
+  opacity: 0;
+  background: radial-gradient(circle at 33% 0%, rgba(255, 255, 255, var(--gloss)), rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    inset 1px 2px 0 rgba(255, 255, 255, var(--rim, 0.5)),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(0.3 * var(--rim, 0.5)));
+  will-change: opacity;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+}
+[data-hl="focus"] .tile.f::after {
+  opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+}
+.snap .tsh,
+.snap .tile::after {
+  transition: none;
+}
 /* Moon uses one warm glass frame that slides between the focused dock and grid tiles. */
 [data-theme="moon"] #dock .tile.f::before,
 [data-theme="moon"] #grid .tile.f::before {
@@ -610,10 +691,11 @@ body {
   opacity: 0;
   pointer-events: none;
   will-change: opacity;
-  transition: opacity calc(0.12s * var(--spd)) linear;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
 .tlabel.on {
   opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
 }
 .snap .tlabel {
   transition: none;
@@ -1458,4 +1540,19 @@ body.scenes-on {
   background: var(--acc);
   box-shadow: none;
   transform: scale(1.1);
+}
+/* effects.motion smooth: the page and everything that fades with it when the grid opens or closes share one duration and one curve,
+   so they read as a single motion (here, after the rules they override) */
+[data-motion="smooth"] {
+  --t-page: 0.5s;
+}
+[data-motion="smooth"] #scroll {
+  transition: transform calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-motion="smooth"] #grid,
+[data-motion="smooth"] #scroll::before,
+[data-motion="smooth"] #sglass,
+[data-motion="smooth"] #shelf,
+[data-motion="smooth"] .card {
+  transition: opacity calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
 }

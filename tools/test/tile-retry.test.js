@@ -96,7 +96,7 @@ run(async () => {
     context.retryTileIcons();
   }
   ok(
-    missing._i.requests.length === 3 && missing.children.length === 1,
+    missing._i.requests.length === 3 && missing.children.filter(e => e.className === 't').length === 1 && missing._i.parentNode === null,
     'a permanently missing icon has bounded retries and only one fallback'
   );
   const live = context.tile({ id: '__live', title: 'Live' });
