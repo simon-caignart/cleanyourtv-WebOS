@@ -216,6 +216,19 @@ run(async () => {
     );
   }
 
+  // films on webOS: the video is on a plane under the page, through a hole in it, so the page never fades the video (opacity does
+  // nothing there) and keeps a black veil above it that is opaque from the start, so the hole never shows Home
+  {
+    const page = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');
+    const css = page.slice(page.indexOf('<style>'), page.indexOf('</style>')),
+      videoCss = (css.match(/#v0[^{]*\{[^}]*\}/g) || []).join('\n');
+    ok(
+      /<div id="veil" class="on"><\/div>/.test(page) && (page.match(/<video /g) || []).length === 1,
+      'one video element, and the black veil over it is there from the start'
+    );
+    ok(videoCss && !/opacity|transition/.test(videoCss), 'the video itself is never faded: ' + videoCss.replace(/\s+/g, ' '));
+  }
+
   // the page asks for each kind of id the way Home's wall.js does: a file from the library, or the live source's current photo
   {
     const html = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');

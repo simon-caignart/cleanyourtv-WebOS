@@ -46,9 +46,10 @@
       #p1.top {
         z-index: 1;
       }
-      /* the films: two layers, so one can fade in over the other */
-      #v0,
-      #v1 {
+      /* the film. webOS draws a <video> on a plane of its own under the page, through a hole in it: opacity does nothing to it there,
+         and while it has no picture the hole shows the window underneath (Home). So it is never faded, and only shown while a film
+         is on: the black veil above it does the fades */
+      #v0 {
         position: fixed;
         left: 0;
         top: 0;
@@ -56,23 +57,35 @@
         height: 100%;
         object-fit: cover;
         background: #000;
-        opacity: 0;
-        transition: opacity 1.4s linear;
-      }
-      #v0.on,
-      #v1.on {
-        opacity: 1;
-      }
-      /* the film that fades in is over the one it replaces, and a film that fades out stays over the photo it uncovers */
-      #v0.top,
-      #v1.top {
+        display: none;
         z-index: 2;
+      }
+      #v0.on {
+        display: block;
+      }
+      /* black over the film (and the photos), drawn by the page, so it covers the video's hole: opaque from the start until the first
+         picture, during every change of film, and when a film fails or stalls */
+      #veil {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+        z-index: 3;
+        opacity: 0;
+        transition: opacity 0.8s ease-out;
+        pointer-events: none;
+      }
+      #veil.on {
+        opacity: 1;
+        transition: opacity 0.6s ease-in;
       }
       #scrim,
       #place,
       #credit,
       #clock {
-        z-index: 3;
+        z-index: 4;
       }
       /* the place, bottom left, for a few seconds at the start of a film */
       #place {
@@ -141,7 +154,7 @@
     <canvas id="p0" width="1920" height="1080"></canvas>
     <canvas id="p1" width="1920" height="1080"></canvas>
     <video id="v0" muted playsinline preload="auto"></video>
-    <video id="v1" muted playsinline preload="auto"></video>
+    <div id="veil" class="on"></div>
     <div id="scrim"></div>
     <div id="place"></div>
     <div id="credit"></div>
@@ -399,6 +412,7 @@
       }
       function startPhotos() {
         mode = 'photos';
+        veil(false);
         photosOn = true;
         clearInterval(timer);
         nextPhoto();
@@ -484,34 +498,36 @@
         return String(c).toUpperCase();
       }
 
-      /* ---------- films from an add-on (Aerials): one plays while the next one loads in the other layer and fades in once it plays,
-         about ten seconds before the first one ends. When the next one does not start, it is tried again alone once the first one has
-         ended: if it plays then, this TV cannot play two at once and goes on with one at a time (the film fades to black and the next
-         one fades in); if it fails again, the film was the problem. Three films in a row that do not play, and the photos come back.
-         Both: when a film ends, a few photos show before the next film. */
+      /* ---------- films from an add-on (Aerials), one at a time (two 4K films at once are more than these TVs decode). A change of
+         film: the black veil fades in over the last second of the film, the next film starts behind it, and the veil fades out once
+         that one has drawn its first pictures. The video itself is never faded (see #v0). A film that does not play, or stops
+         moving for half a minute, is passed over behind the veil; three in a row, and the photos come back. Both: when a film ends,
+         a few photos show before the next film. */
       var PHOTOS_BETWEEN = 3;
       var films = [],
         fpos = 0,
-        V = [el('v0'), el('v1')],
-        cur = -1 /* the layer on screen */,
+        V = el('v0'),
+        playing = false,
         busy = false,
-        single = false,
-        alone = false /* the next film failed beside another one: try it alone */,
         fails = 0,
         moved = 0,
         filmsOn = false,
         watch = 0,
         placeT = 0;
-      function stopFilm(v) {
-        v.onplaying = v.onerror = v.ontimeupdate = v.onended = null;
-        v.className = '';
+      function veil(on) {
+        el('veil').className = on ? 'on' : '';
+      }
+      function stopFilm() {
+        V.onplaying = V.onerror = V.ontimeupdate = V.onended = null;
+        playing = false;
         try {
-          v.pause();
+          V.pause();
         } catch (e) {}
-        v.removeAttribute('src');
+        V.removeAttribute('src');
         try {
-          v.load(); /* lets the decoder go */
+          V.load(); /* lets the decoder go */
         } catch (e) {}
+        V.className = '';
       }
       function showPlace(t) {
         var p = el('place');
@@ -522,10 +538,9 @@
           p.className = '';
         }, 7000);
       }
-      /* the film in layer k: ok once it plays, no when it fails or has not started after 20 seconds */
-      function playFilm(k, f, ok, no) {
-        var v = V[k],
-          over = false,
+      /* the film, behind the veil: ok once it plays, no when it fails or has not started after 20 seconds */
+      function playFilm(f, ok, no) {
+        var over = false,
           t = setTimeout(function () {
             end(no);
           }, 20000);
@@ -533,137 +548,100 @@
           if (over) return;
           over = true;
           clearTimeout(t);
-          v.onplaying = v.onerror = null;
+          V.onplaying = V.onerror = null;
           fn();
         }
-        v._near = false;
-        v.muted = true;
-        v.onplaying = function () {
+        V._near = false;
+        V.muted = true;
+        V.className = 'on';
+        V.onplaying = function () {
           end(ok);
         };
-        v.onerror = function () {
+        V.onerror = function () {
           end(no);
         };
-        v.src = f.url;
+        V.src = f.url;
         try {
-          var p = v.play();
+          var p = V.play();
           if (p && p.catch) p.catch(function () {});
         } catch (e) {}
       }
-      /* the end of a film is near (or it ended, failed or stalled): the next one, or in Both a few photos first */
-      function advance(ended) {
-        if (busy || !filmsOn) return;
-        busy = true;
-        if (mode === 'both' && cur >= 0) {
-          var was = cur;
-          return interlude(
-            PHOTOS_BETWEEN,
-            function () {
-              V[was].className = 'top'; /* fades out over the photo */
-              setTimeout(function () {
-                stopFilm(V[was]);
-                if (cur === was) cur = -1;
-                busy = false;
-              }, 1500);
-            },
-            function () {
-              advance(true);
-            }
-          );
-        }
-        var f = films[fpos++ % films.length];
-        if (!single && !alone && !ended && cur >= 0) {
-          var k = cur ^ 1;
-          return playFilm(
-            k,
-            f,
-            function () {
-              fadeTo(k, f);
-            },
-            function () {
-              stopFilm(V[k]);
-              fpos--; /* the same film again, alone, when the one on screen ends */
-              alone = true;
-              busy = false;
-            }
-          );
-        }
-        var gone = cur,
-          into = cur >= 0 ? cur : 0;
-        if (gone >= 0) V[gone].className = 'top';
-        setTimeout(
-          function () {
-            if (gone >= 0) stopFilm(V[gone]);
-            cur = -1;
-            var tried = alone;
-            alone = false;
-            playFilm(
-              into,
-              f,
-              function () {
-                if (tried) single = true; /* it plays alone, not beside another one */
-                fadeTo(into, f);
-              },
-              function () {
-                stopFilm(V[into]);
-                busy = false;
-                if (++fails >= 3) toPhotos();
-                else advance(true);
-              }
-            );
-          },
-          gone >= 0 ? 1500 : 0
-        );
-      }
-      function fadeTo(k, f) {
-        var old = cur,
-          v = V[k];
-        cur = k;
-        fails = 0;
-        busy = false;
-        moved = Date.now();
-        v.className = 'on top';
-        if (old >= 0 && old !== k) V[old].className = 'on';
-        showPlace(f.title);
-        if (old >= 0 && old !== k)
-          setTimeout(function () {
-            if (cur !== old) stopFilm(V[old]);
-          }, 1600);
-        /* Both: the photo the film faded in over is not drawn while the film covers it (a full-screen layer costs the TV) */
-        setTimeout(function () {
-          if (!photosOn && cur === k) {
+      /* the veil goes away once the film has drawn a picture or two, so the hole never shows anything but the film */
+      function shown(f) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            playing = true;
+            fails = 0;
+            busy = false;
+            moved = Date.now();
+            /* the photo layers are not drawn under a film (a full-screen layer costs the TV) */
+            photosOn = false;
+            clearInterval(timer);
             C[0].className = C[1].className = '';
             shownKey = '';
-          }
-        }, 1600);
-        v.ontimeupdate = function () {
-          moved = Date.now();
-          var left = v.duration - v.currentTime;
-          if (!v._near && left >= 0 && left < (single || mode === 'both' ? 1.5 : 12)) {
-            v._near = true;
-            advance(false);
-          }
-        };
-        v.onended = v.onerror = function () {
-          if (V[cur] === v) advance(true);
-        };
+            veil(false);
+            showPlace(f.title);
+            V.ontimeupdate = function () {
+              moved = Date.now();
+              var left = V.duration - V.currentTime;
+              if (!V._near && left >= 0 && left < 1.2) {
+                V._near = true;
+                advance();
+              }
+            };
+            V.onended = V.onerror = function () {
+              advance();
+            };
+          });
+        });
+      }
+      /* the end of a film is near (or it ended, failed or stalled), or the photos between two films have had their time: the veil
+         comes over everything, and behind it the next film starts, or in Both a few photos first */
+      function advance() {
+        if (busy || !filmsOn) return;
+        busy = true;
+        veil(true);
+        setTimeout(function () {
+          var had = playing;
+          stopFilm();
+          if (mode === 'both' && had)
+            return interlude(
+              PHOTOS_BETWEEN,
+              function () {
+                veil(false);
+                busy = false;
+              },
+              advance
+            );
+          var f = films[fpos++ % films.length];
+          playFilm(
+            f,
+            function () {
+              shown(f);
+            },
+            function () {
+              stopFilm();
+              busy = false;
+              if (++fails >= 3) toPhotos();
+              else advance();
+            }
+          );
+        }, 650);
       }
       function startFilms(list) {
         filmsOn = true;
         films = shuffle(list.slice());
         fpos = 0;
-        advance(true);
+        advance();
         /* a film that stops moving for half a minute (the network) is passed over */
         watch = setInterval(function () {
-          if (filmsOn && !busy && cur >= 0 && Date.now() - moved > 30000) advance(true);
+          if (filmsOn && !busy && playing && Date.now() - moved > 30000) advance();
         }, 5000);
       }
       function toPhotos() {
         filmsOn = false;
         clearInterval(watch);
-        stopFilm(V[0]);
-        stopFilm(V[1]);
-        cur = -1;
+        stopFilm();
         showPlace('');
         startPhotos();
       }
