@@ -347,6 +347,7 @@ body {
 /* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in */
 [data-grid="push"] #grid {
   z-index: 3;
+  will-change: opacity;
   opacity: 0;
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
@@ -1394,10 +1395,19 @@ body.scenes-on {
   z-index: 1;
   opacity: 0;
   pointer-events: none;
-  background-size:
-    100% 100%,
-    1920px 1080px;
   transition: opacity calc(0.25s * var(--spd)) linear;
+}
+#sglass canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+}
+/* while it can show, the glass is kept as a layer of its own, barely visible, so opening the grid only blends it in */
+.scenes-on[data-cards="glass"] #sglass {
+  opacity: 0.004;
+  will-change: opacity;
 }
 .scenes-on[data-cards="glass"].grid-open #sglass {
   opacity: 1;

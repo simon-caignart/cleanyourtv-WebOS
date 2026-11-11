@@ -33,6 +33,7 @@ function applyTheme(t) {
   if (typeof PAGER !== 'undefined') PAGER.draw();
   if (!t || !t.vars) {
     TH = TH0;
+    $('gA').style.display = $('gB').style.display = '';
     updateFocusArt(null);
     if (window.SCENES) SCENES.apply(null);
     return;
@@ -66,6 +67,8 @@ function applyTheme(t) {
     themeKeys.push('--wall');
   }
   for (k in t.attrs) b.setAttribute('data-' + k, t.attrs[k]);
+  /* no ambient glow: its two large layers are not kept at all (a weak GPU keeps few layers resident) */
+  $('gA').style.display = $('gB').style.display = t.vars['--glow-op'] === '0' ? 'none' : '';
   TH = {
     cols: t.cols || 10,
     tileH: t.tileH || 151,

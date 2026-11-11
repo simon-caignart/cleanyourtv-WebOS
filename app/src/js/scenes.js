@@ -81,6 +81,7 @@ var SCENES = (function () {
     customBase = ''; /* URL prefix for custom scene images */
   var box = null,
     frost = null,
+    frostSrc = '',
     solo = null,
     els = [],
     cur = 0,
@@ -126,15 +127,47 @@ var SCENES = (function () {
       return el;
     });
     document.body.insertBefore(box, document.body.firstChild);
-    /* frosted glass behind the app grid (cards.style glass): the blurred scene instead of the dark layer */
-    frost = document.createElement('div');
-    frost.id = 'sglass';
-    $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
+    /* frosted glass behind the app grid (cards.style glass): the blurred scene instead of the dark layer. It is drawn into a small
+       canvas the compositor scales up: a full-screen background image would be decoded only when the grid opens and rastered again at
+       the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while the 960 x 540 canvas texture stays resident. */
+    if (!frost) {
+      frost = document.createElement('div');
+      frost.id = 'sglass';
+      var cv = document.createElement('canvas');
+      cv.width = 960;
+      cv.height = 540;
+      frost.appendChild(cv);
+      $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
+    }
+  }
+  function srcOf(s) {
+    if (!s) return '';
+    return custom ? customBase + s.glass : 'scene-' + s.id + '-glass.jpg';
   }
   function fillOf(s) {
-    if (!s) return '';
-    if (custom) return 'url("' + customBase + s.glass + '")';
-    return 'url("scene-' + s.id + '-glass.jpg")';
+    return s ? 'url("' + srcOf(s) + '")' : '';
+  }
+  /* the glass behind the grid: the scene's blurred copy and the tint, drawn once per scene; the previous one stays until the new loads */
+  function drawFrost(src) {
+    if (!frost || src === frostSrc) return;
+    frostSrc = src;
+    var cv = frost.firstChild,
+      x = cv.getContext('2d');
+    if (!src) {
+      x.clearRect(0, 0, cv.width, cv.height);
+      return;
+    }
+    var i = new Image();
+    i.onload = function () {
+      if (frostSrc !== src) return;
+      x.drawImage(i, 0, 0, cv.width, cv.height);
+      var gr = x.createLinearGradient(0, 0, 0, cv.height);
+      gr.addColorStop(0, 'rgba(16,14,26,0.34)');
+      gr.addColorStop(1, 'rgba(16,14,26,0.46)');
+      x.fillStyle = gr;
+      x.fillRect(0, 0, cv.width, cv.height);
+    };
+    i.src = src;
   }
   /* the digits, and the fill placed so the blurred scene lines up with the screen behind them */
   function drawClock(el, s, text) {
@@ -305,7 +338,7 @@ var SCENES = (function () {
     if (!cards) return;
     var els2 = cards.children,
       g = cardsGlass() && on ? fillOf(lib[cur]) : '';
-    if (frost) frost.style.backgroundImage = g ? 'linear-gradient(rgba(16,14,26,0.34),rgba(16,14,26,0.46)),' + g : '';
+    drawFrost(g ? srcOf(lib[cur]) : '');
     for (var i = 0; i < els2.length; i++) {
       var el = els2[i];
       if (!/\bcard-(weather|ha-|frame\b)/.test(el.className)) continue;
