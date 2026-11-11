@@ -89,12 +89,15 @@ run(async () => {
     cfgNow = { wall: { on: true } },
     themeNow = null,
     scenesNow = { scenes: [] },
-    askedCc = null;
+    askedCc = null,
+    uiNow = '';
   const ctx = {
     config: { get: () => cfgNow },
     luna: async uri => {
       calls.push(uri);
       if (/listRunningApps/.test(uri)) return { returnValue: true, running: [{ id: 'com.webos.app.screensaver' }] };
+      if (/getSystemSettings/.test(uri))
+        return uiNow ? { returnValue: true, settings: { localeInfo: { locales: { UI: uiNow, TV: 'en-GB' } } } } : { returnValue: false };
       return { returnValue: true };
     },
     // an upload, a photo of a source add-on, a live source (the page asks /api/wallpapers/live/<add-on> for its photo, as Home does)
@@ -176,6 +179,21 @@ run(async () => {
   };
   x = await call(f, '/api/screensaver/photos');
   ok(x.j.photos.join(',') === '/api/theme/scene/mine/a.jpg', "a theme's own scenes: its scene images");
+  // effects.scenesYield (the resolved theme's scenes.yield): the scenes step aside for Wallpapers on with photos, as on Home
+  themeNow = { id: 'lounge', scenes: { set: 'couch', secs: 20, yield: true } };
+  x = await call(f, '/api/screensaver/photos');
+  ok(
+    x.j.from === 'wallpapers' && x.j.photos.join(',') === 'u/aa,s/immich/bb,l/unsplash',
+    'scenes that yield: the Wallpapers photos come first'
+  );
+  cfgNow = { wall: { on: false } };
+  x = await call(f, '/api/screensaver/photos');
+  ok(x.j.from === 'scenes', 'scenes that yield, with Wallpapers off: the scenes');
+  cfgNow = { wall: { on: true } };
+  libNow = [];
+  x = await call(f, '/api/screensaver/photos');
+  ok(x.j.from === 'scenes', 'scenes that yield, with Wallpapers on but no photos: the scenes');
+  libNow = ['u/aa', 's/immich/bb', 'l/unsplash', 'x/zz'];
   // the launcher's landscapes are handed out by name, only these five
   {
     const appDir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cytv-scene-')), 'app');
@@ -204,7 +222,13 @@ run(async () => {
   // not with the browser's own default (which on the TV is not the TV's language)
   {
     x = await call(f, '/api/screensaver/photos');
-    ok(x.j.lang === '' && x.j.clock === 'auto', "without settings: the TV's language (the page reads its locale) and the automatic clock");
+    ok(
+      x.j.lang === 'en' && x.j.clock === 'auto',
+      'without settings or an answer from the TV: English, never empty, and the automatic clock'
+    );
+    uiNow = 'fr-FR';
+    x = await call(f, '/api/screensaver/photos');
+    ok(x.j.lang === 'fr-FR', "the Language setting follows the TV: the TV's menu language (localeInfo UI), not its TV locale: " + x.j.lang);
     cfgNow = { wall: { on: true }, lang: 'fr', clock: '24' };
     x = await call(f, '/api/screensaver/photos');
     ok(x.j.lang === 'fr' && x.j.clock === '24', 'the Language and Clock settings go to the page: ' + x.j.lang + ' ' + x.j.clock);
