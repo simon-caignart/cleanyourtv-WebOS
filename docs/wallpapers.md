@@ -15,6 +15,7 @@ In the launcher, **Customise** > **Wallpapers**:
 | Row | What it does |
 |---|---|
 | Use Wallpapers | On: a photo from the library replaces the theme's background, in every theme. Off: the theme as it is. |
+| Photos on Home | **Landscape only** (the default): Home shows the photos that are clearly wider than tall, as a portrait photo would show only its middle band there; the screen saver shows them all. **All**: every photo. See [Landscape and portrait](#landscape-and-portrait). |
 | New photo | When the photo changes: each time Home opens, or every 10 or 30 seconds, every minute, or every 3, 5, 15 or 60 minutes. With an interval, the photo changes on that interval while Home is on screen, and opening Home changes it only if that long has passed since the last change. The photos cross-fade. |
 | Add photos... | Opens the manager app on its Wallpapers screen. |
 
@@ -39,9 +40,21 @@ and closes when you leave the QR screen. It is not encrypted: photos travel over
 |---|---|
 | Manage from your phone | The QR code for the phone page. |
 | Local uploads, one row per photo source, Total | How many photos there are per source, a line about each source (for Immich when it was last synced and its last error), and the space the uploads use. A source row opens that source's own page on the phone. |
+| Photos on Home | Landscape only (the default) or All, as in Customise > Wallpapers. |
 | Picture size | 4K (3840 pixels, the default) or Full HD (1920). Applies to new uploads and to what photo sources download next. On a 4K TV, Home is laid out at 1920 x 1080 but drawn at 3840 x 2160, so a 4K photo is shown pixel for pixel; Full HD fits about four times as many photos in 150 MB. |
 | Remove all uploads | Deletes every uploaded photo, after a confirmation. |
 | Immich is an add-on now, Remove old Immich data | Only on a TV that used Immich before it became an add-on: the old settings and photos wait until you install the Immich add-on, which takes them over once. **Remove old Immich data** deletes them instead, after a confirmation. |
+
+## Landscape and portrait
+
+The service knows the size of every photo in the library, for every source: it reads it from the first bytes of the file (the frame header of a JPEG, turned when the photo was taken with the phone upright, or the header of a PNG or WebP) when a photo is uploaded or a source lists it, and keeps it in `index.json`.
+A photo already on the TV gets its size the first time the list is read; a source's photo that changes is read again.
+A photo is **landscape** when it is at least 1.2 times as wide as tall; a square-ish photo counts as portrait.
+The photo of a live source (Unsplash) is not kept on the TV, so its size is not known: it counts as landscape (Unsplash is asked for landscape photos).
+
+On Home a photo fills the whole screen, so a portrait one shows only its middle band: with **Photos on Home** at **Landscape only**, Home leaves the portrait photos out, as the Apple TV does.
+A library with no landscape photo at all shows every photo on Home.
+The [screen saver](screensaver.md#photo-styles) shows every photo, two portrait photos side by side.
 
 ## Immich (add-on)
 

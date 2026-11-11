@@ -118,7 +118,8 @@ object is `wallpapers` on the module `create()` returns:
 
 Core merges the photos with the uploads: `s/<add-on>/<id>` for a file and `l/<add-on>` for a live source. A source that throws offers
 nothing and is logged once. `GET /api/wallpapers/status` has a `sources` list only when an add-on provides photos. Core still does the
-rotation, the dimming and the Picture size setting; a source only supplies photos.
+rotation, the dimming and the Picture size setting, and reads each photo's size (landscape or portrait, for Home's Photos on Home
+and the screen saver's pairs); a source only supplies photos.
 
 ## Providing something to the service: cards
 

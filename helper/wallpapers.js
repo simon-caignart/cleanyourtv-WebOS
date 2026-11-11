@@ -35,6 +35,98 @@ function imageType(b) {
 }
 const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 
+// The size of a picture as it is shown, from its first bytes: [width, height], or null. JPEG: the frame header (SOF), turned when
+// the EXIF orientation says the camera was held on its side (5 to 8: browsers show such a photo turned); PNG: IHDR; WebP: VP8, VP8L or
+// VP8X. A JPEG's frame header can come after a large EXIF block, so a caller that read too little gets null and reads more.
+function imageSize(b) {
+  if (!b || b.length < 16) return null;
+  const type = imageType(b);
+  if (type === 'png')
+    return b.length >= 24 && b.toString('latin1', 12, 16) === 'IHDR' ? dims(b.readUInt32BE(16), b.readUInt32BE(20)) : null;
+  if (type === 'webp') {
+    const kind = b.toString('latin1', 12, 16);
+    if (kind === 'VP8 ' && b.length >= 30) return dims(b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff);
+    if (kind === 'VP8L' && b.length >= 25 && b[20] === 0x2f) {
+      const bits = b.readUInt32LE(21);
+      return dims((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1);
+    }
+    if (kind === 'VP8X' && b.length >= 30) return dims(b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1);
+    return null;
+  }
+  if (type !== 'jpg') return null;
+  let o = 2,
+    turned = false;
+  while (o + 9 < b.length) {
+    if (b[o] !== 0xff) return null;
+    const m = b[o + 1];
+    if (m === 0xff) {
+      o++;
+      continue;
+    }
+    if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) {
+      o += 2;
+      continue;
+    }
+    const len = b.readUInt16BE(o + 2);
+    if (m === 0xe1 && b.toString('latin1', o + 4, o + 10) === 'Exif\0\0')
+      turned = exifTurned(b.slice(o + 10, Math.min(b.length, o + 2 + len)));
+    // the frame headers: baseline, progressive and the rarer ones; not DHT (c4), JPG (c8) or DAC (cc)
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+      const h = b.readUInt16BE(o + 5),
+        w = b.readUInt16BE(o + 7);
+      return turned ? dims(h, w) : dims(w, h);
+    }
+    if (m === 0xda || m === 0xd9) return null;
+    o += 2 + len;
+  }
+  return null;
+}
+const dims = (w, h) => (w > 0 && h > 0 ? [w, h] : null);
+// does the EXIF orientation (tag 0x0112 in the first directory) turn the picture by a quarter (5 to 8)?
+function exifTurned(t) {
+  try {
+    const le = t.toString('latin1', 0, 2) === 'II';
+    const u16 = i => (le ? t.readUInt16LE(i) : t.readUInt16BE(i)),
+      u32 = i => (le ? t.readUInt32LE(i) : t.readUInt32BE(i));
+    const d = u32(4),
+      n = u16(d);
+    for (let i = 0; i < n && d + 2 + i * 12 + 12 <= t.length; i++) {
+      const e = d + 2 + i * 12;
+      if (u16(e) === 0x0112) return u16(e + 8) >= 5 && u16(e + 8) <= 8;
+    }
+  } catch (_) {}
+  return false;
+}
+// the size of a picture file, reading only its start (more when a JPEG's frame header comes late), or null
+function fileSize(f) {
+  let fd;
+  try {
+    fd = fs.openSync(f, 'r');
+    for (const n of [65536, 1048576]) {
+      const b = Buffer.alloc(n);
+      const got = fs.readSync(fd, b, 0, n, 0);
+      const s = imageSize(b.slice(0, got));
+      if (s || got < n) return s;
+    }
+  } catch (_) {
+  } finally {
+    if (fd !== undefined)
+      try {
+        fs.closeSync(fd);
+      } catch (_) {}
+  }
+  return null;
+}
+// a landscape photo: clearly wider than tall (a square-ish one counts as portrait); a size not known counts as landscape
+const LANDSCAPE = 1.2;
+const isLandscape = size => !size || !(size[0] > 0 && size[1] > 0) || size[0] / size[1] >= LANDSCAPE;
+// what Home shows: only the landscape photos (the default), or all ('all'); a library without a landscape photo shows them all
+function homePhotos(ids, sizes, mode) {
+  if (mode === 'all') return ids.slice();
+  const l = ids.filter(id => isLandscape(sizes[id]));
+  return l.length ? l : ids.slice();
+}
+
 function create(ctx) {
   const config = ctx.config;
   const cfg = () => Object.assign({ size: '4k' }, config.get().wallpapers || {});
@@ -57,6 +149,8 @@ function create(ctx) {
     index.upload = Array.isArray(index.upload) ? index.upload : [];
     index.immich = index.immich && typeof index.immich === 'object' ? index.immich : {};
     index.sync = index.sync || { state: 'idle', at: 0, error: '', ok: 0 };
+    // the size of each photo, by its id in the list: [width, height, what the file was (a source's photo can be replaced)]
+    index.sizes = index.sizes && typeof index.sizes === 'object' ? index.sizes : {};
     return index;
   }
   function saveIdx() {
@@ -91,6 +185,8 @@ function create(ctx) {
     fs.writeFileSync(path.join(UP, file + '.tmp'), buf, { mode: 0o600 });
     fs.renameSync(path.join(UP, file + '.tmp'), path.join(UP, file));
     idx().upload.push({ id, file, bytes: buf.length, at: Date.now() });
+    const sz = imageSize(buf);
+    if (sz) idx().sizes['u/' + id] = sz;
     saveIdx();
     return '';
   }
@@ -292,14 +388,69 @@ function create(ctx) {
     }
     return out;
   }
+  // {id: [width, height]} of the photos in the list whose size is known. Read from each file's first bytes once and kept in the index:
+  // an upload when it arrives (and an older one the first time it is asked for), a source's photo the first time it is listed and
+  // again when its file changes. A live source's photo is not kept on the TV: unknown, which counts as landscape.
+  function sizes(ids) {
+    const kept = idx().sizes,
+      out = {},
+      now = {};
+    let changed = false;
+    for (const id of ids) {
+      let f = '',
+        tag = '';
+      const su = /^u\/(.+)$/.exec(id),
+        ss = /^s\/([^/]+)\/(.+)$/.exec(id);
+      if (su) f = photoFile('u', su[1]);
+      else if (ss) {
+        f = srcFile(ss[1], ss[2]);
+        try {
+          const st = f ? fs.statSync(f) : null;
+          tag = st ? st.size + ':' + Math.round(st.mtimeMs) : '';
+        } catch (_) {
+          f = '';
+        }
+      }
+      if (!f) continue;
+      let k = kept[id];
+      if (!k || (k[2] || '') !== tag) {
+        const z = fileSize(f);
+        k = z ? (tag ? [z[0], z[1], tag] : z) : null;
+        changed = true;
+      }
+      if (k) {
+        now[id] = k;
+        out[id] = [k[0], k[1]];
+      }
+    }
+    if (changed || Object.keys(kept).length !== Object.keys(now).length) {
+      idx().sizes = now;
+      try {
+        saveIdx();
+      } catch (_) {}
+    }
+    return out;
+  }
+  // Wallpapers' Photos on Home: 'landscape' (the default) or 'all'
+  const homeMode = () => (cfg().home === 'all' ? 'all' : 'landscape');
   // a number that changes whenever the set of photos changes: the launcher reads the list again then
   const stamp = () => {
     const l = list();
-    return l.length + ':' + crypto.createHash('md5').update(l.join(',')).digest('hex').slice(0, 8);
+    // Photos on Home is part of it: Home's list changes with it
+    return (
+      l.length +
+      ':' +
+      crypto
+        .createHash('md5')
+        .update(l.join(',') + (homeMode() === 'all' ? '|all' : ''))
+        .digest('hex')
+        .slice(0, 8)
+    );
   };
   function status() {
     const out = {
       size: cfg().size === 'hd' ? 'hd' : '4k',
+      home: homeMode(),
       uploads: idx().upload.length,
       total: list().length,
       bytes: usedBytes(),
@@ -418,13 +569,23 @@ function create(ctx) {
     if (ml) return json(await liveForHome(ml[1]));
     if (u === '/api/wallpapers/push') return json(pushNow());
     if (u === '/api/wallpapers/status') return json(status());
-    if (u === '/api/wallpapers/list') return json({ photos: list(), stamp: stamp() });
+    if (u === '/api/wallpapers/list') {
+      const l = list(),
+        z = sizes(l);
+      // home: the photos Home shows (Photos on Home); sizes for the screen saver, which pairs portrait photos
+      return json({ photos: l, stamp: stamp(), home: homePhotos(l, z, homeMode()), sizes: z, homeMode: homeMode() });
+    }
     if (req.method !== 'POST') return web.notFound(res);
     const b = await body(req);
     if (u === '/api/wallpapers/set') {
       if (b.size === '4k' || b.size === 'hd')
         setCfg(w => {
           w.size = b.size;
+        });
+      if (b.home === 'all' || b.home === 'landscape')
+        setCfg(w => {
+          if (b.home === 'all') w.home = 'all';
+          else delete w.home;
         });
       return json(status());
     }
@@ -445,7 +606,20 @@ function create(ctx) {
     return web.notFound(res);
   }
 
-  return { name: 'wallpapers', prefix: '/api/wallpapers/', handle, status, stamp, adoptLegacy, addUpload, list, phone, liveCurrent };
+  return {
+    name: 'wallpapers',
+    prefix: '/api/wallpapers/',
+    handle,
+    status,
+    stamp,
+    adoptLegacy,
+    addUpload,
+    list,
+    sizes,
+    homeMode,
+    phone,
+    liveCurrent,
+  };
 }
 
 // the phone page: Upload photos. Plain script for iOS Safari and Android Chrome; photos are scaled in
@@ -510,4 +684,4 @@ button.p,label.b{background:#f5f6f8;color:#111;font-weight:600;border:0}input{te
   );
 }
 
-module.exports = { create, imageType, LIMITS, PAIR_PORT };
+module.exports = { create, imageType, imageSize, fileSize, isLandscape, homePhotos, LANDSCAPE, LIMITS, PAIR_PORT };

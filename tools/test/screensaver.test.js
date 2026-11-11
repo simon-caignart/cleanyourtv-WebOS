@@ -125,8 +125,11 @@ run(async () => {
       x.j.photos.join(',') === 'u/aa,s/immich/bb,l/unsplash' &&
       x.j.from === 'wallpapers' &&
       x.j.stamp === undefined &&
-      x.j.every === 25,
-    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 25 s each'
+      x.j.every === 16 &&
+      x.j.style === 'kenburns' &&
+      x.j.show === 'photos' &&
+      x.j.slides.length === x.j.photos.length,
+    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 16 s each (Ken Burns), every photo once in the slides'
   );
   // the other things Home can have behind it, in Home's order (scenes, then Wallpapers, then the theme's wallpaper)
   themeNow = { id: 'still', wallpaper: { id: 'still', file: 'lake.jpg', dim: 0.4 } };
@@ -196,6 +199,35 @@ run(async () => {
   );
   cfgNow = { wall: { on: true } };
   themeNow = null;
+
+  // the clock and the date in Home's language and clock format: the page gets the settings with the photos and formats with them,
+  // not with the browser's own default (which on the TV is not the TV's language)
+  {
+    x = await call(f, '/api/screensaver/photos');
+    ok(x.j.lang === '' && x.j.clock === 'auto', "without settings: the TV's language (the page reads its locale) and the automatic clock");
+    cfgNow = { wall: { on: true }, lang: 'fr', clock: '24' };
+    x = await call(f, '/api/screensaver/photos');
+    ok(x.j.lang === 'fr' && x.j.clock === '24', 'the Language and Clock settings go to the page: ' + x.j.lang + ' ' + x.j.clock);
+    cfgNow = { wall: { on: true } };
+    const page = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');
+    ok(
+      !/toLocale(Date|Time)String\(undefined/.test(page) && /toLocaleTimeString\(LOC,/.test(page) && /toLocaleDateString\(LOC,/.test(page),
+      'the page formats the time and the date with that language, not the browser default'
+    );
+  }
+
+  // films on webOS: the video is on a plane under the page, through a hole in it, so the page never fades the video (opacity does
+  // nothing there) and keeps a black veil above it that is opaque from the start, so the hole never shows Home
+  {
+    const page = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');
+    const css = page.slice(page.indexOf('<style>'), page.indexOf('</style>')),
+      videoCss = (css.match(/#v0[^{]*\{[^}]*\}/g) || []).join('\n');
+    ok(
+      /<div id="veil" class="on"><\/div>/.test(page) && (page.match(/<video /g) || []).length === 1,
+      'one video element, and the black veil over it is there from the start'
+    );
+    ok(videoCss && !/opacity|transition/.test(videoCss), 'the video itself is never faded: ' + videoCss.replace(/\s+/g, ' '));
+  }
 
   // the page asks for each kind of id the way Home's wall.js does: a file from the library, or the live source's current photo
   {
@@ -400,15 +432,16 @@ run(async () => {
       ok(n.status === 0, s + ' is valid shell');
     }
   }
-  // ---- the manager: every "Screen saver" row (CleanYourTV as Home, Features) opens the switch's confirm screen ----
+  // ---- the manager: every "Screen saver" row (CleanYourTV as Home, Features) opens its screen: the switch, then the settings ----
   {
     const menu = fs.readFileSync(path.join(root, 'manager', 'src', 'js', 'menu.js'), 'utf8');
     const rows = menu.split("label: 'Screen saver'").slice(1);
     ok(
       rows.length === 2 &&
         rows.every(r => /^[\s\S]{0,400}?fn: openSaver/.test(r)) &&
-        /function openSaver\(\) \{[\s\S]{0,400}?push\('confirm-saver'\)/.test(menu),
-      'both "Screen saver" rows of the manager open the confirm screen of the switch (rows: ' + rows.length + ')'
+        /function openSaver\(\) \{[\s\S]{0,600}?push\('saver'\)/.test(menu) &&
+        /view === 'saver'[\s\S]{0,800}?push\('confirm-saver'\)/.test(menu),
+      'both "Screen saver" rows of the manager open its screen, whose first row is the switch (rows: ' + rows.length + ')'
     );
   }
 

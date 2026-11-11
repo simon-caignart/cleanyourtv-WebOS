@@ -12,7 +12,8 @@ LG's screen saver back.
 
 ## What it shows
 
-- **What Home has behind it**, worked out in Home's own order, changed every 25 seconds (a new photo starts when the page opens):
+- **What Home has behind it**, worked out in Home's own order, changed every 16 seconds with Ken Burns and every 25 with Classic (see
+  [Photo styles](#photo-styles); a new photo starts when the page opens):
     1. the theme's **scenes**: the five landscapes of the couch scenes (or an add-on's scenes in their place, such as Seasons, with
        their credit line), or a theme's own scenes;
     2. else, with [Wallpapers](wallpapers.md) on, the **wallpaper library**: uploads from the phone, the photos of a source add-on
@@ -22,15 +23,34 @@ LG's screen saver back.
        Home when its photo changes);
     3. else the **theme's wallpaper**.
 - **The clock and the date**, bottom right, solid white over the photo: no transparency, so it stays readable on a bright picture.
+  They are in Home's language and clock format: the manager's **Language** (or the TV's own language when it follows the TV) and
+  Customise > **Clock** (automatic, 12 or 24 hour).
   It sits in the same corner all the time, which is the one thing to watch on a panel that retains static content.
 - **Nothing behind Home** (a plain theme, Wallpapers off): the clock and date alone, on black.
 
 The first key, click or touch closes it and the app that was on screen comes back. Nothing is saved or uploaded.
 
+## Photo styles
+
+As on the Apple TV, the photos have a style, chosen in the manager: **Features** > **Screen saver** > **Photo style**.
+
+- **Ken Burns** (the default): each photo slowly zooms in or out (between 1 and 1.12 times) and drifts toward or from a point, over the 16 seconds it stays and its fade, and the next one fades in over it.
+- **Classic**: the photos stay still and cross-fade, every 25 seconds.
+
+In both styles a photo in portrait (less than 1.2 times as wide as tall, see [Wallpapers](wallpapers.md#landscape-and-portrait)) is not cut to its middle band.
+Two portrait photos share the screen, side by side with a thin line between them, and drift a little less; a portrait photo left over at the end of the round is shown whole over a blurred, darker copy of itself.
+The order is shuffled each time the screen saver opens; a portrait photo is paired with the next portrait one in that order.
+
+To spare the TV's graphics, each photo is drawn once into a picture of 1920 x 1080 that the screen scales, only that picture moves and fades, and there are never more than two of them; the next photo is loaded and decoded while one shows.
+
 ## Films (the Aerials add-on)
 
 With the **Aerials** add-on installed (manager > Add-ons > Get more), the screen saver plays Apple's Aerial films instead of the pictures above: slow drone films of cities, landscapes and the sea, a few minutes each, as on the Apple TV.
-Each film fades in over the one before, about ten seconds before that one ends, and the place's name shows in the bottom left corner for a few seconds at its start; the clock and the date stay where they are.
+**Features** > **Screen saver** > **Show** chooses, as the Apple TV's screen saver type does: **Aerials** (the default with the add-on), **Photos**, or **Aerials and photos**: a film, then three photos, then the next film, in turn (each change goes through black, as between films).
+One film plays at a time: over its last second the screen fades to black, the next film starts behind the black, and the black fades away once that film shows its first pictures.
+The place's name shows in the bottom left corner for a few seconds at the start of each film; the clock and the date stay where they are.
+The black is drawn by the page above the film because webOS shows a video on a plane of its own under the page, through a hole in it: fading the video itself does nothing there, and while a video has no picture the hole shows the window underneath (Home).
+So the page is black from its start until the first film plays, during every change, and when a film fails.
 The order is shuffled each time the screen saver opens.
 
 - The films are streamed from Apple's server (`sylvan.apple.com`) as they play; nothing is saved on the TV but the list of films.
@@ -38,9 +58,7 @@ The order is shuffled each time the screen saver opens.
 - The films come over plain http: Apple's server answers the same files over https only with a certificate from Apple's own root, which neither the service nor the TV's browser trusts.
 - **1080p H.264** (about 12 Mbit/s) is the default, the format every TV plays.
   **4K HEVC** (SDR) is chosen with `curl -X POST localhost:8765/api/addons/aerials/quality -d '{"quality":"4k"}'` on the TV (`"1080"` goes back); `GET /api/addons/aerials/status` says how many films there are, the quality, and when the list was last read.
-- When the next film does not start beside the one on screen, it is tried again alone once that one ends.
-  If it plays then, the TV cannot play two films at once, and the page goes on with one at a time: each film fades to black and the next one fades in.
-  A film that does not play is passed over, and so is one that stops for half a minute (the network); after three films in a row that do not play, the screen saver shows the pictures again until it opens the next time.
+- A film that does not play is passed over, and so is one that stops for half a minute (the network); after three films in a row that do not play, the screen saver shows the pictures again until it opens the next time.
 - Switched off or removed, the screen saver shows the pictures again.
 
 Any add-on can provide films the same way (`"provides": ["videos"]`, see [Add-ons](development/addons.md#providing-something-to-the-service-films)).
@@ -103,7 +121,8 @@ right after opening.
 
 ## Turning it off and on
 
-It is **off by default**. In the manager app: **Features → Screen saver** or **CleanYourTV as Home → Screen saver**, On or Off.
+It is **off by default**. In the manager app: **Features → Screen saver** or **CleanYourTV as Home → Screen saver**, then **CleanYourTV's screen saver**, On or Off.
+The same screen has **Show** (with the Aerials add-on) and **Photo style**, which take effect the next time the screen saver opens, without a restart.
 Switching restarts the TV, as that switch does for Home; after the restart the screen saver is ours or LG's. The row under Features
 also says which one runs now: ours or LG's own.
 

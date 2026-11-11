@@ -932,5 +932,18 @@
  "%s has no backdrop now.": "%s n’a plus de fond.",
  "Could not reset the backdrop. Try again in a moment.": "Impossible de supprimer le fond. Réessayez dans un instant.",
  "Top Shelf": "Top Shelf",
- "For Top Shelf: <b>Add</b> on the <b>Backdrop</b> line under an app, then a picture.": "Pour Top Shelf : <b>Ajouter</b> sur la ligne <b>Fond</b> sous une app, puis une image."
+ "For Top Shelf: <b>Add</b> on the <b>Backdrop</b> line under an app, then a picture.": "Pour Top Shelf : <b>Ajouter</b> sur la ligne <b>Fond</b> sous une app, puis une image.",
+ "Photos on Home": "Photos sur l’accueil",
+ "Landscape only": "Paysage seulement",
+ "CleanYourTV’s screen saver": "L’économiseur d’écran de CleanYourTV",
+ "Photo style": "Style des photos",
+ "Classic": "Classique",
+ "cross-fade": "fondu enchaîné",
+ "Ken Burns": "Ken Burns",
+ "slow pan and zoom": "zoom et panoramique lents",
+ "portrait photos go to the screen saver": "les photos en portrait vont à l’économiseur d’écran",
+ "Aerials": "Aerials",
+ "Photos": "Photos",
+ "Aerials and photos": "Aerials et photos",
+ "Screen saver": "Économiseur d’écran"
 }

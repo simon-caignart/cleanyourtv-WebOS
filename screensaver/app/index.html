@@ -1,10 +1,12 @@
 <!doctype html>
 <!-- CleanYourTV screen saver: replaces LG's screen saver app (docs/screensaver.md). Photos come from the wallpaper library through
-     the service (GET /api/screensaver/photos; the pictures from /api/wallpapers/photo/..., a live source's current photo from
-     /api/wallpapers/live/<add-on>, as on Home), with the clock and date in
-     the corner. With an add-on that provides films (Aerials, GET /api/screensaver/videos) it plays those instead, cross-faded, with the
-     place's name for a few seconds at the start, and goes back to the photos when they do not play.
-     Written for the TV's Chromium 68 and up: ES5 style, only opacity changes, nothing else animates.
+     the service (GET /api/screensaver/photos: the photos as slides, a portrait photo paired with another; the pictures from
+     /api/wallpapers/photo/..., a live source's current photo from /api/wallpapers/live/<add-on>, as on Home), with the clock and date in
+     the corner, in one of two styles: Ken Burns (each photo slowly zooms and pans) or Classic (a cross-fade). With an add-on that
+     provides films (Aerials, GET /api/screensaver/videos) it plays those instead, or a film and then a few photos in turn, with the
+     place's name for a few seconds at the start of a film, and goes back to the photos when the films do not play.
+     Written for the TV's Chromium 68 and up: ES5 style, only opacity and transform change. A full-screen layer is expensive on a 4K TV,
+     so a photo is drawn into a canvas of 1920 x 1080 that the screen scales, and there are never more than two photo layers.
      The first key, click or touch closes the page and the app that was on screen comes back. -->
 <html lang="en">
   <head>
@@ -24,26 +26,30 @@
         color: #fff;
         cursor: none;
       }
+      /* the photos: two canvases of 1920 x 1080 over the screen; the one that fades in is over the other */
       #p0,
       #p1 {
         position: fixed;
         left: 0;
         top: 0;
-        right: 0;
-        bottom: 0;
-        background-repeat: no-repeat;
-        background-position: 50% 50%;
-        background-size: cover;
+        width: 100vw;
+        height: 100vh;
         opacity: 0;
         transition: opacity 1.4s linear;
+        will-change: opacity, transform;
       }
       #p0.on,
       #p1.on {
         opacity: 1;
       }
-      /* the films: two layers, so one can fade in over the other */
-      #v0,
-      #v1 {
+      #p0.top,
+      #p1.top {
+        z-index: 1;
+      }
+      /* the film. webOS draws a <video> on a plane of its own under the page, through a hole in it: opacity does nothing to it there,
+         and while it has no picture the hole shows the window underneath (Home). So it is never faded, and only shown while a film
+         is on: the black veil above it does the fades */
+      #v0 {
         position: fixed;
         left: 0;
         top: 0;
@@ -51,23 +57,35 @@
         height: 100%;
         object-fit: cover;
         background: #000;
+        display: none;
+        z-index: 2;
+      }
+      #v0.on {
+        display: block;
+      }
+      /* black over the film (and the photos), drawn by the page, so it covers the video's hole: opaque from the start until the first
+         picture, during every change of film, and when a film fails or stalls */
+      #veil {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+        z-index: 3;
         opacity: 0;
-        transition: opacity 1.4s linear;
+        transition: opacity 0.8s ease-out;
+        pointer-events: none;
       }
-      #v0.on,
-      #v1.on {
+      #veil.on {
         opacity: 1;
-      }
-      /* the film that fades in is over the one it replaces, which stays until the fade is over */
-      #v0.top,
-      #v1.top {
-        z-index: 1;
+        transition: opacity 0.6s ease-in;
       }
       #scrim,
       #place,
       #credit,
       #clock {
-        z-index: 2;
+        z-index: 4;
       }
       /* the place, bottom left, for a few seconds at the start of a film */
       #place {
@@ -133,10 +151,10 @@
     </style>
   </head>
   <body>
-    <div id="p0"></div>
-    <div id="p1"></div>
+    <canvas id="p0" width="1920" height="1080"></canvas>
+    <canvas id="p1" width="1920" height="1080"></canvas>
     <video id="v0" muted playsinline preload="auto"></video>
-    <video id="v1" muted playsinline preload="auto"></video>
+    <div id="veil" class="on"></div>
     <div id="scrim"></div>
     <div id="place"></div>
     <div id="credit"></div>
@@ -146,22 +164,17 @@
     </div>
     <script>
       var API = 'http://127.0.0.1:8765';
-      var list = [],
-        order = [],
-        pos = 0,
-        every = 25,
-        side = 0,
-        timer = 0,
-        started = false,
+      var started = false,
         closing = false,
-        upAt = Date.now();
+        upAt = Date.now(),
+        mode = 'photos'; /* photos, films, or both: a film, then a few photos */
       function el(id) {
         return document.getElementById(id);
       }
 
       /* the way out. It is defined first, so that a failure further down still leaves the remote working.
-   The window receives a keydown of its own as it is opened (webOS delivers one with the launch), so for the first two
-   seconds a key is not a way out: without that the page closed itself 0.3 s after the launch and was never seen. */
+         The window receives a keydown of its own as it is opened (webOS delivers one with the launch), so for the first two
+         seconds a key is not a way out: without that the page closed itself 0.3 s after the launch and was never seen. */
       function dismiss() {
         if (Date.now() - upAt < 2000) return;
         if (closing) return;
@@ -214,8 +227,8 @@
       }
 
       /* where a photo of the library comes from, as on Home (app/src/js/wall.js): a file the service hands out (an upload u/<id>, a
-   source add-on's photo s/<add-on>/<id>), or a live source (l/<add-on>, Unsplash) that the service asks for its current photo:
-   {url, credit}, an address on the source's own server */
+         source add-on's photo s/<add-on>/<id>), or a live source (l/<add-on>, Unsplash) that the service asks for its current photo:
+         {url, credit}, an address on the source's own server */
       function photoRequest(id) {
         /* a path on the service: a scene or the theme's wallpaper, which Home has instead of the library (helper/screensaver.js) */
         if (id.charAt(0) === '/') return { photo: API + id };
@@ -225,56 +238,247 @@
       }
       /* end photoRequest */
 
-      /* one photo at a time, cross-faded between the two layers: opacity only, the GPU of these TVs is weak */
-      var shown = '';
-      function put(url, credit) {
-        if (url === shown) return; /* a live source still on the same photo: nothing to fade */
-        var im = new Image();
-        im.onload = function () {
-          var on = el(side ? 'p1' : 'p0'),
-            off = el(side ? 'p0' : 'p1');
-          side ^= 1;
-          shown = url;
-          on.style.backgroundImage = 'url("' + url + '")';
-          on.className = 'on';
-          off.className = '';
-          /* the photographer, where the source asks for a credit line (Unsplash), as Home shows it */
-          var c = el('credit');
-          c.textContent = credit || '';
-          c.style.display = c.textContent ? 'block' : 'none';
-        };
-        im.src = url;
-      }
-      function show() {
-        if (!order.length) return;
-        var id = order[pos % order.length],
-          r = photoRequest(id);
-        pos++;
-        if (r.photo) return put(r.photo, credits[id] || '');
-        /* nothing from the live source (no photo yet, no network): the photo on screen stays */
-        get(r.live).then(function (j) {
-          if (j && j.url) put(j.url, j.credit);
+      /* ---------- photos: slides of one landscape photo, two portrait photos side by side, or one portrait photo over a blurred copy
+         of itself (the service pairs them, helper/screensaver.js slides()). The next slide is loaded and decoded while one shows, then
+         drawn into the hidden canvas, which fades in over the other. Ken Burns: the canvas slowly zooms (1 to 1.12) and drifts over
+         the slide's time and its fade (transform only); Classic: it stays still. ---------- */
+      var W = 1920,
+        H = 1080,
+        GAP = 8;
+      var C = [el('p0'), el('p1')],
+        side = 0,
+        slides = [],
+        spos = 0,
+        credits = {},
+        every = 16,
+        style = 'kenburns',
+        timer = 0,
+        shownKey = '',
+        photosOn = false,
+        live = false,
+        ahead = null;
+      function picture(url) {
+        return new Promise(function (ok, no) {
+          var im = new Image();
+          im.onload = function () {
+            if (im.decode)
+              im.decode().then(
+                function () {
+                  ok(im);
+                },
+                function () {
+                  ok(im);
+                }
+              );
+            else ok(im);
+          };
+          im.onerror = no;
+          im.src = url;
         });
       }
-
-      function arm() {
+      /* {url, credit} of a photo, or null (a live source with nothing now) */
+      function addressOf(id) {
+        var r = photoRequest(id);
+        if (r.photo) return Promise.resolve({ url: r.photo, credit: credits[id] || '' });
+        return get(r.live).then(function (j) {
+          return j && j.url ? { url: j.url, credit: j.credit || '' } : null;
+        });
+      }
+      /* a slide loaded and decoded: {slide, imgs, key, credit}, or null (it failed, or it is what is on screen already: a live
+         source still on the same photo) */
+      function prep(slide) {
+        if (!slide) return Promise.resolve(null);
+        var ids = slide.b ? [slide.a, slide.b] : [slide.a];
+        return Promise.all(ids.map(addressOf))
+          .then(function (us) {
+            if (
+              us.some(function (u) {
+                return !u;
+              })
+            )
+              return null;
+            var key = us
+              .map(function (u) {
+                return u.url;
+              })
+              .join('|');
+            if (key === shownKey) return null;
+            return Promise.all(
+              us.map(function (u) {
+                return picture(u.url);
+              })
+            ).then(function (imgs) {
+              return { slide: slide, imgs: imgs, key: key, credit: us[0].credit };
+            });
+          })
+          .catch(function () {
+            return null;
+          });
+      }
+      /* the picture over the box x, y, w, h, its middle kept */
+      function cover(g, im, x, y, w, h) {
+        var k = Math.max(w / im.naturalWidth, h / im.naturalHeight),
+          dw = im.naturalWidth * k,
+          dh = im.naturalHeight * k;
+        g.save();
+        g.beginPath();
+        g.rect(x, y, w, h);
+        g.clip();
+        g.drawImage(im, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        g.restore();
+      }
+      function render(cv, p) {
+        var g = cv.getContext('2d'),
+          im = p.imgs[0];
+        g.fillStyle = '#000';
+        g.fillRect(0, 0, W, H);
+        if (p.slide.b) {
+          /* two portrait photos, each in its half, a thin black line between them */
+          var hw = (W - GAP) / 2;
+          cover(g, im, 0, 0, hw, H);
+          cover(g, p.imgs[1], W - hw, 0, hw, H);
+        } else if (p.slide.portrait) {
+          /* one portrait photo, whole, over a blurred and darkened copy of itself: drawn tiny, then scaled up (no filter) */
+          var t = document.createElement('canvas');
+          t.width = 64;
+          t.height = 36;
+          cover(t.getContext('2d'), im, 0, 0, 64, 36);
+          g.drawImage(t, 0, 0, W, H);
+          g.fillStyle = 'rgba(0,0,0,0.45)';
+          g.fillRect(0, 0, W, H);
+          var k = Math.min(W / im.naturalWidth, H / im.naturalHeight);
+          g.drawImage(im, (W - im.naturalWidth * k) / 2, (H - im.naturalHeight * k) / 2, im.naturalWidth * k, im.naturalHeight * k);
+        } else cover(g, im, 0, 0, W, H);
+      }
+      /* Ken Burns: from scale 1 to 1.12 (or back), moving toward (or from) a random point; the move never shows an edge, as it stays
+         within the margin the scale gives. Two portrait photos drift less, as each fills only half the screen. */
+      function motion(cv, slide, secs) {
+        var fade = 'opacity 1.4s linear';
+        cv.style.transition = fade;
+        if (style !== 'kenburns') {
+          cv.style.transform = '';
+          return;
+        }
+        var big = slide.portrait ? 1.05 : 1.12,
+          zin = Math.random() < 0.5,
+          s0 = zin ? 1 : big,
+          s1 = zin ? big : 1,
+          a = Math.random() * 2 * Math.PI,
+          reach = slide.portrait ? 0.5 : 0.9;
+        var at = function (s, f) {
+          var m = ((s - 1) / 2) * 100 * reach * f;
+          return 'translate(' + (Math.cos(a) * m).toFixed(2) + '%,' + (Math.sin(a) * m * 0.7).toFixed(2) + '%) scale(' + s + ')';
+        };
+        cv.style.transform = at(s0, zin ? 0 : 1);
+        void cv.offsetWidth; /* the start, before the move */
+        cv.style.transition = fade + ', transform ' + (secs + 3) + 's linear';
+        cv.style.transform = at(s1, zin ? 1 : 0);
+      }
+      function credit(text) {
+        var c = el('credit');
+        c.textContent = text || '';
+        c.style.display = c.textContent ? 'block' : 'none';
+      }
+      function put(p) {
+        var on = C[side],
+          off = C[side ^ 1];
+        side ^= 1;
+        render(on, p);
+        motion(on, p.slide, every);
+        on.className = 'on top';
+        off.className = 'on';
+        setTimeout(function () {
+          if (C[side ^ 1] !== off) off.className = ''; /* under the new photo once the fade is over */
+        }, 1600);
+        shownKey = p.key;
+        credit(p.credit);
+      }
+      /* the next slide on screen (decoded ahead while the last one showed); a slide that fails is passed over, up to the whole list
+         while nothing shows yet. shown(drawn) is called once it is on screen, or nothing could be shown */
+      function nextPhoto(shown, tries) {
+        if (!slides.length) {
+          if (shown) shown(false);
+          return;
+        }
+        var p = ahead || prep(slides[spos++ % slides.length]);
+        ahead = null;
+        p.then(function (x) {
+          if (!photosOn) return;
+          if (x) put(x);
+          else if (!shownKey && (tries || 0) < slides.length) return nextPhoto(shown, (tries || 0) + 1);
+          if (shown) shown(!!x);
+          if (slides.length > 1 || live) ahead = prep(slides[spos++ % slides.length]);
+        });
+      }
+      function startPhotos() {
+        mode = 'photos';
+        veil(false);
+        photosOn = true;
         clearInterval(timer);
+        nextPhoto();
         /* one photo stays; a live source alone is asked again, so the saver follows Home when the source moves on */
-        if (order.length < 2 && !(order.length === 1 && photoRequest(order[0]).live)) return;
-        timer = setInterval(show, Math.max(10, every) * 1000);
+        if (slides.length > 1 || live) timer = setInterval(nextPhoto, Math.max(10, every) * 1000);
+      }
+      /* Both: n photos between two films. shown() once the first one is on screen (under the film), over() when the last one has had
+         its time */
+      function interlude(n, shown, over) {
+        photosOn = true;
+        clearInterval(timer);
+        var k = 1;
+        nextPhoto(function () {
+          shown();
+        });
+        timer = setInterval(
+          function () {
+            if (k >= n) {
+              clearInterval(timer);
+              photosOn = false;
+              return over();
+            }
+            k++;
+            nextPhoto();
+          },
+          Math.max(10, every) * 1000
+        );
+      }
+      function usePhotos(r) {
+        credits = r.credits || {};
+        if (typeof r.every === 'number') every = r.every;
+        if (r.style === 'classic' || r.style === 'kenburns') style = r.style;
+        slides =
+          r.slides ||
+          shuffle((r.photos || []).slice()).map(function (id) {
+            return { a: id };
+          });
+        spos = 0;
+        ahead = null;
+        live = slides.some(function (s) {
+          return s.a.slice(0, 2) === 'l/';
+        });
       }
 
       function pad(n) {
         return (n < 10 ? '0' : '') + n;
       }
+      /* the time and the date in Home's language and clock format (app/src/js/clock.js): the Language setting from the service, else
+         the TV's own locale; the Clock setting (auto: the language's own way, 12 or 24 hours) */
+      var LOC = (window.webOSSystem && webOSSystem.locale) || navigator.language || 'en-GB',
+        CLOCK = 'auto';
+      function useClock(r) {
+        if (r && r.lang) LOC = r.lang;
+        if (r && (r.clock === '12' || r.clock === '24' || r.clock === 'auto')) CLOCK = r.clock;
+        tickClock();
+      }
       function tickClock() {
         var d = new Date(),
-          h = d.getHours(),
-          m = d.getMinutes();
-        el('time').textContent = pad(h) + ':' + pad(m);
+          o = { hour: 'numeric', minute: '2-digit' };
+        if (CLOCK === '24') o.hourCycle = 'h23';
+        else if (CLOCK === '12') o.hourCycle = 'h12';
         try {
-          el('date').textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+          el('time').textContent = d.toLocaleTimeString(LOC, o);
+          el('date').textContent = d.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long' });
         } catch (e) {
+          el('time').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
           el('date').textContent = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
         }
       }
@@ -294,32 +498,36 @@
         return String(c).toUpperCase();
       }
 
-      /* ---------- films from an add-on (Aerials): one plays while the next one loads in the other layer and fades in once it plays,
-         about ten seconds before the first one ends. When the next one does not start, it is tried again alone once the first one has
-         ended: if it plays then, this TV cannot play two at once and goes on with one at a time (the film fades to black and the next
-         one fades in); if it fails again, the film was the problem. Three films in a row that do not play, and the photos come back. */
+      /* ---------- films from an add-on (Aerials), one at a time (two 4K films at once are more than these TVs decode). A change of
+         film: the black veil fades in over the last second of the film, the next film starts behind it, and the veil fades out once
+         that one has drawn its first pictures. The video itself is never faded (see #v0). A film that does not play, or stops
+         moving for half a minute, is passed over behind the veil; three in a row, and the photos come back. Both: when a film ends,
+         a few photos show before the next film. */
+      var PHOTOS_BETWEEN = 3;
       var films = [],
         fpos = 0,
-        V = [el('v0'), el('v1')],
-        cur = -1 /* the layer on screen */,
+        V = el('v0'),
+        playing = false,
         busy = false,
-        single = false,
-        alone = false /* the next film failed beside another one: try it alone */,
         fails = 0,
         moved = 0,
         filmsOn = false,
         watch = 0,
         placeT = 0;
-      function stopFilm(v) {
-        v.onplaying = v.onerror = v.ontimeupdate = v.onended = null;
-        v.className = '';
+      function veil(on) {
+        el('veil').className = on ? 'on' : '';
+      }
+      function stopFilm() {
+        V.onplaying = V.onerror = V.ontimeupdate = V.onended = null;
+        playing = false;
         try {
-          v.pause();
+          V.pause();
         } catch (e) {}
-        v.removeAttribute('src');
+        V.removeAttribute('src');
         try {
-          v.load(); /* lets the decoder go */
+          V.load(); /* lets the decoder go */
         } catch (e) {}
+        V.className = '';
       }
       function showPlace(t) {
         var p = el('place');
@@ -330,10 +538,9 @@
           p.className = '';
         }, 7000);
       }
-      /* the film in layer k: ok once it plays, no when it fails or has not started after 20 seconds */
-      function playFilm(k, f, ok, no) {
-        var v = V[k],
-          over = false,
+      /* the film, behind the veil: ok once it plays, no when it fails or has not started after 20 seconds */
+      function playFilm(f, ok, no) {
+        var over = false,
           t = setTimeout(function () {
             end(no);
           }, 20000);
@@ -341,129 +548,121 @@
           if (over) return;
           over = true;
           clearTimeout(t);
-          v.onplaying = v.onerror = null;
+          V.onplaying = V.onerror = null;
           fn();
         }
-        v._near = false;
-        v.muted = true;
-        v.onplaying = function () {
+        V._near = false;
+        V.muted = true;
+        V.className = 'on';
+        V.onplaying = function () {
           end(ok);
         };
-        v.onerror = function () {
+        V.onerror = function () {
           end(no);
         };
-        v.src = f.url;
+        V.src = f.url;
         try {
-          var p = v.play();
+          var p = V.play();
           if (p && p.catch) p.catch(function () {});
         } catch (e) {}
       }
-      /* the end of a film is near (or it ended, failed or stalled): the next one */
-      function advance(ended) {
+      /* the veil goes away once the film has drawn a picture or two, so the hole never shows anything but the film */
+      function shown(f) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            playing = true;
+            fails = 0;
+            busy = false;
+            moved = Date.now();
+            /* the photo layers are not drawn under a film (a full-screen layer costs the TV) */
+            photosOn = false;
+            clearInterval(timer);
+            C[0].className = C[1].className = '';
+            shownKey = '';
+            veil(false);
+            showPlace(f.title);
+            V.ontimeupdate = function () {
+              moved = Date.now();
+              var left = V.duration - V.currentTime;
+              if (!V._near && left >= 0 && left < 1.2) {
+                V._near = true;
+                advance();
+              }
+            };
+            V.onended = V.onerror = function () {
+              advance();
+            };
+          });
+        });
+      }
+      /* the end of a film is near (or it ended, failed or stalled), or the photos between two films have had their time: the veil
+         comes over everything, and behind it the next film starts, or in Both a few photos first */
+      function advance() {
         if (busy || !filmsOn) return;
         busy = true;
-        var f = films[fpos++ % films.length];
-        if (!single && !alone && !ended && cur >= 0) {
-          var k = cur ^ 1;
-          return playFilm(
-            k,
+        veil(true);
+        setTimeout(function () {
+          var had = playing;
+          stopFilm();
+          if (mode === 'both' && had)
+            return interlude(
+              PHOTOS_BETWEEN,
+              function () {
+                veil(false);
+                busy = false;
+              },
+              advance
+            );
+          var f = films[fpos++ % films.length];
+          playFilm(
             f,
             function () {
-              fadeTo(k, f);
+              shown(f);
             },
             function () {
-              stopFilm(V[k]);
-              fpos--; /* the same film again, alone, when the one on screen ends */
-              alone = true;
+              stopFilm();
               busy = false;
+              if (++fails >= 3) toPhotos();
+              else advance();
             }
           );
-        }
-        var was = cur,
-          into = cur >= 0 ? cur : 0;
-        if (was >= 0) V[was].className = '';
-        setTimeout(
-          function () {
-            if (was >= 0) stopFilm(V[was]);
-            cur = -1;
-            var tried = alone;
-            alone = false;
-            playFilm(
-              into,
-              f,
-              function () {
-                if (tried) single = true; /* it plays alone, not beside another one */
-                fadeTo(into, f);
-              },
-              function () {
-                stopFilm(V[into]);
-                busy = false;
-                if (++fails >= 3) toPhotos();
-                else advance(true);
-              }
-            );
-          },
-          was >= 0 ? 1500 : 0
-        );
-      }
-      function fadeTo(k, f) {
-        var old = cur,
-          v = V[k];
-        cur = k;
-        fails = 0;
-        busy = false;
-        moved = Date.now();
-        v.className = 'on top';
-        if (old >= 0 && old !== k) V[old].className = 'on';
-        showPlace(f.title);
-        if (old >= 0 && old !== k)
-          setTimeout(function () {
-            if (cur !== old) stopFilm(V[old]);
-          }, 1600);
-        v.ontimeupdate = function () {
-          moved = Date.now();
-          var left = v.duration - v.currentTime;
-          if (!v._near && left >= 0 && left < (single ? 1.5 : 12)) {
-            v._near = true;
-            advance(false);
-          }
-        };
-        v.onended = v.onerror = function () {
-          if (V[cur] === v) advance(true);
-        };
+        }, 650);
       }
       function startFilms(list) {
         filmsOn = true;
         films = shuffle(list.slice());
         fpos = 0;
-        advance(true);
+        advance();
         /* a film that stops moving for half a minute (the network) is passed over */
         watch = setInterval(function () {
-          if (filmsOn && !busy && cur >= 0 && Date.now() - moved > 30000) advance(true);
+          if (filmsOn && !busy && playing && Date.now() - moved > 30000) advance();
         }, 5000);
       }
       function toPhotos() {
         filmsOn = false;
         clearInterval(watch);
-        stopFilm(V[0]);
-        stopFilm(V[1]);
-        cur = -1;
+        stopFilm();
         showPlace('');
-        load();
+        startPhotos();
       }
 
-      var credits = {};
-      function load() {
+      /* the photos (and what to show: Aerials, photos or both), then the films where an add-on has them */
+      function load(first) {
         return get(API + '/api/screensaver/photos?cc=' + encodeURIComponent(country())).then(function (r) {
-          credits = r.credits || {};
-          list = (r.photos || []).slice();
-          if (typeof r.every === 'number') every = r.every;
-          order = shuffle(list.slice());
-          pos = 0;
-          if (order.length) {
-            show();
-            arm();
+          useClock(r);
+          usePhotos(r);
+          if (!first) {
+            if (mode === 'photos') startPhotos();
+            return;
           }
+          var show = r.show || 'photos';
+          if (show === 'photos') return startPhotos();
+          get(API + '/api/screensaver/videos').then(function (v) {
+            var list = (v && v.videos) || [];
+            if (!list.length) return startPhotos();
+            mode = show === 'both' && slides.length ? 'both' : 'films';
+            startFilms(list);
+          });
         });
       }
 
@@ -472,19 +671,15 @@
         started = true;
         tickClock();
         setInterval(tickClock, 10000);
-        /* films when an add-on has them, else the photos */
-        get(API + '/api/screensaver/videos').then(function (r) {
-          if (r && r.videos && r.videos.length) startFilms(r.videos);
-          else load();
-        });
+        load(true);
         /* the library changes (photos uploaded from the phone): read it again every ten minutes */
         setInterval(function () {
-          if (!filmsOn) load();
+          if (mode !== 'films') load(false);
         }, 600000);
       }
 
       /* keep the screen dark until the page is ready, then fade in the first photo; never stay on top of the system:
-   when the TV goes to standby or another app takes the screen, the page closes itself (the standby flow waits for it otherwise) */
+         when the TV goes to standby or another app takes the screen, the page closes itself (the standby flow waits for it otherwise) */
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) dismiss();
         else begin();

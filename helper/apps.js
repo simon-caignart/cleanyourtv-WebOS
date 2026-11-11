@@ -445,7 +445,8 @@ function create(ctx) {
     delete c.androidBox; // the box's address stays with the service
     const theme = ctx.feature('theme'),
       wp = ctx.feature('wallpapers');
-    if (wp) c.wallpapers = { stamp: wp.stamp() };
+    // and Photos on Home, only when it shows all the photos (the default is the landscape ones)
+    if (wp) c.wallpapers = Object.assign({ stamp: wp.stamp() }, wp.homeMode && wp.homeMode() === 'all' ? { home: 'all' } : {});
     return theme ? Object.assign(c, { theme: theme.resolved() }) : c;
   }
 
