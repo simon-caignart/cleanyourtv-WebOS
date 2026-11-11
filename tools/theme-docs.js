@@ -24,7 +24,7 @@ function table() {
               ? spec.map(x => '`' + x + '`').join(', ')
               : type === 'file'
                 ? 'a file name'
-                : (type === 'auto' ? 'px, ' : '') + spec[0] + ' to ' + spec[1] + (type === 'int' || type === 'auto' ? '' : '');
+                : (type === 'auto' ? 'px, ' : '') + spec[0] + ' to ' + spec[1] + (type === 'num?' ? ' or empty' : '');
     rows.push('| `' + key + '` | ' + values + ' | ' + show(def) + ' | ' + doc.replace(/\|/g, '\\|') + ' |');
   }
   return '<!-- schema:start -->\n' + rows.join('\n') + '\n<!-- schema:end -->';

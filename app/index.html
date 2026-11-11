@@ -177,6 +177,21 @@ body {
   margin-left: 22px;
   padding-top: 14px;
 }
+/* clock.style pill: the time in a small translucent pill; with scenes, scenes.js lays the blurred scene under its tint */
+[data-cstyle="pill"] #clock {
+  height: 58px;
+  padding: 0 26px;
+  border-radius: 29px;
+  background-color: rgba(var(--night-rgb), 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+[data-cstyle="pill"] #date {
+  padding-top: 0;
+  margin-left: 14px;
+}
 [data-clock="stack"] #clock {
   flex-direction: column;
   align-items: var(--clock-ai);
@@ -306,7 +321,7 @@ body {
   padding: var(--dock-pad);
   border-radius: calc(var(--dock-rad) + var(--dock-pad));
   background: rgba(255, 255, 255, var(--dock-panel));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, calc(var(--dock-panel) * 1.4));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
 }
 #dock > * + * {
   margin-left: var(--dock-gap);
@@ -357,7 +372,8 @@ body {
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
 }
-[data-grid="push"].grid-open #grid {
+[data-grid="push"].grid-open #grid,
+[data-grid="push"][data-peek] #grid {
   opacity: 1;
   pointer-events: auto;
 }
@@ -1492,7 +1508,7 @@ body.scenes-on {
   color: var(--acc-ink);
   text-shadow: none;
 }
-/* the app grid over frosted glass (scenes.js #sglass) instead of the dark layer, with scenes and glass cards */
+/* the app grid over frosted glass (scenes.js #sglass) instead of the dark layer, with scenes (or the photo they yield to) and glass cards */
 #sglass {
   position: absolute;
   left: 0;
@@ -1510,16 +1526,21 @@ body.scenes-on {
   top: 0;
   width: 1920px;
   height: 1080px;
+  opacity: 0;
+  transition: opacity 0.8s linear;
+}
+#sglass canvas.on {
+  opacity: 1;
 }
 /* while it can show, the glass is kept as a layer of its own, barely visible, so opening the grid only blends it in */
-.scenes-on[data-cards="glass"] #sglass {
+.glass-on #sglass {
   opacity: 0.004;
   will-change: opacity;
 }
-.scenes-on[data-cards="glass"].grid-open #sglass {
+.glass-on.grid-open #sglass {
   opacity: 1;
 }
-.scenes-on[data-cards="glass"] #scroll::before {
+.glass-on #scroll::before {
   display: none;
 }
 
@@ -1580,6 +1601,28 @@ body.scenes-on {
 [data-motion="smooth"] #shelf,
 [data-motion="smooth"] .card {
   transition: opacity calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* grid.scroll row: rows and the dock fade out as the page pushes them past the clip line; a step inside the grid moves the page with
+   the focus timing, and held keys keep the page in step with the tiles */
+[data-gscroll="row"] #grid .tile {
+  transition-property: transform, opacity;
+}
+[data-gscroll="row"]:not([data-motion="smooth"]).snap #grid .tile {
+  transition-property: none;
+}
+[data-gscroll="row"] #grid .tile.gone,
+[data-gscroll="row"] #dock.gone {
+  opacity: 0;
+}
+[data-gscroll="row"] #dock {
+  transition: opacity calc(0.3s * var(--spd)) linear;
+}
+[data-gscroll="row"].gstep #scroll {
+  transition-duration: calc(0.3s * var(--spd));
+}
+[data-gscroll="row"].snap #scroll {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: linear;
 }
 /* menus */
 #ov {
@@ -3128,6 +3171,7 @@ var TH0 = {
     shelfDock: null,
     dockBottom: false,
     label: null,
+    rows: null,
   },
   TH = TH0,
   themeStrip = null /* the page strip's look and place in this theme (addons.js); null: the defaults */,
@@ -3146,6 +3190,8 @@ var TH0 = {
     'data-hl',
     'data-tshadow',
     'data-launch',
+    'data-peek',
+    'data-gscroll',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,
@@ -3211,6 +3257,7 @@ function applyTheme(t) {
     shelfDock: t.shelf || null,
     dockBottom: !!t.dockBottom,
     label: t.label || null,
+    rows: t.rowScroll || null,
   };
   lastTheme = t;
   /* the name follows the dock (shelf.dockAlign) only while that is on; otherwise it keeps the theme's own margin (--name-x) */
@@ -3283,7 +3330,8 @@ function applyShelfPref() {
 }
 
 function setFocus(nr, nc, first) {
-  var old = rows[r] && rows[r][c];
+  var old = rows[r] && rows[r][c],
+    wasR = r;
   if (old) old.classList.remove('f');
   r = nr;
   c = Math.min(nc, rows[r].length - 1);
@@ -3303,12 +3351,21 @@ function setFocus(nr, nc, first) {
   if (TH.push) {
     /* the grid sits under the dock: focusing it scrolls everything up (the dock stops at its 'up' position) and the grid fades in */
     document.body.classList.toggle('grid-open', r >= 2);
-    var ps = 0;
+    var ps = 0,
+      ex = 0;
     if (r >= 2) {
-      var bot = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY) + TH.tileH + labelRoom(TH.label, TH.tileH),
-        ex = Math.max(0, bot - (1080 - 60));
+      var top = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY),
+        h = TH.tileH + labelRoom(TH.label, TH.tileH);
+      /* the first row brings the dock back into view */
+      ex = !TH.rows
+        ? Math.max(0, top + h - (1080 - 60))
+        : r === 2
+          ? 0
+          : rowScroll(gridEx, top, h, TH.tileH + TH.gapY, TH.rows.top + 30, 1080 - 60);
       ps = -(TH.push.up + ex);
     }
+    gridEx = ex;
+    if (TH.rows) fadeRows(ex, wasR >= 2 && r >= 2);
     $('scroll').style.transform = ps ? 'translateY(' + ps + 'px)' : '';
     $('grid').style.transform = '';
     return;
@@ -3376,6 +3433,28 @@ function moonTileFocus(e) {
   frame.style.setProperty('--focus-c', e.style.getPropertyValue('--c') || '241,182,111');
   frame.style.opacity = '1';
   frame.style.transform = 'translate(' + Math.round(x - pad) + 'px,' + Math.round(y - pad) + 'px)';
+}
+/* grid.scroll row (push mode): the page moves by whole rows, and only when the focused row and its name would leave the safe area
+   (top..bottom on the screen); going back up it stays until the row would leave at the top. ex is how far the open grid has scrolled. */
+var gridEx = 0;
+function rowScroll(ex, top, h, step, lo, hi) {
+  for (var i = 0; i < 100 && top - ex + h > hi; i++) ex += step;
+  for (i = 0; i < 100 && ex > 0 && top - ex < lo; i++) ex -= step;
+  return Math.max(0, ex);
+}
+/* the rows (and the dock) that the scroll pushes past the clip line at the top fade out instead of being cut; a step inside the grid
+   moves the page with the focus timing (.gstep) rather than the longer opening move */
+function fadeRows(ex, step) {
+  var lo = TH.rows.top,
+    rowTop = TH.push.gridTop - TH.push.up - ex,
+    i,
+    j;
+  document.body.classList.toggle('gstep', step);
+  $('dock').classList.toggle('gone', r >= 2 && TH.rows.dockUp - ex < lo);
+  for (i = 2; i < rows.length; i++) {
+    var gone = r >= 2 && rowTop + (i - 2) * (TH.tileH + TH.gapY) < lo;
+    for (j = 0; j < rows[i].length; j++) rows[i][j].classList.toggle('gone', gone);
+  }
 }
 /* tile.label: the focused app's name under its tile, as on a streaming box. Two labels take turns, so the name fades in under the new
    tile while the old one fades out where it was. They live in #scroll, so they move with the page and the clip of #view cuts them like
@@ -5040,6 +5119,8 @@ var SCENES = (function () {
   var box = null,
     frost = null,
     frostSrc = '',
+    wallUrl = '' /* the Wallpapers photo on screen (wall.js), '' when Wallpapers is off or has none */,
+    yielded = false /* the theme's scenes stepped aside for that photo (effects.scenesYield) */,
     solo = null,
     els = [],
     cur = 0,
@@ -5085,18 +5166,23 @@ var SCENES = (function () {
       return el;
     });
     document.body.insertBefore(box, document.body.firstChild);
-    /* frosted glass behind the app grid (cards.style glass): the blurred scene instead of the dark layer. It is drawn into a small
-       canvas the compositor scales up: a full-screen background image would be decoded only when the grid opens and rastered again at
-       the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while the 960 x 540 canvas texture stays resident. */
-    if (!frost) {
-      frost = document.createElement('div');
-      frost.id = 'sglass';
+  }
+  /* frosted glass behind the app grid (cards.style glass): the blurred scene, or the Wallpapers photo the scenes yield to, instead of the
+     dark layer. It is drawn into small canvases the compositor scales up: a full-screen background image would be decoded only when the
+     grid opens and rastered again at the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while a 960 x 540 canvas texture
+     stays resident. Two canvases take turns, so a new picture fades in over the old one. */
+  function frostEl() {
+    if (frost) return frost;
+    frost = document.createElement('div');
+    frost.id = 'sglass';
+    for (var k = 0; k < 2; k++) {
       var cv = document.createElement('canvas');
       cv.width = 960;
       cv.height = 540;
       frost.appendChild(cv);
-      $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
     }
+    $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
+    return frost;
   }
   function srcOf(s) {
     if (!s) return '';
@@ -5105,27 +5191,66 @@ var SCENES = (function () {
   function fillOf(s) {
     return s ? 'url("' + srcOf(s) + '")' : '';
   }
-  /* the glass behind the grid: the scene's blurred copy and the tint, drawn once per scene; the previous one stays until the new loads */
-  function drawFrost(src) {
-    if (!frost || src === frostSrc) return;
-    frostSrc = src;
-    var cv = frost.firstChild,
-      x = cv.getContext('2d');
+  /* the glass behind the grid: a picture and the tint, drawn once per picture once it is decoded; until then the previous one stays. A
+     scene brings its own blurred copy; a Wallpapers photo (blur) is blurred here, drawn tiny and scaled back up in steps. */
+  var frostFront = 0,
+    frostT = 0,
+    tiny = null;
+  function drawFrost(src, blur) {
+    var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
+      key = src && src + '|' + dim + '|' + (blur ? 1 : 0);
+    if (key === frostSrc) return;
+    frostSrc = key;
+    var cvs = frostEl().children;
     if (!src) {
-      x.clearRect(0, 0, cv.width, cv.height);
+      clearTimeout(frostT);
+      cvs[0].classList.remove('on');
+      cvs[1].classList.remove('on');
       return;
     }
     var i = new Image();
-    i.onload = function () {
-      if (frostSrc !== src) return;
-      x.drawImage(i, 0, 0, cv.width, cv.height);
-      var gr = x.createLinearGradient(0, 0, 0, cv.height);
-      gr.addColorStop(0, 'rgba(16,14,26,0.34)');
-      gr.addColorStop(1, 'rgba(16,14,26,0.46)');
+    var draw = function () {
+      if (frostSrc !== key) return;
+      var back = cvs[frostFront ^ 1],
+        front = cvs[frostFront],
+        x = back.getContext('2d');
+      x.drawImage(blur ? blurred(i) : i, 0, 0, back.width, back.height);
+      var gr = x.createLinearGradient(0, 0, 0, back.height);
+      gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');
+      gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
       x.fillStyle = gr;
-      x.fillRect(0, 0, cv.width, cv.height);
+      x.fillRect(0, 0, back.width, back.height);
+      /* the new one on top fades in; the old one stays whole under it until then */
+      back.style.zIndex = '1';
+      front.style.zIndex = '0';
+      back.classList.add('on');
+      frostFront ^= 1;
+      clearTimeout(frostT);
+      frostT = setTimeout(function () {
+        front.classList.remove('on');
+      }, 900);
+    };
+    i.onload = function () {
+      if (i.decode) i.decode().then(draw, draw);
+      else draw();
     };
     i.src = src;
+  }
+  /* a photo blurred without filters: drawn at 96 x 54, then scaled up twice with smoothing; the canvas scales the rest */
+  function blurred(img) {
+    if (!tiny)
+      tiny = [96, 192, 384].map(function (w) {
+        var c = document.createElement('canvas');
+        c.width = w;
+        c.height = (w * 9) / 16;
+        return c;
+      });
+    for (var k = 0; k < tiny.length; k++) {
+      var x = tiny[k].getContext('2d');
+      x.imageSmoothingEnabled = true;
+      x.drawImage(k ? tiny[k - 1] : img, 0, 0, tiny[k].width, tiny[k].height);
+    }
+    return tiny[tiny.length - 1];
   }
   /* the digits, and the fill placed so the blurred scene lines up with the screen behind them */
   function drawClock(el, s, text) {
@@ -5223,7 +5348,8 @@ var SCENES = (function () {
     lastTh = th;
     var wantCouch = !!(th && th.scenes && th.scenes.set === 'couch');
     var wantCustom = !!(th && th.scenes && th.scenes.set === 'custom' && th.scenes.lib && th.scenes.lib.length);
-    var want = wantCouch || wantCustom;
+    yielded = !!(th && th.scenes && th.scenes.yield && wallUrl);
+    var want = (wantCouch || wantCustom) && !yielded;
     secs = (th && th.scenes && th.scenes.secs) || 20;
 
     if (wantCouch) askAddon(false);
@@ -5246,6 +5372,7 @@ var SCENES = (function () {
 
     on = want;
     document.body.classList.toggle('scenes-on', want);
+    document.body.classList.toggle('glass-on', cardsGlass() && (want || yielded));
     if (want) {
       build();
       box.style.display = '';
@@ -5292,11 +5419,12 @@ var SCENES = (function () {
   }
   /* glass cards: the blurred scene behind each card, lined up with the screen; without scenes the CSS gives a plain frosted panel */
   function glassCards() {
+    pillGlass();
     var cards = $('cards');
     if (!cards) return;
     var els2 = cards.children,
       g = cardsGlass() && on ? fillOf(lib[cur]) : '';
-    drawFrost(g ? srcOf(lib[cur]) : '');
+    drawFrost(g ? srcOf(lib[cur]) : cardsGlass() && yielded ? wallUrl : '', !g);
     for (var i = 0; i < els2.length; i++) {
       var el = els2[i];
       if (!/\bcard-(weather|ha-|frame\b)/.test(el.className)) continue;
@@ -5311,6 +5439,20 @@ var SCENES = (function () {
       el.style.backgroundSize = '100% 100%,1920px 1080px';
       el.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
     }
+  }
+  /* the pill clock (clock.style pill) on the blurred scene, lined up with the screen, under a tint that keeps white text readable */
+  function pillGlass() {
+    var ck = $('clock'),
+      g = on && document.body.getAttribute('data-cstyle') === 'pill' ? fillOf(lib[cur]) : '';
+    if (!ck) return;
+    if (!g) {
+      ck.style.backgroundImage = '';
+      return;
+    }
+    var r = ck.getBoundingClientRect();
+    ck.style.backgroundImage = 'linear-gradient(rgba(16,14,26,0.42),rgba(16,14,26,0.42)),' + g;
+    ck.style.backgroundSize = '100% 100%,1920px 1080px';
+    ck.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
   }
   /* the clock's typeface must be in before the glass is measured */
   try {
@@ -5329,6 +5471,12 @@ var SCENES = (function () {
     apply: apply,
     tick: tick,
     glassCards: glassCards,
+    /* the Wallpapers photo now behind Home (wall.js), or '' */
+    wall: function (url) {
+      if (url === wallUrl) return;
+      wallUrl = url;
+      if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
+    },
     shown: function () {
       arm();
       glassCards();
@@ -5410,7 +5558,12 @@ var WALL = (function () {
     im.onerror = function () {
       if (skip && !isLive(id)) skip();
     };
+    /* decoded before it is shown, so the swap does not wait for a 4K decode; the scenes and the grid glass learn of the photo */
     im.onload = function () {
+      if (im.decode) im.decode().then(put, put);
+      else put();
+    };
+    var put = function () {
       if (!want()) return;
       var l = layers(),
         on = l[side],
@@ -5425,6 +5578,7 @@ var WALL = (function () {
       last = Date.now();
       curCredit = text || '';
       credit(curCredit);
+      if (typeof SCENES !== 'undefined') SCENES.wall(url);
     };
     im.src = url;
   }
@@ -5474,6 +5628,7 @@ var WALL = (function () {
     }
     cur = '';
     curCredit = '';
+    if (typeof SCENES !== 'undefined') SCENES.wall('');
   }
   /* after the settings were read: switched on or off, a new interval, or a different set of photos */
   function sync() {

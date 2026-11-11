@@ -154,6 +154,19 @@ run(async () => {
       'the name is centred under the tile, as wide as the focused tile, 15 px below its scaled bottom'
     );
     ok(lctx.labelBox(0, 0, 250, 150, 1.22, -10).y === b.y - 10, 'a lifted dock tile lifts its name too');
+    // grid.scroll row: (ex, row top, row height with its name, row step, safe top, safe bottom)
+    ok(
+      lctx.rowScroll(0, 411, 217, 260, 150, 1020) === 0 && lctx.rowScroll(0, 671, 217, 260, 150, 1020) === 0,
+      'rows that fit in the safe area do not scroll the page'
+    );
+    ok(
+      lctx.rowScroll(0, 931, 217, 260, 150, 1020) === 260 && lctx.rowScroll(260, 1191, 217, 260, 150, 1020) === 520,
+      'the next row that would leave the safe area scrolls the page by exactly one row'
+    );
+    ok(
+      lctx.rowScroll(520, 931, 217, 260, 150, 1020) === 520 && lctx.rowScroll(520, 411, 217, 260, 150, 1020) === 260,
+      'going back up the page stays until the row would leave at the top, then moves back by whole rows'
+    );
     ok(
       lctx.labelRoom(L, 150) === Math.ceil(16.5 + 15 + 29 * 1.2) && lctx.labelRoom(null, 150) === 0,
       'the room a name takes under a row: the grown tile, the gap and one line; none without names'
@@ -196,6 +209,65 @@ run(async () => {
   ok(
     !('--press-s' in plain.vars) && !('launch' in plain.attrs) && !('--launch-sg' in plain.vars),
     'by default a held tile sinks to 0.96 and a launch dims it, with no new keys in the reply'
+  );
+  // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
+  const peeking = themeMod.resolve(
+    themeMod.normalize(
+      {
+        dock: { anchor: 'bottom', y: 65, h: 150, panel: 0.1, panelPad: 40 },
+        grid: { mode: 'push', dockUp: 60, peek: 24, gapY: 110, y: 500 },
+      },
+      'peek'
+    )
+  );
+  ok(
+    peeking.attrs.peek === 'on' && peeking.push.gridTop === 1056 && peeking.push.up === 725 && peeking.gapY === 110,
+    'grid.peek places the first row 24 px into the screen, the page moves it up with the dock, and the row gap goes past 60'
+  );
+  const noPeek = themeMod.resolve(themeMod.normalize({ grid: { mode: 'below', peek: 24 } }, 'nopeek'));
+  ok(
+    !('peek' in plain.attrs) && !('peek' in noPeek.attrs) && noPeek.gt === plain.gt,
+    'without push mode (or by default) there is no peek and the grid stays where it was'
+  );
+  // clock.style pill, dock.panelRim and grid.glassDim: a clock readable on any scene, a brighter platter rim, a calmer glass
+  const calm = themeMod.resolve(
+    themeMod.normalize({ clock: { style: 'pill' }, dock: { panel: 0.1, panelRim: 0.35 }, grid: { glassDim: 0.5 } }, 'calm')
+  );
+  ok(
+    calm.attrs.cstyle === 'pill' && calm.vars['--dock-rim'] === '0.35' && calm.glassDim === 0.5,
+    'the pill clock, the panel rim and the darkness of the glass reach the launcher'
+  );
+  const rims = [0.9, -1, '', null, 'x'].map(
+    x => themeMod.normalize({ dock: { panelRim: x } }, 'rim', themeMod.DEFAULTS).v['dock.panelRim']
+  );
+  ok(
+    rims[0] === 0.8 && rims[1] === 0 && rims[2] === null && rims[3] === null && rims[4] === null,
+    'an optional number is clamped, and empty or invalid leaves it worked out from dock.panel'
+  );
+  ok(
+    !('--dock-rim' in plain.vars) && !('glassDim' in plain) && !('cstyle' in plain.attrs),
+    'by default the rim follows the panel, the glass keeps its tint and the clock is text, with no new keys in the reply'
+  );
+  const rowed = themeMod.resolve(
+    themeMod.normalize({ dock: { anchor: 'bottom' }, grid: { scroll: 'row', clipTop: 120, dockUp: 140 } }, 'rowed')
+  );
+  ok(
+    rowed.attrs.gscroll === 'row' && rowed.rowScroll.top === 120 && rowed.rowScroll.dockUp === 140,
+    'grid.scroll row reaches a push grid with its clip line and the place of the dock'
+  );
+  ok(
+    !('gscroll' in plain.attrs) &&
+      !('rowScroll' in plain) &&
+      !('rowScroll' in themeMod.resolve(themeMod.normalize({ grid: { scroll: 'row' } }, 'below'))),
+    'by default, and outside push mode, the grid scrolls as before with no new keys in the reply'
+  );
+  // effects.scenesYield: the scenes step aside for Wallpapers photos; only a theme that asks for it carries the key
+  const yields = themeMod.resolve(themeMod.normalize({ effects: { scenes: 'couch', scenesYield: true } }, 'yields'));
+  ok(
+    yields.scenes.yield === true &&
+      !('yield' in couch.scenes) &&
+      !('scenes' in themeMod.resolve(themeMod.normalize({ effects: { scenesYield: true } }, 'noscenes'))),
+    'effects.scenesYield reaches the launcher with the scenes, and means nothing without them'
   );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));

@@ -4,6 +4,10 @@ Your own photos behind the home screen. Out of the box they are files: photos yo
 [add-ons](development/addons.md) you install in the manager: [Immich](https://immich.app) albums, iCloud Shared Albums, [Unsplash](https://unsplash.com), and more. Everything ends up in
 one rotation on the TV. The same photos stand in for LG's screen saver when CleanYourTV's [Screen saver](screensaver.md) is on.
 
+A theme with scenes (Couch, for example) shows its scenes instead of your photos, unless the theme lets the scenes step aside for
+Wallpapers (`effects.scenesYield`, see [Themes](themes.md#scenes-and-the-glass-clock)); then your photos are behind Home and the app
+grid opens over a frosted copy of the photo on screen.
+
 ## Switching it on
 
 In the launcher, **Customise** > **Wallpapers**:

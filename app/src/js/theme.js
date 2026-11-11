@@ -15,6 +15,7 @@ var TH0 = {
     shelfDock: null,
     dockBottom: false,
     label: null,
+    rows: null,
   },
   TH = TH0,
   themeStrip = null /* the page strip's look and place in this theme (addons.js); null: the defaults */,
@@ -33,6 +34,8 @@ var TH0 = {
     'data-hl',
     'data-tshadow',
     'data-launch',
+    'data-peek',
+    'data-gscroll',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,
@@ -98,6 +101,7 @@ function applyTheme(t) {
     shelfDock: t.shelf || null,
     dockBottom: !!t.dockBottom,
     label: t.label || null,
+    rows: t.rowScroll || null,
   };
   lastTheme = t;
   /* the name follows the dock (shelf.dockAlign) only while that is on; otherwise it keeps the theme's own margin (--name-x) */
@@ -170,7 +174,8 @@ function applyShelfPref() {
 }
 
 function setFocus(nr, nc, first) {
-  var old = rows[r] && rows[r][c];
+  var old = rows[r] && rows[r][c],
+    wasR = r;
   if (old) old.classList.remove('f');
   r = nr;
   c = Math.min(nc, rows[r].length - 1);
@@ -190,12 +195,21 @@ function setFocus(nr, nc, first) {
   if (TH.push) {
     /* the grid sits under the dock: focusing it scrolls everything up (the dock stops at its 'up' position) and the grid fades in */
     document.body.classList.toggle('grid-open', r >= 2);
-    var ps = 0;
+    var ps = 0,
+      ex = 0;
     if (r >= 2) {
-      var bot = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY) + TH.tileH + labelRoom(TH.label, TH.tileH),
-        ex = Math.max(0, bot - (1080 - 60));
+      var top = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY),
+        h = TH.tileH + labelRoom(TH.label, TH.tileH);
+      /* the first row brings the dock back into view */
+      ex = !TH.rows
+        ? Math.max(0, top + h - (1080 - 60))
+        : r === 2
+          ? 0
+          : rowScroll(gridEx, top, h, TH.tileH + TH.gapY, TH.rows.top + 30, 1080 - 60);
       ps = -(TH.push.up + ex);
     }
+    gridEx = ex;
+    if (TH.rows) fadeRows(ex, wasR >= 2 && r >= 2);
     $('scroll').style.transform = ps ? 'translateY(' + ps + 'px)' : '';
     $('grid').style.transform = '';
     return;
@@ -263,6 +277,28 @@ function moonTileFocus(e) {
   frame.style.setProperty('--focus-c', e.style.getPropertyValue('--c') || '241,182,111');
   frame.style.opacity = '1';
   frame.style.transform = 'translate(' + Math.round(x - pad) + 'px,' + Math.round(y - pad) + 'px)';
+}
+/* grid.scroll row (push mode): the page moves by whole rows, and only when the focused row and its name would leave the safe area
+   (top..bottom on the screen); going back up it stays until the row would leave at the top. ex is how far the open grid has scrolled. */
+var gridEx = 0;
+function rowScroll(ex, top, h, step, lo, hi) {
+  for (var i = 0; i < 100 && top - ex + h > hi; i++) ex += step;
+  for (i = 0; i < 100 && ex > 0 && top - ex < lo; i++) ex -= step;
+  return Math.max(0, ex);
+}
+/* the rows (and the dock) that the scroll pushes past the clip line at the top fade out instead of being cut; a step inside the grid
+   moves the page with the focus timing (.gstep) rather than the longer opening move */
+function fadeRows(ex, step) {
+  var lo = TH.rows.top,
+    rowTop = TH.push.gridTop - TH.push.up - ex,
+    i,
+    j;
+  document.body.classList.toggle('gstep', step);
+  $('dock').classList.toggle('gone', r >= 2 && TH.rows.dockUp - ex < lo);
+  for (i = 2; i < rows.length; i++) {
+    var gone = r >= 2 && rowTop + (i - 2) * (TH.tileH + TH.gapY) < lo;
+    for (j = 0; j < rows[i].length; j++) rows[i][j].classList.toggle('gone', gone);
+  }
 }
 /* tile.label: the focused app's name under its tile, as on a streaming box. Two labels take turns, so the name fades in under the new
    tile while the old one fades out where it was. They live in #scroll, so they move with the page and the clip of #view cuts them like

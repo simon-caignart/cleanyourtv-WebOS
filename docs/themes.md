@@ -40,6 +40,7 @@ folder of the GitHub repository (the `main` branch):
 | Couch | After [couch-tv](https://github.com/Seagey/couch-tv): five landscapes take turns every 20 seconds behind a large glass clock, the scenery in front of the digits; the date above the clock, round buttons top right, the apps on glass at the bottom; cards on frosted glass. Uses `clock.style`, `effects.scenes` and `cards.style`. |
 | Lock Screen | A phone-style lock screen: a greeting and a big clock top left, and a small, translucent dock low in the corner over a calm blue landscape, so the picture fills the screen. Down moves the dock up and shows all apps below it. Turn Wallpapers on for your own photos. It has slots for cards (Customise > Cards): the greeting is one, and there is a place under the clock. |
 | Moon | A moonlit autumn landscape with a four-app glass dock, warm focus, app-colour rails and places for cards around the clock. |
+| Lounge | A streaming-box home screen: six wide icons on a glass platter over the Couch landscapes (or your Wallpapers photos), smooth focus with a soft light and shadow, the app's name under it in the grid, a glass pill clock, and a first grid row that peeks at the bottom. Uses `effects.motion`, `tile.label`, `grid.peek`, `grid.scroll` and `effects.scenesYield`. |
 
 ![Classic, Compact, Large print and Midnight](screenshots/themes-1.jpg)
 
@@ -169,7 +170,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `clock.y` | 0 to 900 | `54` | Distance from the top or bottom edge, in px. |
 | `clock.scale` | 0.6 to 2.5 | `1` | Scale of the time. |
 | `clock.dateScale` | 0.6 to 2 | `1` | Scale of the date. |
-| `clock.style` | `text`, `glass` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. |
+| `clock.style` | `text`, `glass`, `pill` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a small rounded translucent pill, readable on any background (frosted with the scene when `effects.scenes` is on); place and size it with the other clock settings. |
 | **bar** | | | |
 | `bar.show` | `true` or `false` | `true` | Show the top buttons (Inputs, Settings, Customise, ...). |
 | `bar.style` | `pill`, `round`, `flat` | `pill` | `pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background. |
@@ -209,6 +210,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `dock.radius` | 0 to 80 | `36` | Corner radius of dock tiles. |
 | `dock.panel` | 0 to 0.6 | `0` | Opacity of a translucent panel behind the dock tiles; 0 for none. |
 | `dock.panelPad` | 0 to 60 | `24` | Space between the panel and the tiles, in px. |
+| `dock.panelRim` | 0 to 0.8 or empty | empty | Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`. |
 | `dock.tileAlpha` | 0 to 1 | `1` | Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles. |
 | `dock.tileFrost` | 0 to 1 | `0` | Frost over the resting (unfocused) dock tiles and their icons; 0 for none. Calms loud tile colours without leaving a floating icon square, because the tile and its icon dim together. The focused tile keeps its full colour. |
 | `dock.tileFrostColor` | `#rrggbb` | `#ffffff` | Tint of the dock-tile frost (`dock.tileFrost`): a light colour for a glassy frost, a dark one to deepen the tiles. |
@@ -222,14 +224,17 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.cols` | 4 to 14 | `10` | Columns. |
 | `grid.tileH` | 80 to 240 | `151` | Height of a tile, in px; the width follows from the columns. |
 | `grid.gapX` | 6 to 60 | `24` | Horizontal space between tiles, in px. |
-| `grid.gapY` | 6 to 60 | `26` | Vertical space between tiles, in px. |
+| `grid.gapY` | 6 to 140 | `26` | Vertical space between tiles, in px. |
 | `grid.radius` | 0 to 100 | `34` | Corner radius of tiles. |
 | `grid.x` | 0 to 900 | `96` | Distance of the grid from the left edge, in px. |
 | `grid.width` | 600 to 1920 | `1728` | Width of the grid, in px. |
 | `grid.y` | px, 0 to 1000 | empty | Distance of the grid from the top edge, in px. Empty: under the dock, or 290 for an overlay. |
+| `grid.peek` | 0 to 120 | `0` | `push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used). |
+| `grid.scroll` | `edge`, `row` | `edge` | `push` mode: how the open grid scrolls. `edge`: just enough to keep the focused row on screen; `row`: by whole rows, as soon as the focused row and its name would leave the screen's safe area, staying put on the way back up until the row reaches the top; rows that pass the clip line at the top fade out instead of being cut. |
 | `grid.clipTop` | 0 to 600 | `300` | Where scrolled rows disappear at the top, in px (`below` mode). |
 | `grid.focusScale` | 1 to 1.4 | `1.12` | Scale of the focused tile. |
-| `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the layer behind the overlay grid. |
+| `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass). |
+| `grid.glassDim` | 0 to 0.9 | `0.34` | How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm. |
 | `grid.overlayH` | 200 to 900 | `510` | Visible height of the overlay grid before it scrolls, in px. |
 | `grid.iconScale` | 0.5 to 2.5 | `1` | Extra scale of the icons in the app grid only; multiplies `tile.iconScale`. The tile does not change size. |
 | **tile** | | | |
@@ -260,6 +265,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |
 | `effects.sceneSecs` | 10 to 600 | `20` | Seconds each scene stays (`effects.scenes`). |
 | `effects.topShelf` | `true` or `false` | `false` | Top Shelf: while an app in the dock is focused, its backdrop (a picture chosen on the phone, App icons) cross-fades in behind Home; in the app grid a blurred copy of it. Apps without one show the usual background. **Customise** > **Top Shelf** overrides it. |
+| `effects.scenesYield` | `true` or `false` | `false` | With `effects.scenes`: the scenes show only while Wallpapers is off or has no photos; its photos take their place, and with `cards.style` glass the frosted glass behind the grid is drawn from the photo on screen. |
 | **cards** | | | |
 | `cards.style` | `flat`, `glass` | `flat` | `glass`: the weather and Home Assistant cards sit on frosted glass (a blurred copy of the scene behind them, no live blur). |
 <!-- schema:end -->
@@ -267,7 +273,9 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 ### Scenes and the glass clock
 
 `effects.scenes` `couch` shows five landscapes that ship with the launcher (Night, Golden hour, Waterline, Fog, Dawn), each for
-`effects.sceneSecs` seconds, cross-faded. They take the place of `effects.wallpaper` and of [Wallpapers](wallpapers.md).
+`effects.sceneSecs` seconds, cross-faded. They take the place of `effects.wallpaper` and of [Wallpapers](wallpapers.md), unless the
+theme sets `effects.scenesYield`: then the scenes show only while Wallpapers is off or has no photos, and with `cards.style` glass the
+frosted glass behind the app grid is drawn from the Wallpapers photo on screen (blurred on the TV, faded over when the photo changes).
 `clock.style` `glass` draws the time as a large glass clock in Antonio: its fill is a blurred, brightened copy of the scene, with a thin
 rim and a sheen. In four scenes the scenery is cut out of the photo and drawn over the clock, so the peaks stand in front of the digits;
 in Waterline the clock sits on the water with a reflection under it. Each scene places the clock and the date above it, so the other
