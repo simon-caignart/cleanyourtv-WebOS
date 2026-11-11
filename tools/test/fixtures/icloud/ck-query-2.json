@@ -1,0 +1,709 @@
+{
+ "records": [
+  {
+   "recordName": "AckMaster3/Test+Name=",
+   "recordType": "CPLMaster",
+   "fields": {
+    "itemType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resOriginalFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resOriginalWidth": {
+     "value": 4032,
+     "type": "INT64"
+    },
+    "resOriginalHeight": {
+     "value": 3024,
+     "type": "INT64"
+    },
+    "originalOrientation": {
+     "value": 6,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 1536,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGThumbFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGThumbWidth": {
+     "value": 480,
+     "type": "INT64"
+    },
+    "resJPEGThumbHeight": {
+     "value": 360,
+     "type": "INT64"
+    },
+    "resOriginalRes": {
+     "value": {
+      "fileChecksum": "AckSumM3o0000",
+      "size": 2000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM3o",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM3o/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumM3m0000",
+      "size": 800000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM3m",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM3m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGThumbRes": {
+     "value": {
+      "fileChecksum": "AckSumM3t0000",
+      "size": 60000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM3t",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM3t/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "0B000000-0000-4000-8000-000000000003",
+   "recordType": "CPLAsset",
+   "fields": {
+    "orientation": {
+     "value": 6,
+     "type": "INT64"
+    },
+    "isHidden": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "trashReason": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "assetDate": {
+     "value": 1772400000000,
+     "type": "TIMESTAMP"
+    },
+    "addedDate": {
+     "value": 1772000000000,
+     "type": "TIMESTAMP"
+    },
+    "masterRef": {
+     "value": {
+      "recordName": "AckMaster3/Test+Name=",
+      "action": "DELETE_SELF",
+      "zoneID": {
+       "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+       "ownerRecordName": "_00000000000000000000000000000abc",
+       "zoneType": "REGULAR_CUSTOM_ZONE"
+      }
+     },
+     "type": "REFERENCE"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "AckMaster4/Test+Name=",
+   "recordType": "CPLMaster",
+   "fields": {
+    "itemType": {
+     "value": "com.apple.quicktime-movie",
+     "type": "STRING"
+    },
+    "resOriginalFileType": {
+     "value": "com.apple.quicktime-movie",
+     "type": "STRING"
+    },
+    "resOriginalWidth": {
+     "value": 1920,
+     "type": "INT64"
+    },
+    "resOriginalHeight": {
+     "value": 1080,
+     "type": "INT64"
+    },
+    "originalOrientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 1536,
+     "type": "INT64"
+    },
+    "resJPEGThumbFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGThumbWidth": {
+     "value": 480,
+     "type": "INT64"
+    },
+    "resJPEGThumbHeight": {
+     "value": 360,
+     "type": "INT64"
+    },
+    "resOriginalRes": {
+     "value": {
+      "fileChecksum": "AckSumM4o0000",
+      "size": 2000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM4o",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM4o/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumM4m0000",
+      "size": 800000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM4m",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM4m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGThumbRes": {
+     "value": {
+      "fileChecksum": "AckSumM4t0000",
+      "size": 60000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM4t",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM4t/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "0B000000-0000-4000-8000-000000000004",
+   "recordType": "CPLAsset",
+   "fields": {
+    "orientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "isHidden": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "trashReason": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "assetDate": {
+     "value": 1772650000000,
+     "type": "TIMESTAMP"
+    },
+    "addedDate": {
+     "value": 1772000000000,
+     "type": "TIMESTAMP"
+    },
+    "masterRef": {
+     "value": {
+      "recordName": "AckMaster4/Test+Name=",
+      "action": "DELETE_SELF",
+      "zoneID": {
+       "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+       "ownerRecordName": "_00000000000000000000000000000abc",
+       "zoneType": "REGULAR_CUSTOM_ZONE"
+      }
+     },
+     "type": "REFERENCE"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "AckMaster5/Test+Name=",
+   "recordType": "CPLMaster",
+   "fields": {
+    "itemType": {
+     "value": "public.heic",
+     "type": "STRING"
+    },
+    "resOriginalFileType": {
+     "value": "public.heic",
+     "type": "STRING"
+    },
+    "resOriginalWidth": {
+     "value": 3000,
+     "type": "INT64"
+    },
+    "resOriginalHeight": {
+     "value": 2000,
+     "type": "INT64"
+    },
+    "originalOrientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 1536,
+     "type": "INT64"
+    },
+    "resJPEGThumbFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGThumbWidth": {
+     "value": 480,
+     "type": "INT64"
+    },
+    "resJPEGThumbHeight": {
+     "value": 360,
+     "type": "INT64"
+    },
+    "resOriginalRes": {
+     "value": {
+      "fileChecksum": "AckSumM5o0000",
+      "size": 2000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM5o",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM5o/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumM5m0000",
+      "size": 800000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM5m",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM5m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGThumbRes": {
+     "value": {
+      "fileChecksum": "AckSumM5t0000",
+      "size": 60000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM5t",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM5t/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "0B000000-0000-4000-8000-000000000005",
+   "recordType": "CPLAsset",
+   "fields": {
+    "orientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "isHidden": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "trashReason": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "assetDate": {
+     "value": 1772300000000,
+     "type": "TIMESTAMP"
+    },
+    "addedDate": {
+     "value": 1772000000000,
+     "type": "TIMESTAMP"
+    },
+    "masterRef": {
+     "value": {
+      "recordName": "AckMaster5/Test+Name=",
+      "action": "DELETE_SELF",
+      "zoneID": {
+       "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+       "ownerRecordName": "_00000000000000000000000000000abc",
+       "zoneType": "REGULAR_CUSTOM_ZONE"
+      }
+     },
+     "type": "REFERENCE"
+    },
+    "resJPEGFullFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGFullWidth": {
+     "value": 3000,
+     "type": "INT64"
+    },
+    "resJPEGFullHeight": {
+     "value": 2000,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 1365,
+     "type": "INT64"
+    },
+    "resJPEGFullRes": {
+     "value": {
+      "fileChecksum": "AckSumA5f0000",
+      "size": 3000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefA5f",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestA5f/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumA5m0000",
+      "size": 700000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefA5m",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestA5m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "AckMaster6/Test+Name=",
+   "recordType": "CPLMaster",
+   "fields": {
+    "itemType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resOriginalFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resOriginalWidth": {
+     "value": 4032,
+     "type": "INT64"
+    },
+    "resOriginalHeight": {
+     "value": 3024,
+     "type": "INT64"
+    },
+    "originalOrientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 1536,
+     "type": "INT64"
+    },
+    "resJPEGThumbFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGThumbWidth": {
+     "value": 480,
+     "type": "INT64"
+    },
+    "resJPEGThumbHeight": {
+     "value": 360,
+     "type": "INT64"
+    },
+    "resOriginalRes": {
+     "value": {
+      "fileChecksum": "AckSumM6o0000",
+      "size": 2000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM6o",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM6o/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumM6m0000",
+      "size": 800000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM6m",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM6m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGThumbRes": {
+     "value": {
+      "fileChecksum": "AckSumM6t0000",
+      "size": 60000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM6t",
+      "downloadURL": "https://cvws.icloud-content.com/B/TestM6t/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "0B000000-0000-4000-8000-000000000006",
+   "recordType": "CPLAsset",
+   "fields": {
+    "orientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "isHidden": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "trashReason": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "assetDate": {
+     "value": 1772640000000,
+     "type": "TIMESTAMP"
+    },
+    "addedDate": {
+     "value": 1772000000000,
+     "type": "TIMESTAMP"
+    },
+    "masterRef": {
+     "value": {
+      "recordName": "AckMaster6/Test+Name=",
+      "action": "DELETE_SELF",
+      "zoneID": {
+       "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+       "ownerRecordName": "_00000000000000000000000000000abc",
+       "zoneType": "REGULAR_CUSTOM_ZONE"
+      }
+     },
+     "type": "REFERENCE"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "AckMaster7/Test+Name=",
+   "recordType": "CPLMaster",
+   "fields": {
+    "itemType": {
+     "value": "public.heic",
+     "type": "STRING"
+    },
+    "resOriginalFileType": {
+     "value": "public.heic",
+     "type": "STRING"
+    },
+    "resOriginalWidth": {
+     "value": 4032,
+     "type": "INT64"
+    },
+    "resOriginalHeight": {
+     "value": 3024,
+     "type": "INT64"
+    },
+    "originalOrientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "resJPEGMedFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGMedWidth": {
+     "value": 2048,
+     "type": "INT64"
+    },
+    "resJPEGMedHeight": {
+     "value": 1536,
+     "type": "INT64"
+    },
+    "resJPEGThumbFileType": {
+     "value": "public.jpeg",
+     "type": "STRING"
+    },
+    "resJPEGThumbWidth": {
+     "value": 480,
+     "type": "INT64"
+    },
+    "resJPEGThumbHeight": {
+     "value": 360,
+     "type": "INT64"
+    },
+    "resOriginalRes": {
+     "value": {
+      "fileChecksum": "AckSumM7o0000",
+      "size": 2000000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM7o",
+      "downloadURL": "https://cvws.icloud-content.com.evil.example/B/TestM7o/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGMedRes": {
+     "value": {
+      "fileChecksum": "AckSumM7m0000",
+      "size": 800000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM7m",
+      "downloadURL": "https://cvws.icloud-content.com.evil.example/B/TestM7m/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    },
+    "resJPEGThumbRes": {
+     "value": {
+      "fileChecksum": "AckSumM7t0000",
+      "size": 60000,
+      "wrappingKey": "dGVzdA==",
+      "referenceChecksum": "AckRefM7t",
+      "downloadURL": "https://cvws.icloud-content.com.evil.example/B/TestM7t/${f}?o=Atest&v=1&x=3&a=Ctest&e=1772712000&k=Dtest&ckc=com.apple.photos.cloud&p=42&s=Etest"
+     },
+     "type": "ASSETID"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  },
+  {
+   "recordName": "0B000000-0000-4000-8000-000000000007",
+   "recordType": "CPLAsset",
+   "fields": {
+    "orientation": {
+     "value": 1,
+     "type": "INT64"
+    },
+    "isHidden": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "trashReason": {
+     "value": 0,
+     "type": "INT64"
+    },
+    "assetDate": {
+     "value": 1772630000000,
+     "type": "TIMESTAMP"
+    },
+    "addedDate": {
+     "value": 1772000000000,
+     "type": "TIMESTAMP"
+    },
+    "masterRef": {
+     "value": {
+      "recordName": "AckMaster7/Test+Name=",
+      "action": "DELETE_SELF",
+      "zoneID": {
+       "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+       "ownerRecordName": "_00000000000000000000000000000abc",
+       "zoneType": "REGULAR_CUSTOM_ZONE"
+      }
+     },
+     "type": "REFERENCE"
+    }
+   },
+   "recordChangeTag": "1",
+   "deleted": false,
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   }
+  }
+ ],
+ "syncToken": "TestSync2"
+}

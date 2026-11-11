@@ -74,17 +74,28 @@ Install **iCloud Shared Album** in the manager's **Add-ons**.
 It adds a row on the Wallpapers screen that opens its page on the phone: paste the public link of one or more shared albums (one per line), then **Test and save**.
 The page shows each album with its name, how many photos it has and how many are on the TV, **Sync now**, and the synced photos (tap one to hide it from the TV).
 
-The album must be shared as a public website: in Photos on an iPhone, iPad or Mac, open the shared album, then its people settings, and turn on **Public Website**.
-The link is `https://www.icloud.com/sharedalbum/#` followed by the album's token, about fifteen letters and digits.
-Anyone with that link can see the album, so treat it like a password.
-The part after `#` (the album's token) is kept in the service's settings file (`config.json`, readable by root only); the TV's pages only ever see its last four characters, and it is not logged.
+The album must be shared with a public link, and there are two kinds; the TV tells them apart by the link:
+
+| Link | Where it comes from |
+|---|---|
+| `https://photos.icloud.com/shared/album/` and the album's ID | The shared albums of recent iOS, iPadOS and macOS: share the album with a link anyone can open. |
+| `https://www.icloud.com/sharedalbum/#` and the album's token | Older shared albums: in Photos, open the shared album, then its people settings, and turn on **Public Website**. |
+
+Anyone with the link can see the album, so treat it like a password.
+The album's ID or token is kept in the service's settings file (`config.json`, readable by root only); the TV's pages only ever see its last four characters, and it is not logged.
+Nothing about the album's owner is kept (Apple's answer names the owner; the TV reads only the album's title and its photos).
 Up to 10 albums.
 
-A sync reads each album the way the album's page on icloud.com does (Apple's shared-streams web service, which Apple does not document), skips videos, and downloads each photo once, newest first, as a JPEG.
-Apple keeps a shared album's photos in a few sizes: at 4K the TV takes the largest (Apple usually keeps shared photos at 2048 pixels on the long side), at Full HD the smallest that still covers 1920 pixels; thumbnails are never used.
+A sync reads each album the way the album's page does, through Apple's web services, which Apple does not document: CloudKit (`ckdatabasews.icloud.com`) for a photos.icloud.com link, the shared-streams service for an older one.
+It skips videos and hidden photos, and downloads each photo once, newest first, as a JPEG:
+
+- A photos.icloud.com album: an edited photo as edited; otherwise the original when it is a JPEG that needs no turning, else Apple's JPEG of it, 2048 pixels on the long side. An iPhone's HEIC photos therefore come at 2048 pixels, also at 4K. The TV reads the newest 350 or so photos of a larger album (the phone page then shows its count with a "+").
+- An older album: Apple keeps its photos in a few sizes, usually up to 2048 pixels; at 4K the TV takes the largest, at Full HD the smallest that still covers 1920 pixels.
+
+Thumbnails are never used.
 A photo is downloaded again only when Apple reports a different checksum or the Picture size changed; it is tracked by its photo ID.
 Photos that left an album are deleted from the TV; nothing else is touched.
-The TV talks only to Apple's `p<NN>-sharedstreams.icloud.com` servers (an album that lives on another one is followed there, a few times at most) and downloads only over https from hosts under `icloud-content.com` or `icloud.com`; an answer or a redirect that points anywhere else is refused.
+The TV talks only to Apple's `ckdatabasews.icloud.com`, `p<NN>-ckdatabasews.icloud.com` and `p<NN>-sharedstreams.icloud.com` servers (an album that lives on another one is followed there, a few times at most) and downloads only over https from hosts under `icloud-content.com` or `icloud.com`; an answer or a redirect that points anywhere else is refused.
 
 The sync runs every six hours, and when you add an album or press **Sync now** on the phone page.
 Shortly after the TV starts it only runs when the last sync is more than a day old.
