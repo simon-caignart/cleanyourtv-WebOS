@@ -18,7 +18,14 @@
   },
   "type": {
     "fontFile": "inter.woff2",
-    "scale": 1
+    "variable": true,
+    "opsz": "display",
+    "scale": 1,
+    "weightTitle": 600,
+    "weightText": 500,
+    "weightLabel": 500,
+    "weightClock": 500,
+    "tracking": 0
   },
   "clock": {
     "show": true,
@@ -29,7 +36,7 @@
     "align": "right",
     "x": 51,
     "y": 53,
-    "scale": 0.52,
+    "scale": 0.43,
     "style": "pill"
   },
   "bar": {
@@ -107,7 +114,8 @@
     "scenes": "couch",
     "sceneSecs": 60,
     "motion": "smooth",
-    "scenesYield": true
+    "scenesYield": true,
+    "wallpaperDim": 0.12
   },
   "cards": {
     "style": "glass"
