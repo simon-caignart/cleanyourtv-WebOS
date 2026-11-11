@@ -1,0 +1,14 @@
+{
+  "locations": {
+    "cvws.icloud-content.com": { "scheme": "https", "hosts": ["cvws.icloud-content.com"] }
+  },
+  "items": {
+    "01aa000000000000000000000000000000000001a1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath01a1/IMG_0001.JPG?o=AtestSig&v=1&z=https%3A%2F%2Fp42-content.icloud.com%3A443&x=1&a=Btest&e=1772712000&r=test-1&s=Ctest" },
+    "01aa000000000000000000000000000000000001b1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath01b1/IMG_0001.JPG?o=AtestSig&v=1&z=https%3A%2F%2Fp42-content.icloud.com%3A443&x=1&a=Btest&e=1772712000&r=test-2&s=Ctest" },
+    "01aa000000000000000000000000000000000002a1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath02a1/IMG_0002.JPG?o=AtestSig&e=1772712000" },
+    "01aa000000000000000000000000000000000002b1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath02b1/IMG_0002.JPG?o=AtestSig&e=1772712000" },
+    "01aa000000000000000000000000000000000004a1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath04a1/IMG_0004.JPG?o=AtestSig&e=1772712000" },
+    "01aa000000000000000000000000000000000004b1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath04b1/IMG_0004.JPG?o=AtestSig&e=1772712000" },
+    "01aa000000000000000000000000000000000004c1": { "url_expiry": "2026-03-05T12:00:00Z", "url_location": "cvws.icloud-content.com", "url_path": "/S/AaTestPath04c1/IMG_0004.JPG?o=AtestSig&e=1772712000" }
+  }
+}
