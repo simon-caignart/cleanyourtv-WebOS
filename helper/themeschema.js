@@ -66,6 +66,13 @@ const SCHEMA = [
     'light',
     'Text and icons of the `glass` top buttons and the `pill` clock. `light`: white; `auto`: dark over a bright picture and white over a dark one, measured once per picture (Wallpapers photo, scene, wallpaper) behind them.',
   ],
+  [
+    'surface.tint',
+    'num',
+    [0, 0.8],
+    0,
+    "How much of the colour of the picture behind them tints the glass of the `glass` top buttons and the `pill` clock: the opacity of a layer of the picture's mean colour there, measured once per picture like `surface.ink`.",
+  ],
   ['type.font', 'enum', ['default', 'serif', 'mono'], 'default', "The typeface: the TV's own, a serif or a monospace."],
   [
     'type.fontFile',
@@ -749,6 +756,10 @@ function resolve(t, accent) {
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
+  if (v['surface.tint'] > 0) {
+    attrs.tint = 'on';
+    vars['--tint-a'] = String(v['surface.tint']);
+  }
   // the weights, spacing and optical size of the text: set only by a theme that changes them, read by the launcher and the Inputs list
   [
     ['type.weightTitle', '--w-title'],

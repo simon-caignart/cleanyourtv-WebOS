@@ -37,6 +37,7 @@ var TH0 = {
     'data-peek',
     'data-gscroll',
     'data-inkmode',
+    'data-tint',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,

@@ -159,6 +159,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `surface.menuAlpha` | 0.5 to 1 | `0.97` | Opacity of the dark layer behind menus. |
 | `surface.rowRadius` | 0 to 50 | `30` | Corner radius of menu rows. |
 | `surface.ink` | `light`, `auto` | `light` | Text and icons of the `glass` top buttons and the `pill` clock. `light`: white; `auto`: dark over a bright picture and white over a dark one, measured once per picture (Wallpapers photo, scene, wallpaper) behind them. |
+| `surface.tint` | 0 to 0.8 | `0` | How much of the colour of the picture behind them tints the glass of the `glass` top buttons and the `pill` clock: the opacity of a layer of the picture's mean colour there, measured once per picture like `surface.ink`. |
 | **type** | | | |
 | `type.font` | `default`, `serif`, `mono` | `default` | The typeface: the TV's own, a serif or a monospace. |
 | `type.fontFile` | a file name | none | A typeface of the theme: a file in the theme's folder, `.woff2`, `.woff`, `.ttf` or `.otf`, at most 400 KB, used for all text. Characters it lacks come from `type.font`. Its licence must allow redistribution; put the licence file in the folder too. |
