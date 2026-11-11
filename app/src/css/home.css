@@ -1666,3 +1666,58 @@ body.scenes-on {
   transition-duration: calc(0.1s * var(--spd));
   transition-timing-function: linear;
 }
+/* grid.hideTop: the top buttons and the clock leave while the grid is open */
+[data-gtop="hide"] #bar,
+[data-gtop="hide"] #clock {
+  transition: opacity calc(0.3s * var(--spd)) ease;
+}
+[data-gtop="hide"].grid-open #bar,
+[data-gtop="hide"].grid-open #clock {
+  opacity: 0;
+  pointer-events: none;
+}
+/* effects.lateDim off: the scenes keep their light at night */
+body[data-late="off"] .scene .late {
+  opacity: 0;
+}
+/* effects.bottomShade: one static layer over the picture behind the dock, under the frosted glass of the open grid */
+#bshade {
+  display: none;
+}
+[data-bshade] #bshade {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 600px;
+  width: 1920px;
+  height: 480px;
+  z-index: 1;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, calc(var(--bshade-a) * 0.35)) 45%,
+    rgba(0, 0, 0, calc(var(--bshade-a) * 0.8)) 80%,
+    rgba(0, 0, 0, var(--bshade-a))
+  );
+  transition: opacity calc(0.5s * var(--spd)) ease;
+}
+[data-bshade].grid-open #bshade {
+  opacity: 0;
+}
+/* dock.chevron: a thin chevron above the platter at rest */
+[data-chev] #dock::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -47px;
+  width: 28px;
+  height: 12px;
+  margin-left: -14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'%3E%3Cpath d='M2 10.5 14 2l12 8.5' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat;
+  opacity: 0.6;
+  transition: opacity calc(0.3s * var(--spd)) ease;
+  pointer-events: none;
+}
+[data-chev].grid-open #dock::after {
+  opacity: 0;
+}

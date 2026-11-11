@@ -258,6 +258,19 @@ run(async () => {
     tinted.attrs.tint === 'on' && tinted.vars['--tint-a'] === '0.35' && !('tint' in plain.attrs) && !('--tint-a' in plain.vars),
     'surface.tint reaches the launcher, and by default the glass is not tinted, with no new keys in the reply'
   );
+  const calmTop = themeMod.resolve(
+    themeMod.normalize({ dock: { chevron: true }, grid: { hideTop: true }, effects: { lateDim: false, bottomShade: 0.45 } }, 'calmtop')
+  );
+  ok(
+    calmTop.attrs.chev === 'on' &&
+      calmTop.attrs.gtop === 'hide' &&
+      calmTop.attrs.late === 'off' &&
+      calmTop.attrs.bshade === 'on' &&
+      calmTop.vars['--bshade-a'] === '0.45' &&
+      ['chev', 'gtop', 'late', 'bshade'].every(k => !(k in plain.attrs)) &&
+      !('--bshade-a' in plain.vars),
+    'the chevron, the status area hidden in the grid, no night dimming and the bottom shade reach the launcher; none by default'
+  );
   // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
   const peeking = themeMod.resolve(
     themeMod.normalize(
