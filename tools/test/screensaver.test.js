@@ -295,6 +295,57 @@ run(async () => {
     }
   }
   {
+    // a page the service opened itself (the idle fallback) is not in tvpowerd's saver slot: the power state reads Active without
+    // "Screen Saver" all along, so it stays while Home is in front and closes only when another app is in front, twice in a row
+    const procDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cytv-proc-'));
+    fs.writeFileSync(path.join(procDir, 'mounts'), 'x ' + P.SCREENSAVER_APP + ' ext4 rw 0 0\n');
+    const wasProc = P.PROC;
+    P.PROC = procDir;
+    const realNow = Date.now;
+    let now = realNow(),
+      fg = 'com.webos.app.home',
+      running = [],
+      kills = 0;
+    Date.now = () => now;
+    const g = saver.create({
+      config: { get: () => ({}) },
+      luna: async uri => {
+        if (/listRunningApps/.test(uri)) return { running };
+        if (/getForegroundAppInfo/.test(uri)) return { returnValue: true, appId: fg };
+        if (/getPowerState/.test(uri)) return { state: 'Active', returnValue: true };
+        if (/applicationManager\/launch/.test(uri)) running = [{ id: 'com.webos.app.screensaver' }];
+        if (/killApp/.test(uri)) {
+          kills++;
+          running = [];
+        }
+        return { returnValue: true };
+      },
+      feature: () => null,
+    });
+    const ticks = async n => {
+      for (let i = 0; i < n; i++) await g.tick();
+    };
+    try {
+      await call(g, '/api/screensaver/active', 'POST'); // a key on the launcher, then nothing
+      await ticks(1); // Home in front: the idle time starts
+      now += 130000;
+      await ticks(3); // the page is down, so the list is read every third tick: the service opens the page
+      ok(running.length === 1, 'the idle fallback opens the page');
+      await ticks(3); // the page is up: the minute starts
+      now += 61000;
+      await ticks(4);
+      ok(kills === 0, 'a page the service opened stays up while Home is in front, although the power state never says Screen Saver');
+      fg = 'netflix';
+      await ticks(1);
+      ok(kills === 0, 'one reading of another app in front closes nothing');
+      await ticks(1);
+      ok(kills === 1, 'another app in front at two checks in a row closes a page the service opened');
+    } finally {
+      Date.now = realNow;
+      P.PROC = wasProc;
+    }
+  }
+  {
     // webapp-mgr's killApp failing must not stop the app manager's own way out, nor turn the dismissal into an error
     const seen = [];
     const g = saver.create({
