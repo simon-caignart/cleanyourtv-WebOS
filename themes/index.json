@@ -79,6 +79,13 @@
    "preview": "lockscreen/preview.jpg"
   },
   {
+   "id": "lounge",
+   "name": "Lounge",
+   "author": "simoncaignart",
+   "description": "A streaming-box home screen: six wide icons over a landscape, no focus ring, the focused app lifts with a soft shadow; Down turns the row into the first row of the grid over frosted glass.",
+   "preview": "lounge/preview.jpg"
+  },
+  {
    "id": "midnight",
    "name": "Midnight",
    "author": "CleanYourTV",
