@@ -79,6 +79,14 @@ A moonlit autumn landscape with a four-app glass dock, warm focus, app-colour ra
 
 Folder: [`moon/`](moon/)
 
+### Lounge
+
+A streaming-box home screen: six wide icons on a glass platter at the bottom over the Couch landscapes, or over your own photos when Wallpapers is on. The focused app grows smoothly with a soft light and shadow and its name under it in the grid; the time sits in a small glass pill. Down turns the row into the first row of the grid, which peeks at the bottom of the screen, over frosted glass. Typeface: Inter (SIL Open Font License, `OFL.txt`).
+
+[![Lounge](lounge/preview.jpg)](lounge/preview.jpg)
+
+Folder: [`lounge/`](lounge/)
+
 ### Horizon
 
 A row of seven square apps along the bottom of a dusk landscape, the clock on the left and the buttons on the right at the top. Down moves the row up and shows all apps below it.

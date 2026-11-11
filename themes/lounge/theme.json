@@ -1,7 +1,7 @@
 {
   "name": "Lounge",
   "author": "simoncaignart",
-  "description": "A streaming-box home screen: six wide icons over a landscape, no focus ring, the focused app lifts with a soft shadow; Down turns the row into the first row of the grid over frosted glass.",
+  "description": "A streaming-box home screen: six wide icons on a glass platter over a landscape or your Wallpapers photos, the focused app grows with a soft light and shadow and its name under it; Down turns the row into the first row of the grid over frosted glass.",
   "colors": {
     "night": "#000000",
     "panel": "#1c1c1e",
@@ -26,9 +26,10 @@
     "layout": "inline",
     "anchor": "top",
     "align": "right",
-    "x": 90,
-    "y": 62,
-    "scale": 0.52
+    "x": 51,
+    "y": 63,
+    "scale": 0.52,
+    "style": "pill"
   },
   "bar": {
     "show": true,
@@ -63,7 +64,8 @@
     "lift": 0,
     "focusScale": 1.22,
     "panelPad": 40,
-    "iconScale": 1.14
+    "iconScale": 1.14,
+    "panelRim": 0.35
   },
   "grid": {
     "mode": "push",
@@ -72,24 +74,38 @@
     "cols": 6,
     "tileH": 150,
     "gapX": 48,
-    "gapY": 60,
+    "gapY": 110,
     "radius": 26,
     "x": 90,
     "width": 1740,
     "clipTop": 120,
-    "focusScale": 1.22
+    "focusScale": 1.22,
+    "peek": 24,
+    "scroll": "row",
+    "glassDim": 0.5
   },
   "tile": {
-    "gloss": 0.12,
+    "gloss": 0.22,
     "border": 0,
     "ringWidth": 0,
-    "ringOffset": 0
+    "ringOffset": 0,
+    "iconScale": 1.25,
+    "highlight": "focus",
+    "rim": 0.5,
+    "shadow": "soft",
+    "shadowStrength": 0.65,
+    "press": 1.11,
+    "launch": "zoom",
+    "label": "focus",
+    "labelSize": 29
   },
   "effects": {
     "glow": 0,
-    "speed": 1.8,
+    "speed": 1,
     "scenes": "couch",
-    "sceneSecs": 60
+    "sceneSecs": 60,
+    "motion": "smooth",
+    "scenesYield": true
   },
   "cards": {
     "style": "glass"
