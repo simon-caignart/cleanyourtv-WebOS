@@ -539,6 +539,28 @@ function appMenu(a) {
             resetIcon(a);
           },
         });
+      /* Top Shelf: the picture behind Home while the app is focused in the dock, chosen on the same phone page */
+      if (TOPSHELF.enabled())
+        items.push({
+          label: t('Change backdrop'),
+          fn: function () {
+            launch('com.cleanyourtv.manager', { open: 'icons', app: a.id });
+          },
+        });
+      if (TOPSHELF.enabled() && TOPSHELF.has(a.id))
+        items.push({
+          label: t('Reset backdrop'),
+          fn: function () {
+            TOPSHELF.reset(a.id).then(
+              function () {
+                toast(t('%s has no backdrop now.').replace('%s', a.title));
+              },
+              function () {
+                toast(t('Could not reset the backdrop. Try again in a moment.'), true);
+              }
+            );
+          },
+        });
       items.push({
         label: t('Hide app'),
         fn: function () {
@@ -835,6 +857,17 @@ function customizeMenu() {
             stay: true,
             fn: wallMenu,
           },
+          iconsOn
+            ? {
+                label: t('Top Shelf'),
+                sub: TOPSHELF.enabled() ? t('On') : t('Off'),
+                stay: true,
+                fn: function () {
+                  TOPSHELF.toggle();
+                  saveCfg();
+                },
+              }
+            : null,
           {
             label: t('Show app name'),
             sub: cfg.shelfShow === false ? t('Off') : t('On'),
@@ -856,7 +889,9 @@ function customizeMenu() {
               tick();
             },
           },
-        ];
+        ].filter(function (it) {
+          return it;
+        });
       },
     },
     {

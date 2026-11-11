@@ -321,7 +321,7 @@ function load() {
       ]);
       retryTileIcons();
       if (typeof x.stamp === 'number') appsStamp = x.stamp;
-      if (sig === lastSig) return;
+      if (sig === lastSig) return TOPSHELF.sync(); /* a backdrop sent from the phone shows when Home opens again */
       lastSig = sig;
       apps = x.apps.map(function (a) {
         return a.input
@@ -341,6 +341,7 @@ function load() {
       store();
       rebuild();
       WALL.sync();
+      TOPSHELF.sync();
       if (!perfReady) {
         perfReady = true;
         perfMark('launcher ready ' + Math.round(performance.now()));

@@ -66,7 +66,7 @@ Homebrew Channel and of CleanYourTV are never listed. The list is read when it o
 rows of that tab are below. A menu opened from a row (the dock, the theme) returns to the same tab with Back.
 
 - **Apps**: the dock, hidden apps, app order (and **Arrange apps...**) and **Mark running apps**.
-- **Look**: **Theme**, **Accent colour**, **Wallpapers** and **Clock**.
+- **Look**: **Theme**, **Accent colour**, **Wallpapers**, **Top Shelf** (with the App icons add-on, see [Top Shelf](#top-shelf)) and **Clock**.
 - **Top & cards**: the top buttons and, in themes with places for cards, **Home Assistant** and **Cards**.
 - **More**: **More settings...**, the manager app.
 
@@ -85,6 +85,7 @@ tuner) and is offered only when the TV has that app and **Show LG's own Live TV*
 - the **clock** format (automatic, 12 or 24 hour);
 - the **theme** (see [Themes](themes.md)) and the **accent colour**; the theme list shows each theme's screenshot;
 - **Wallpapers**: your own photos behind Home, and how often they change (see [Wallpapers](wallpapers.md));
+- **Top Shelf**: the focused dock app's own picture behind Home, on or off (see [Top Shelf](#top-shelf));
 - **More settings...**, which opens the [manager app](manager.md) for everything the TV and the service do.
 
 Putting the dock, buttons, hidden apps, order and clock back to the defaults is in the manager app: **Reset Home customisation**.
@@ -190,6 +191,28 @@ PNG or WebP, at most 1 MB) are kept in `/media/developer/cleanyourtv/icons/` (Ic
 300; the app's own files are never touched, so the picture stays when the app or CleanYourTV updates. **More** > **App icons** in the
 manager opens the same page.
 
+### Top Shelf
+
+As on the Apple TV, the picture behind Home can be the focused app's own: while an app in the dock has the focus, its **backdrop** cross-fades in behind Home (in about 0.6 s, once the focus settles, as the glow does).
+Moving to an app without one fades back to the usual background (the scenes, Wallpapers or the theme's wallpaper).
+With the focus in the app grid, the backdrop of the last dock app stays, covered by a heavily blurred copy of it, a little darker; the top buttons and the cards leave the picture as it is.
+While a backdrop shows it covers the ambient glow, the scenes (their glass clock too) and a photo's credit line.
+To spare the TV's graphics, Home draws the backdrop at 960 x 540 and the blurred copy at 240 x 135 and lets the screen scale them up; a full-screen 4K layer fading in made the picture stall for a moment.
+
+It is part of the **App icons** add-on and is off unless the theme switches it on (`effects.topShelf`, see [Themes](themes.md)).
+**Customise** > **Look** > **Top Shelf** turns it on or off whatever the theme says.
+Set back to what the theme says, the choice is forgotten, so another theme brings its own again.
+
+LG's apps have no such pictures, so you choose one per app.
+While Top Shelf is on, holding OK on an app gives **Change backdrop** (and **Reset backdrop** once it has one), which opens the same phone page as **Change icon**: under each app a **Backdrop** line with **Add** (or **Change**) and **Reset**.
+The preview shows the picture as the TV will, 16:9 with the dock over it.
+The phone cuts it to 16:9 around its middle, scales it to the width of Wallpapers' **Picture size** (3840 pixels, or 1920 with Full HD; a smaller picture is not enlarged) and sends it as a JPEG under 1.5 MB.
+Then it sends the blurred copy it makes (480 x 270, a few kilobytes): the TV only scales that up, as it must not blur.
+Go back to Home to see it.
+
+The backdrops are kept in `/media/developer/cleanyourtv/icons/backdrop/` (JPEG, PNG or WebP, at most 1.5 MB) and the blurred copies in `icons/backdrop/glass/` (JPEG, at most 256 KB), one per app, at most 300.
+A new backdrop replaces the old one and its blurred copy.
+
 ## Language
 
 Menus follow the TV's language, or the one chosen in the manager app: English, Dutch, German, French, Spanish, Catalan, Russian,
@@ -213,6 +236,7 @@ Settings are stored on the TV in `/media/developer/cleanyourtv/config.json`:
 | `sort` | `usage` or `alpha`. |
 | `clock` | `auto`, `12` or `24`. |
 | `runDots` | `true` shows a green dot on open apps (off by default). |
+| `topShelf` | `true` or `false`: Top Shelf on or off whatever the theme says (absent: as the theme says). |
 
 See [`config.example.json`](https://github.com/lasharor/cleanyourtv-WebOS/blob/main/config.example.json). Change settings in
 the launcher; the file is read and written by the service.

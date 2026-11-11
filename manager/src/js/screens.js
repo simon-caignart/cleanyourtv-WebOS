@@ -352,6 +352,13 @@ function openIconPair(app) {
   $('share').querySelector('ol').innerHTML = tr(
     '<li>Phone on the <b>same Wi-Fi</b> as the TV.</li><li>Scan the code with the camera.</li><li>Choose <b>Change</b> next to an app, then a picture, <b>Full tile</b> or <b>Icon</b>.</li>'
   );
+  /* Top Shelf (Customise > Look on Home): a backdrop per app, on the same page */
+  $('share')
+    .querySelector('ol')
+    .insertAdjacentHTML(
+      'beforeend',
+      '<li>' + tr('For Top Shelf: <b>Add</b> on the <b>Backdrop</b> line under an app, then a picture.') + '</li>'
+    );
   $('sharemsg').textContent = tr('Preparing…');
   /* scale: this screen's pixels per CSS pixel (2 on a 4K TV, as on Home), so the sizes shown are the panel's own pixels */
   api('/api/icons/pair', { app: app, scale: window.devicePixelRatio || 1 }).then(
