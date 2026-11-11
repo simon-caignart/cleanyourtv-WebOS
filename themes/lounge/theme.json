@@ -20,7 +20,15 @@
     "scale": 1
   },
   "clock": {
-    "show": false
+    "show": true,
+    "date": false,
+    "greeting": false,
+    "layout": "inline",
+    "anchor": "top",
+    "align": "right",
+    "x": 90,
+    "y": 62,
+    "scale": 0.52
   },
   "bar": {
     "show": true,
@@ -28,7 +36,7 @@
     "labels": "hide",
     "anchor": "top",
     "align": "right",
-    "x": 90,
+    "x": 300,
     "y": 60,
     "size": 52,
     "gap": 12
@@ -43,41 +51,43 @@
   "dock": {
     "anchor": "bottom",
     "align": "center",
-    "y": 250,
+    "y": 65,
     "count": 6,
     "w": 250,
     "h": 150,
     "gap": 48,
-    "radius": 20,
-    "panel": 0,
+    "radius": 26,
+    "panel": 0.1,
     "tileAlpha": 1,
     "tileFrost": 0,
     "lift": 0,
-    "focusScale": 1.15
+    "focusScale": 1.22,
+    "panelPad": 40,
+    "iconScale": 1.14
   },
   "grid": {
     "mode": "push",
-    "dockUp": 170,
+    "dockUp": 140,
     "align": "left",
     "cols": 6,
     "tileH": 150,
     "gapX": 48,
     "gapY": 60,
-    "radius": 20,
+    "radius": 26,
     "x": 90,
     "width": 1740,
-    "clipTop": 150,
-    "focusScale": 1.15
+    "clipTop": 120,
+    "focusScale": 1.22
   },
   "tile": {
-    "gloss": 0.2,
+    "gloss": 0.12,
     "border": 0,
     "ringWidth": 0,
     "ringOffset": 0
   },
   "effects": {
     "glow": 0,
-    "speed": 1,
+    "speed": 1.8,
     "scenes": "couch",
     "sceneSecs": 60
   },
