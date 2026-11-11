@@ -484,4 +484,16 @@ run(async () => {
   );
   ok(!/weather|wx|forecast/i.test(csjs) && !/weather|wx|forecast/i.test(cscss), 'the card sheet names no card (it is generic)');
   ok(/e\.source !== CS\.frame\.contentWindow/.test(csjs), 'the card sheet listens only to its own frame');
+  // the frosted glass behind the app grid: a 960 x 540 canvas scaled up, kept as a layer, never a full-screen background image (an LG C4
+  // froze for up to 100 ms on each opening while it decoded and rastered one at 3840 x 2160)
+  const scjs = fs.readFileSync(path.join(root, 'app', 'src', 'js', 'scenes.js'), 'utf8'),
+    hcss = fs.readFileSync(path.join(root, 'app', 'src', 'css', 'home.css'), 'utf8');
+  ok(
+    /cv\.width = 960;/.test(scjs) && /cv\.height = 540;/.test(scjs) && !/frost\.style\.backgroundImage/.test(scjs),
+    'the glass behind the grid is drawn into a small canvas, not set as a background image'
+  );
+  ok(
+    /\.scenes-on\[data-cards="glass"\] #sglass \{\s*opacity: 0\.004;\s*will-change: opacity;/.test(hcss),
+    'the glass stays a barely visible layer while the grid is closed, so opening only blends it in'
+  );
 });

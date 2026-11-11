@@ -14,6 +14,7 @@ var TH0 = {
     slots: [],
     shelfDock: null,
     dockBottom: false,
+    label: null,
   },
   TH = TH0,
   themeStrip = null /* the page strip's look and place in this theme (addons.js); null: the defaults */,
@@ -32,6 +33,7 @@ function applyTheme(t) {
   if (typeof PAGER !== 'undefined') PAGER.draw();
   if (!t || !t.vars) {
     TH = TH0;
+    $('gA').style.display = $('gB').style.display = '';
     updateFocusArt(null);
     if (window.SCENES) SCENES.apply(null);
     return;
@@ -65,6 +67,8 @@ function applyTheme(t) {
     themeKeys.push('--wall');
   }
   for (k in t.attrs) b.setAttribute('data-' + k, t.attrs[k]);
+  /* no ambient glow: its two large layers are not kept at all (a weak GPU keeps few layers resident) */
+  $('gA').style.display = $('gB').style.display = t.vars['--glow-op'] === '0' ? 'none' : '';
   TH = {
     cols: t.cols || 10,
     tileH: t.tileH || 151,
@@ -80,6 +84,7 @@ function applyTheme(t) {
     slots: t.slots || [],
     shelfDock: t.shelf || null,
     dockBottom: !!t.dockBottom,
+    label: t.label || null,
   };
   lastTheme = t;
   /* the name follows the dock (shelf.dockAlign) only while that is on; otherwise it keeps the theme's own margin (--name-x) */
@@ -160,6 +165,7 @@ function setFocus(nr, nc, first) {
   e.classList.add('f');
   updateFocusArt(e);
   moonTileFocus(e);
+  tileLabel(e);
   var a = e._a,
     nm = a ? a.title : e._o ? barLabel(e._o) : '',
     n = $('name');
@@ -172,7 +178,7 @@ function setFocus(nr, nc, first) {
     document.body.classList.toggle('grid-open', r >= 2);
     var ps = 0;
     if (r >= 2) {
-      var bot = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY) + TH.tileH,
+      var bot = TH.push.gridTop - TH.push.up + (r - 2) * (TH.tileH + TH.gapY) + TH.tileH + labelRoom(TH.label, TH.tileH),
         ex = Math.max(0, bot - (1080 - 60));
       ps = -(TH.push.up + ex);
     }
@@ -193,7 +199,13 @@ function setFocus(nr, nc, first) {
   if (r >= 2) {
     var gr = rows.length - 2,
       gt = TH.gt;
-    sh = Math.min(0, Math.max(50 - (gt + (r - 2) * (TH.tileH + TH.gapY)), TH.viewH - 54 - (gt + gr * TH.tileH + (gr - 1) * TH.gapY)));
+    sh = Math.min(
+      0,
+      Math.max(
+        50 - (gt + (r - 2) * (TH.tileH + TH.gapY)),
+        TH.viewH - 54 - labelRoom(TH.label, TH.tileH) - (gt + gr * TH.tileH + (gr - 1) * TH.gapY)
+      )
+    );
   } /* row height + gap from the theme: no layout reads */
   $('scroll').style.transform = sh ? 'translateY(' + sh + 'px)' : '';
 }
@@ -237,6 +249,67 @@ function moonTileFocus(e) {
   frame.style.setProperty('--focus-c', e.style.getPropertyValue('--c') || '241,182,111');
   frame.style.opacity = '1';
   frame.style.transform = 'translate(' + Math.round(x - pad) + 'px,' + Math.round(y - pad) + 'px)';
+}
+/* tile.label: the focused app's name under its tile, as on a streaming box. Two labels take turns, so the name fades in under the new
+   tile while the old one fades out where it was. They live in #scroll, so they move with the page and the clip of #view cuts them like
+   the tiles; their place is read from the layout (offsets do not include the focus scale), not from the tile's animated box. */
+var tLabels = null,
+  tLabelOn = 0;
+var LABEL_GAP = 15; /* px between the bottom of the scaled tile and the name */
+/* the space a name takes under a focused tile (its tile grows by the focus scale around its centre) */
+function labelRoom(L, tileH) {
+  return L ? Math.ceil(((L.gridScale - 1) * tileH) / 2 + LABEL_GAP + L.size * 1.2) : 0;
+}
+/* where a name goes for a tile at (left, top) of size (w, h) in #scroll's coordinates, scaled by s and raised by lift when focused */
+function labelBox(left, top, w, h, s, lift) {
+  var lw = Math.round(w * s);
+  return { x: Math.round(left + w / 2 - lw / 2), y: Math.round(top + h / 2 + (h * s) / 2 + lift + LABEL_GAP), w: lw };
+}
+function tileLabel(e) {
+  var L = TH.label,
+    p = e && e.parentNode,
+    dock = !!p && p.id === 'dock',
+    show = !!L && !moving && !!p && (p.id === 'grid' || (dock && L.dock));
+  if (!tLabels) {
+    if (!show) return;
+    var sc = $('scroll');
+    tLabels = [0, 1].map(function () {
+      var d = document.createElement('div');
+      d.className = 'tlabel';
+      sc.appendChild(d);
+      return d;
+    });
+  }
+  var cur = tLabels[tLabelOn];
+  if (show && cur._for === e && cur.classList.contains('on')) {
+    placeLabel(cur, e, p, dock, L);
+    return;
+  }
+  cur.classList.remove('on');
+  cur._for = null;
+  if (!show) return;
+  tLabelOn ^= 1;
+  var nx = tLabels[tLabelOn],
+    a = e._a,
+    nm = a ? (a.input && !a.title ? 'HDMI ' + a.input : a.title) : '';
+  if (nx.textContent !== nm) nx.textContent = nm;
+  nx._for = e;
+  placeLabel(nx, e, p, dock, L);
+  nx.classList.add('on');
+}
+function placeLabel(el, e, p, dock, L) {
+  var sr = $('scroll').getBoundingClientRect(),
+    pr = p.getBoundingClientRect(),
+    b = labelBox(
+      pr.left - sr.left + e.offsetLeft,
+      pr.top - sr.top + e.offsetTop,
+      e.offsetWidth,
+      e.offsetHeight,
+      dock ? L.dockScale : L.gridScale,
+      dock ? -L.lift : 0
+    );
+  el.style.width = b.w + 'px';
+  el.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px)';
 }
 function mapCol(from, to, col) {
   return from > 1 ? Math.round((col * (to - 1)) / (from - 1)) : 0;
