@@ -216,6 +216,13 @@ const SCHEMA = [
   ['dock.panelPad', 'int', [0, 60], 24, 'Space between the panel and the tiles, in px.'],
   ['dock.panelRim', 'num?', [0, 0.8], null, "Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`."],
   [
+    'dock.glass',
+    'bool',
+    null,
+    false,
+    'The panel is glass while the grid is closed: the picture behind it shows blurred under its fill and rim (with `cards.style` glass, from the same blurred copy as the glass behind the grid).',
+  ],
+  [
     'dock.chevron',
     'bool',
     null,
@@ -377,7 +384,7 @@ const SCHEMA = [
     '',
     'A file name in `themes/wallpapers/`: `.jpg`, `.png` or `.webp`, at most 1.5 MB; drawn at 1920 x 1080.',
   ],
-  ['effects.wallpaperDim', 'num', [0, 0.9], 0.4, 'How far the wallpaper is darkened with the background colour.'],
+  ['effects.wallpaperDim', 'num', [0, 0.9], 0.4, 'How far the wallpaper, and Wallpapers photos, are darkened with the background colour.'],
   [
     'effects.bottomShade',
     'num',
@@ -791,6 +798,12 @@ function resolve(t, accent) {
   }
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
+  // how far a Wallpapers photo is darkened, for a theme without a wallpaper of its own (with one it travels in out.wallpaper)
+  if (!w && v['effects.wallpaperDim'] !== 0.4) out.wallDim = v['effects.wallpaperDim'];
+  if (v['dock.glass']) {
+    out.dockGlass = true;
+    attrs.dglass = 'on';
+  }
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
   if (v['surface.tint'] > 0) {
     attrs.tint = 'on';

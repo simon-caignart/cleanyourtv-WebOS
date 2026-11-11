@@ -42,6 +42,7 @@ var TH0 = {
     'data-gtop',
     'data-late',
     'data-bshade',
+    'data-dglass',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,

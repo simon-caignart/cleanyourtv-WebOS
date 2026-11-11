@@ -94,6 +94,7 @@ function rebuild(animate) {
   setFocus(nr, nc, true);
   if (moving && tiles[moving]) tiles[moving].classList.add('moving');
   markRunning();
+  if (typeof SCENES !== 'undefined') SCENES.platter();
   if (animate && moving) {
     var animating = [];
     for (k in rects) {

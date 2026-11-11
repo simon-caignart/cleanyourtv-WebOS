@@ -160,7 +160,10 @@ var SCENES = (function () {
      scene brings its own blurred copy; a Wallpapers photo (blur) is blurred here, drawn tiny and scaled back up in steps. */
   var frostFront = 0,
     frostT = 0,
-    tiny = null;
+    tiny = null,
+    pg = null /* dock.glass: the canvas under the dock panel */,
+    pgImg = null,
+    pgKey = '';
   function drawFrost(src, blur) {
     var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
       key = src && src + '|' + dim + '|' + (blur ? 1 : 0);
@@ -171,6 +174,7 @@ var SCENES = (function () {
       clearTimeout(frostT);
       cvs[0].classList.remove('on');
       cvs[1].classList.remove('on');
+      platter(null);
       return;
     }
     var i = new Image();
@@ -179,7 +183,9 @@ var SCENES = (function () {
       var back = cvs[frostFront ^ 1],
         front = cvs[frostFront],
         x = back.getContext('2d');
-      x.drawImage(blur ? blurred(i) : i, 0, 0, back.width, back.height);
+      var soft = blur ? blurred(i) : i;
+      x.drawImage(soft, 0, 0, back.width, back.height);
+      platter(soft);
       var gr = x.createLinearGradient(0, 0, 0, back.height);
       gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');
       gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
@@ -200,6 +206,78 @@ var SCENES = (function () {
       else draw();
     };
     i.src = src;
+  }
+  /* dock.glass: the blurred picture behind the dock panel, cut to the panel's rounded shape inside a half-size canvas (no clip or mask
+     in CSS), with the bottom shade over it as on the screen around it. It lies in #scroll under the dock, so it moves with it, and it is
+     only shown while the grid is closed: over the frosted glass of the open grid the panel is plain glass. Drawn once per picture and
+     when the dock changes size; img: a 16:9 picture or canvas of the whole screen, null to hide, undefined to redraw the last one. */
+  function platter(img) {
+    if (img !== undefined) pgImg = img;
+    var d = $('dock'),
+      sc = $('scroll'),
+      want = !!(lastTh && lastTh.dockGlass && pgImg && d && d.offsetWidth);
+    if (!want) {
+      if (pg) pg.style.display = 'none';
+      pgKey = '';
+      return;
+    }
+    var r = d.getBoundingClientRect(),
+      s = sc.getBoundingClientRect(),
+      m = /matrix\(([^)]*)\)/.exec(getComputedStyle(sc).transform || ''),
+      ty = m ? parseFloat(m[1].split(',')[5]) || 0 : 0,
+      /* where the dock is on the screen with the grid closed */
+      x0 = r.left,
+      y0 = r.top - ty,
+      w = r.width,
+      h = r.height,
+      rad = parseFloat(getComputedStyle(d).borderTopLeftRadius) || 0,
+      shade = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bshade-a')) || 0,
+      key = [x0, y0, w, h, rad, shade].join('|');
+    if (!pg) {
+      pg = document.createElement('canvas');
+      pg.className = 'pglass';
+      sc.insertBefore(pg, sc.firstChild);
+    }
+    pg.style.display = '';
+    if (key === pgKey && img === undefined) return;
+    pgKey = key;
+    var cw = Math.ceil(w / 2),
+      ch = Math.ceil(h / 2),
+      k = (pgImg.naturalWidth || pgImg.width) / 1920,
+      x = pg.getContext('2d');
+    pg.width = cw;
+    pg.height = ch;
+    pg.style.left = r.left - s.left + 'px';
+    pg.style.top = r.top - s.top + 'px';
+    pg.style.width = w + 'px';
+    pg.style.height = h + 'px';
+    x.save();
+    roundRect(x, cw, ch, rad / 2);
+    x.clip();
+    x.drawImage(pgImg, x0 * k, y0 * k, w * k, h * k, 0, 0, cw, ch);
+    if (shade) {
+      /* the stops of #bshade (home.css): from y 600 to the bottom */
+      var g = x.createLinearGradient(0, 0, 0, ch),
+        at = function (y) {
+          var t = Math.max(0, Math.min(1, (y - 600) / 480)),
+            a = t < 0.45 ? (t / 0.45) * 0.35 : t < 0.8 ? 0.35 + ((t - 0.45) / 0.35) * 0.45 : 0.8 + ((t - 0.8) / 0.2) * 0.2;
+          return 'rgba(0,0,0,' + (a * shade).toFixed(3) + ')';
+        };
+      for (var q = 0; q <= 4; q++) g.addColorStop(q / 4, at(y0 + (h * q) / 4));
+      x.fillStyle = g;
+      x.fillRect(0, 0, cw, ch);
+    }
+    x.restore();
+  }
+  function roundRect(x, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    x.beginPath();
+    x.moveTo(r, 0);
+    x.arcTo(w, 0, w, h, r);
+    x.arcTo(w, h, 0, h, r);
+    x.arcTo(0, h, 0, 0, r);
+    x.arcTo(0, 0, w, 0, r);
+    x.closePath();
   }
   /* a photo blurred without filters: drawn at 96 x 54, then scaled up twice with smoothing; the canvas scales the rest */
   function blurred(img) {
@@ -353,6 +431,7 @@ var SCENES = (function () {
     soloClock();
     arm();
     glassCards();
+    platter();
     inkUpdate();
   }
   /* surface.ink auto (ink.js): the picture now behind Home. A built-in scene is a file of the page that may not be read back, so its
@@ -364,7 +443,7 @@ var SCENES = (function () {
     if (on) {
       var s = lib[cur];
       INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'), custom ? null : s.tint);
-    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
+    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : th && th.wallDim != null ? th.wallDim : 0.4, night);
     else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
     else INK.set('', 0, night);
   }
@@ -435,6 +514,10 @@ var SCENES = (function () {
   return {
     apply: apply,
     tick: tick,
+    /* the dock was rebuilt (layout.js): its glass follows its size */
+    platter: function () {
+      platter();
+    },
     glassCards: glassCards,
     /* the Wallpapers photo now behind Home (wall.js), or '' */
     wall: function (url) {

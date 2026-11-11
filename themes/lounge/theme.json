@@ -76,7 +76,8 @@
     "panelPad": 40,
     "iconScale": 1.14,
     "panelRim": 0.35,
-    "chevron": true
+    "chevron": true,
+    "glass": true
   },
   "grid": {
     "mode": "push",
@@ -93,7 +94,7 @@
     "focusScale": 1.22,
     "peek": 24,
     "scroll": "row",
-    "glassDim": 0.5,
+    "glassDim": 0.15,
     "hideTop": true
   },
   "tile": {
