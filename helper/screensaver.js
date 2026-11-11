@@ -5,6 +5,8 @@
 //        photos are library ids ('u/<id>', 's/<add-on>/<id>', 'l/<add-on>') or paths on this service; from: scenes, wallpapers, theme
 //   GET  /api/screensaver/scene/<night|golden|water|fog|dawn>   a couch scene of the launcher (app/scene-<id>.jpg)
 //   GET  /api/screensaver/live/<add-on>   {url, credit}: the photo a live source (Unsplash) gave Home last, so the saver shows the same
+//   GET  /api/screensaver/videos   {videos: [{id, url, title}], from}: the films of the first add-on that provides "videos" and has
+//        some (the Aerials add-on); the page plays them and falls back to the photos above when there are none or they do not play
 //   POST /api/screensaver/active   {returnValue}   the launcher reports a key: the TV is in use, do not open the page over it
 //   POST /api/screensaver/dismiss  {returnValue}   close the page: the app that was on screen comes back
 // The page keeps LG's own screen-saver window type, and a page that stayed up would keep the remote. The page closes itself on the
@@ -47,6 +49,26 @@ const IDLE_MS = 120000;
 const COUCH = ['night', 'golden', 'water', 'fog', 'dawn'];
 function mayOpen(now, homeSince, activeAt) {
   return !!activeAt && now - Math.max(homeSince, activeAt) >= IDLE_MS;
+}
+// a film an add-on hands over, checked: an id, a plain http(s) address the page can put in a <video> (no quotes, spaces or brackets),
+// and the place as one short line; at most 300
+const VIDEO_ID = /^[\w.-]{1,64}$/,
+  VIDEO_URL = /^https?:\/\/[\w.-]+(?::\d{1,5})?\/[\w\/.%~+-]{1,300}$/,
+  VIDEO_MAX = 300;
+function cleanVideos(l) {
+  const seen = {};
+  return (Array.isArray(l) ? l : [])
+    .filter(
+      v => v && typeof v === 'object' && VIDEO_ID.test(String(v.id)) && VIDEO_URL.test(String(v.url)) && !seen[v.id] && (seen[v.id] = 1)
+    )
+    .slice(0, VIDEO_MAX)
+    .map(v => ({
+      id: String(v.id),
+      url: String(v.url),
+      title: String(v.title || '')
+        .replace(/[\u0000-\u001f\u007f]/g, ' ')
+        .slice(0, 80),
+    }));
 }
 
 function create(ctx) {
@@ -107,6 +129,20 @@ function create(ctx) {
     if (t && t.wallpaper)
       return { photos: ['/api/theme/wallpaper/' + t.wallpaper.id + '/' + t.wallpaper.file], credits: {}, from: 'theme' };
     return { photos: [], credits: {}, from: '' };
+  }
+  // the films of the first running, switched-on add-on that provides "videos" and has some
+  async function videos() {
+    const a = ctx.feature && ctx.feature('addons');
+    const list = a && a.providers ? a.providers('videos').filter(p => p.mod.videos && typeof p.mod.videos.list === 'function') : [];
+    for (const p of list) {
+      try {
+        const v = cleanVideos(await p.mod.videos.list());
+        if (v.length) return { videos: v, from: p.id };
+      } catch (e) {
+        console.error('screensaver: add-on ' + p.id + ': ' + ((e && e.message) || e));
+      }
+    }
+    return { videos: [], from: '' };
   }
   async function running() {
     const r = await luna(WEBMGR + 'listRunningApps', {});
@@ -234,6 +270,7 @@ function create(ctx) {
       const b = await background(m ? m[1].toUpperCase() : '');
       return json({ photos: b.photos, credits: b.credits, from: b.from, every: EVERY_S });
     }
+    if (u === '/api/screensaver/videos') return json(await videos());
     // a live source's photo: the one Home has now (wallpapers.js liveCurrent), not the next one the source would hand out
     const lm = /^\/api\/screensaver\/live\/([a-z][a-z0-9-]{1,31})$/.exec(u);
     if (lm) {
@@ -266,7 +303,18 @@ function create(ctx) {
   }
 
   // tick and lastActive are for the tests (tools/test/screensaver.test.js): the timer's step, and when the launcher last reported a key
-  return { name: 'screensaver', prefix: '/api/screensaver', handle, start, photos, close, active, tick, lastActive: () => activeAt };
+  return {
+    name: 'screensaver',
+    prefix: '/api/screensaver',
+    handle,
+    start,
+    photos,
+    videos,
+    close,
+    active,
+    tick,
+    lastActive: () => activeAt,
+  };
 }
 
-module.exports = { create, replaced, supported, mayOpen };
+module.exports = { create, replaced, supported, mayOpen, cleanVideos };

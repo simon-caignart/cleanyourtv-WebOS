@@ -27,6 +27,24 @@ LG's screen saver back.
 
 The first key, click or touch closes it and the app that was on screen comes back. Nothing is saved or uploaded.
 
+## Films (the Aerials add-on)
+
+With the **Aerials** add-on installed (manager > Add-ons > Get more), the screen saver plays Apple's Aerial films instead of the pictures above: slow drone films of cities, landscapes and the sea, a few minutes each, as on the Apple TV.
+Each film fades in over the one before, about ten seconds before that one ends, and the place's name shows in the bottom left corner for a few seconds at its start; the clock and the date stay where they are.
+The order is shuffled each time the screen saver opens.
+
+- The films are streamed from Apple's server (`sylvan.apple.com`) as they play; nothing is saved on the TV but the list of films.
+  The add-on reads Apple's public list (`resources-16.tar`, the one the open-source Aerial screen saver for macOS uses for tvOS, about 2 MB) a quarter of a minute after it starts and then once a week, and keeps the short list it needs in `addon-data/aerials/films.json`.
+- The films come over plain http: Apple's server answers the same files over https only with a certificate from Apple's own root, which neither the service nor the TV's browser trusts.
+- **1080p H.264** (about 12 Mbit/s) is the default, the format every TV plays.
+  **4K HEVC** (SDR) is chosen with `curl -X POST localhost:8765/api/addons/aerials/quality -d '{"quality":"4k"}'` on the TV (`"1080"` goes back); `GET /api/addons/aerials/status` says how many films there are, the quality, and when the list was last read.
+- When the next film does not start beside the one on screen, it is tried again alone once that one ends.
+  If it plays then, the TV cannot play two films at once, and the page goes on with one at a time: each film fades to black and the next one fades in.
+  A film that does not play is passed over, and so is one that stops for half a minute (the network); after three films in a row that do not play, the screen saver shows the pictures again until it opens the next time.
+- Switched off or removed, the screen saver shows the pictures again.
+
+Any add-on can provide films the same way (`"provides": ["videos"]`, see [Add-ons](development/addons.md#providing-something-to-the-service-films)).
+
 ## How it replaces LG's screen saver
 
 The same idea as for [Home](tv-changes.md#at-boot), on the app the TV starts when it is idle: `com.webos.app.screensaver`. Nothing
