@@ -14,7 +14,7 @@
     "pillRing": 0,
     "menuAlpha": 0.92,
     "rowRadius": 16,
-    "glass": 0.55
+    "ink": "auto"
   },
   "type": {
     "fontFile": "inter.woff2",
