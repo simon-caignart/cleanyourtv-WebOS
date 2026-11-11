@@ -154,6 +154,14 @@ run(async () => {
       'the name is centred under the tile, as wide as the focused tile, 15 px below its scaled bottom'
     );
     ok(lctx.labelBox(0, 0, 250, 150, 1.22, -10).y === b.y - 10, 'a lifted dock tile lifts its name too');
+    // surface.ink auto: dark ink above about #8a8a8a under the buttons, white below
+    const ictx = { $: () => null };
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'app', 'src', 'js', 'ink.js'), 'utf8'), ictx);
+    const dark = rgb => ictx.INK.luma(rgb) > ictx.INK_DARK;
+    ok(
+      dark([255, 255, 255]) && dark([160, 160, 160]) && !dark([128, 128, 128]) && !dark([0, 0, 0]),
+      'the ink turns dark over white and light grey, and stays white over mid grey and black'
+    );
     // grid.scroll row: (ex, row top, row height with its name, row step, safe top, safe bottom)
     ok(
       lctx.rowScroll(0, 411, 217, 260, 150, 1020) === 0 && lctx.rowScroll(0, 671, 217, 260, 150, 1020) === 0,
@@ -268,6 +276,33 @@ run(async () => {
       !('yield' in couch.scenes) &&
       !('scenes' in themeMod.resolve(themeMod.normalize({ effects: { scenesYield: true } }, 'noscenes'))),
     'effects.scenesYield reaches the launcher with the scenes, and means nothing without them'
+  );
+  // bar.style glass, surface.ink and bar.besideClock: the status area of a streaming box, the dock's glass with ink that follows the picture
+  const status = themeMod.resolve(
+    themeMod.normalize(
+      {
+        bar: { style: 'glass', besideClock: true, align: 'right', gap: 14 },
+        clock: { style: 'pill', align: 'right', x: 51, y: 53 },
+        surface: { ink: 'auto' },
+      },
+      'status'
+    )
+  );
+  ok(
+    status.attrs.bar === 'glass' &&
+      status.attrs.labels === 'hide' &&
+      status.vars['--pill-r'] === '50%' &&
+      status.attrs.inkmode === 'auto' &&
+      status.barClock.side === 'right' &&
+      status.barClock.x === 51 &&
+      status.barClock.y === 53 &&
+      status.barClock.gap === 14,
+    'glass buttons are icon-only circles, their ink can follow the picture, and the bar can stand beside the clock'
+  );
+  const apart = themeMod.resolve(themeMod.normalize({ bar: { besideClock: true, align: 'right' }, clock: { align: 'left' } }, 'apart'));
+  ok(
+    !('barClock' in apart) && !('barClock' in plain) && !('inkmode' in plain.attrs),
+    'the bar stays where it is when the clock is on the other side, and by default, with no new keys in the reply'
   );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));

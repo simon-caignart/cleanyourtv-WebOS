@@ -289,6 +289,7 @@ var SCENES = (function () {
         document.body.style.setProperty('--scene-date-top', (s.date && s.date.top != null ? s.date.top : 96) + 'px');
       }
       glassCards();
+      inkUpdate();
     }, 700);
     /* after the fade: the old scene is no longer drawn, the next one gets ready */
     setTimeout(function () {
@@ -350,6 +351,20 @@ var SCENES = (function () {
     soloClock();
     arm();
     glassCards();
+    inkUpdate();
+  }
+  /* surface.ink auto (ink.js): the picture now behind Home. A built-in scene is a file of the page that may not be read back, so its
+     brightness is what the scene says (Fog and darkSky have a bright sky); add-on and theme scenes, photos and wallpapers are measured */
+  function inkUpdate() {
+    var th = lastTh,
+      night = th && th.nightRgb ? th.nightRgb.split(',').map(Number) : [7, 8, 11],
+      w = th && th.wallpaper;
+    if (on) {
+      var s = lib[cur];
+      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'));
+    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
+    else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
+    else INK.set('', 0, night);
   }
   /* the glass clock without scenes: one clock with a white frosted fill */
   function soloClock() {
@@ -382,7 +397,6 @@ var SCENES = (function () {
   }
   /* glass cards: the blurred scene behind each card, lined up with the screen; without scenes the CSS gives a plain frosted panel */
   function glassCards() {
-    pillGlass();
     var cards = $('cards');
     if (!cards) return;
     var els2 = cards.children,
@@ -402,20 +416,6 @@ var SCENES = (function () {
       el.style.backgroundSize = '100% 100%,1920px 1080px';
       el.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
     }
-  }
-  /* the pill clock (clock.style pill) on the blurred scene, lined up with the screen, under a tint that keeps white text readable */
-  function pillGlass() {
-    var ck = $('clock'),
-      g = on && document.body.getAttribute('data-cstyle') === 'pill' ? fillOf(lib[cur]) : '';
-    if (!ck) return;
-    if (!g) {
-      ck.style.backgroundImage = '';
-      return;
-    }
-    var r = ck.getBoundingClientRect();
-    ck.style.backgroundImage = 'linear-gradient(rgba(16,14,26,0.42),rgba(16,14,26,0.42)),' + g;
-    ck.style.backgroundSize = '100% 100%,1920px 1080px';
-    ck.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
   }
   /* the clock's typeface must be in before the glass is measured */
   try {
@@ -439,6 +439,7 @@ var SCENES = (function () {
       if (url === wallUrl) return;
       wallUrl = url;
       if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
+      else inkUpdate();
     },
     shown: function () {
       arm();

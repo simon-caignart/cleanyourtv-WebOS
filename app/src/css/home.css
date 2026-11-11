@@ -172,16 +172,16 @@ body {
   margin-left: 22px;
   padding-top: 14px;
 }
-/* clock.style pill: the time in a small translucent pill; with scenes, scenes.js lays the blurred scene under its tint */
+/* clock.style pill: the time in a capsule of the dock panel's glass, as tall as the top buttons; its ink follows the picture behind it
+   (surface.ink, ink.js) */
 [data-cstyle="pill"] #clock {
-  height: 58px;
-  padding: 0 26px;
-  border-radius: 29px;
-  background-color: rgba(var(--night-rgb), 0.42);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  height: var(--pill-h);
+  padding: 0 calc(var(--pill-h) * 0.45);
+  border-radius: calc(var(--pill-h) / 2);
+  background: rgba(255, 255, 255, var(--dock-panel));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 [data-cstyle="pill"] #date {
   padding-top: 0;
@@ -251,6 +251,42 @@ body {
   width: var(--pill-h);
   padding: 0;
   justify-content: center;
+}
+/* bar.style glass: circles of the dock panel's glass with white icons (or dark ones over a bright picture, ink.js); focused, a solid
+   white circle with a dark icon. The id keeps it above the dark-text rules some scenes give the other styles over a bright sky. */
+[data-bar="glass"] .pill {
+  width: var(--pill-h);
+  padding: 0;
+  justify-content: center;
+}
+body[data-bar="glass"] #bar .pill:not(.f) {
+  background: rgba(255, 255, 255, var(--dock-panel));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
+  color: #fff;
+}
+/* surface.ink auto over a bright picture: dark ink, a little more fill and a faint dark edge so the capsule still shows */
+body.ink-dark[data-bar="glass"] #bar .pill:not(.f),
+.ink-dark[data-cstyle="pill"] #clock {
+  background: rgba(255, 255, 255, calc(var(--dock-panel) + 0.16));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4))),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  color: rgba(28, 28, 30, 0.88);
+  text-shadow: none;
+}
+/* the ink changes while the capsule and the buttons are faded out */
+[data-inkmode="auto"] #bar,
+[data-inkmode="auto"] #clock {
+  transition: opacity calc(0.2s * var(--spd)) linear;
+}
+.ink-swap #bar,
+.ink-swap #clock {
+  opacity: 0;
+}
+body[data-bar="glass"] #bar .pill.f {
+  background: #fff;
+  color: #0b0c10;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 [data-bar="flat"] .pill {
   background: none;

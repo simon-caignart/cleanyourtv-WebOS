@@ -36,6 +36,7 @@ var TH0 = {
     'data-launch',
     'data-peek',
     'data-gscroll',
+    'data-inkmode',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,
@@ -102,6 +103,7 @@ function applyTheme(t) {
     dockBottom: !!t.dockBottom,
     label: t.label || null,
     rows: t.rowScroll || null,
+    barClock: t.barClock || null,
   };
   lastTheme = t;
   /* the name follows the dock (shelf.dockAlign) only while that is on; otherwise it keeps the theme's own margin (--name-x) */
@@ -110,9 +112,27 @@ function applyTheme(t) {
   sh.style.paddingRight = '';
   /* scenes and the glass clock (scenes.js) */
   if (window.SCENES) SCENES.apply(t);
+  placeBar();
+  /* the theme's typeface changes the time's width once it has loaded */
+  if (TH.barClock) {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeBar);
+    setTimeout(placeBar, 1500);
+  }
   applyShelfPref();
 }
 
+/* bar.besideClock: the buttons stand right beside the clock, bar.gap apart, centred on its row (the button row is 12 px taller than a
+   button). The time's width changes with the minute and the language, so this is worked out again whenever the time is drawn. Left and
+   right are the theme's sides; rtl.css mirrors them like the rest. */
+function placeBar() {
+  var b = TH.barClock,
+    st = document.documentElement.style;
+  if (!b || !lastTheme) return;
+  var w = $('clock').offsetWidth;
+  if (!w) return;
+  st.setProperty(b.side === 'right' ? '--bar-r' : '--bar-l', b.x + w + b.gap + 'px');
+  st.setProperty('--bar-t', b.y - 6 + 'px');
+}
 /* line the app name up with the left edge of the dock (shelf.dockAlign). The dock is centred on a width that depends on how many apps
    are shown, so its left edge is not known until rebuild: work it out from the tile count (n), the tile width, the gap and the panel
    padding, with no layout read, and set the name's leading padding to match. Exact for a centred dock in either text direction. */

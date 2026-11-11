@@ -13,7 +13,8 @@
     "pillAlpha": 0.18,
     "pillRing": 0,
     "menuAlpha": 0.92,
-    "rowRadius": 16
+    "rowRadius": 16,
+    "ink": "auto"
   },
   "type": {
     "fontFile": "inter.woff2",
@@ -27,20 +28,21 @@
     "anchor": "top",
     "align": "right",
     "x": 51,
-    "y": 63,
+    "y": 53,
     "scale": 0.52,
     "style": "pill"
   },
   "bar": {
     "show": true,
-    "style": "round",
+    "style": "glass",
     "labels": "hide",
     "anchor": "top",
     "align": "right",
     "x": 300,
     "y": 60,
-    "size": 52,
-    "gap": 12
+    "size": 58,
+    "gap": 14,
+    "besideClock": true
   },
   "strip": {
     "style": "dots",
