@@ -14,7 +14,8 @@
     "pillRing": 0,
     "menuAlpha": 0.92,
     "rowRadius": 16,
-    "ink": "auto"
+    "ink": "auto",
+    "tint": 0.35
   },
   "type": {
     "fontFile": "inter.woff2",
@@ -36,7 +37,7 @@
     "align": "right",
     "x": 51,
     "y": 53,
-    "scale": 0.43,
+    "scale": 0.46,
     "style": "pill"
   },
   "bar": {
