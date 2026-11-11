@@ -521,6 +521,11 @@ run(async () => {
       /'data-bshade'/.test(tjs),
     'the hidden status area cannot be clicked, and the bottom shade is not drawn unless the theme asks for it'
   );
+  ok(
+    /\.tlabel \{[^}]*transition: opacity calc\(0\.08s \* var\(--spd\)\) ease-out;/.test(hcss) &&
+      /\.tlabel\.on \{[^}]*transition: opacity calc\(0\.18s \* var\(--spd\)\) ease-out calc\(0\.05s \* var\(--spd\)\);/.test(hcss),
+    'the name under a tile leaves in 80 ms and the next one comes in over 180 ms after 50 ms, so the two never show half each'
+  );
   // dock.glass: a half-size canvas cut to the panel's shape in the canvas itself (no CSS clip or mask), drawn from the blurred copy the
   // frosted glass already made, in #scroll so it moves with the dock, and hidden while the grid is open
   ok(

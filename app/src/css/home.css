@@ -771,11 +771,12 @@ body[data-bar="glass"] #bar .pill.f {
   opacity: 0;
   pointer-events: none;
   will-change: opacity;
-  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+  /* as on tvOS: the name of the tile the focus leaves goes almost at once, the new one comes with the grow, so both are never half there */
+  transition: opacity calc(0.08s * var(--spd)) ease-out;
 }
 .tlabel.on {
   opacity: 1;
-  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+  transition: opacity calc(0.18s * var(--spd)) ease-out calc(0.05s * var(--spd));
 }
 .snap .tlabel {
   transition: none;
