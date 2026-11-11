@@ -224,6 +224,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `dock.panel` | 0 to 0.6 | `0` | Opacity of a translucent panel behind the dock tiles; 0 for none. |
 | `dock.panelPad` | 0 to 60 | `24` | Space between the panel and the tiles, in px. |
 | `dock.panelRim` | 0 to 0.8 or empty | empty | Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`. |
+| `dock.glass` | `true` or `false` | `false` | The panel is glass while the grid is closed: the picture behind it shows blurred under its fill and rim (with `cards.style` glass, from the same blurred copy as the glass behind the grid). |
 | `dock.chevron` | `true` or `false` | `false` | A small chevron centred 35 px above the dock while the grid is closed, the way to the rest of the apps. |
 | `dock.tileAlpha` | 0 to 1 | `1` | Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles. |
 | `dock.tileFrost` | 0 to 1 | `0` | Frost over the resting (unfocused) dock tiles and their icons; 0 for none. Calms loud tile colours without leaving a floating icon square, because the tile and its icon dim together. The focused tile keeps its full colour. |

@@ -521,4 +521,16 @@ run(async () => {
       /'data-bshade'/.test(tjs),
     'the hidden status area cannot be clicked, and the bottom shade is not drawn unless the theme asks for it'
   );
+  // dock.glass: a half-size canvas cut to the panel's shape in the canvas itself (no CSS clip or mask), drawn from the blurred copy the
+  // frosted glass already made, in #scroll so it moves with the dock, and hidden while the grid is open
+  ok(
+    /pg\.width = cw;/.test(scjs) &&
+      /var cw = Math\.ceil\(w \/ 2\)/.test(scjs) &&
+      /x\.clip\(\);/.test(scjs) &&
+      /sc\.insertBefore\(pg, sc\.firstChild\)/.test(scjs) &&
+      /platter\(soft\);/.test(scjs) &&
+      /\.grid-open \.pglass \{\s*opacity: 0;/.test(hcss) &&
+      !/\.pglass \{[^}]*(overflow|clip-path|mask)/.test(hcss),
+    'the glass of the dock panel is a small canvas drawn once per picture, moved with the dock and hidden in the grid'
+  );
 });
