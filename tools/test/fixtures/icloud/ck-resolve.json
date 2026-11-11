@@ -1,0 +1,91 @@
+{
+ "results": [
+  {
+   "shortGUID": {
+    "value": "0Ab_TestCloudKitAlbum9xYz",
+    "shouldFetchRootRecord": true
+   },
+   "containerIdentifier": "com.apple.photos.cloud",
+   "environment": "production",
+   "databaseScope": "SHARED",
+   "zoneID": {
+    "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+    "ownerRecordName": "_00000000000000000000000000000abc",
+    "zoneType": "REGULAR_CUSTOM_ZONE"
+   },
+   "share": {
+    "recordName": "cloudkit.zoneshare",
+    "recordType": "cloudkit.share",
+    "fields": {
+     "cloudkit.title": {
+      "value": "Test CloudKit album",
+      "type": "STRING"
+     },
+     "cloudkit.type": {
+      "value": "photos_sharedcollections",
+      "type": "STRING"
+     },
+     "cloudkit.thumbnailImageData": {
+      "value": "/9j/4AAQ",
+      "type": "BYTES"
+     }
+    },
+    "participants": [
+     {
+      "participantId": "00000000-0000-4000-8000-0000000000BB",
+      "userIdentity": {
+       "userRecordName": "_00000000000000000000000000000abc",
+       "nameComponents": {
+        "givenName": "Testfirst",
+        "familyName": "Testlast"
+       },
+       "lookupInfo": {
+        "emailAddress": "owner@example.com"
+       }
+      },
+      "type": "OWNER",
+      "permission": "READ_WRITE"
+     }
+    ],
+    "owner": {
+     "userIdentity": {
+      "userRecordName": "_00000000000000000000000000000abc",
+      "nameComponents": {
+       "givenName": "Testfirst",
+       "familyName": "Testlast"
+      },
+      "lookupInfo": {
+       "emailAddress": "owner@example.com"
+      }
+     }
+    },
+    "publicPermission": "READ_ONLY",
+    "publicAnonymousAccess": true,
+    "shortGUID": "0Ab_TestCloudKitAlbum9xYz",
+    "zoneID": {
+     "zoneName": "SharedCollection-00000000-0000-4000-8000-0000000000AA",
+     "ownerRecordName": "_00000000000000000000000000000abc",
+     "zoneType": "REGULAR_CUSTOM_ZONE"
+    }
+   },
+   "ownerIdentity": {
+    "userRecordName": "_00000000000000000000000000000abc",
+    "nameComponents": {
+     "givenName": "Testfirst",
+     "familyName": "Testlast"
+    },
+    "lookupInfo": {
+     "emailAddress": "owner@example.com"
+    }
+   },
+   "anonymousPublicAccess": {
+    "token": "TestAccessTokenForTheAnonymousReader000000000000",
+    "tokenTTL": 1200000,
+    "databasePartition": "https://p42-ckdatabasews.icloud.com:443",
+    "resolvedPartitionNumber": 42
+   },
+   "minimallyResolved": false,
+   "requireAppleLogin": false
+  }
+ ]
+}

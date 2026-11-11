@@ -57,9 +57,9 @@
     {
       "id": "icloud",
       "name": "iCloud Shared Album",
-      "version": "1.0.0",
-      "description": "Photos from your iCloud Shared Albums (shared as a public website) as the Home wallpaper, synced to the TV.",
-      "about": "Paste the public link of one or more iCloud Shared Albums on your phone (in Photos: the album's people settings, Public Website on). The TV downloads each photo once, at Full HD or the album's largest size, every six hours, and keeps showing them when Apple cannot be reached. Videos are skipped. At most 300 photos and 100 MB.",
+      "version": "1.1.0",
+      "description": "Photos from your iCloud Shared Albums (shared with a public link) as the Home wallpaper, synced to the TV.",
+      "about": "Paste the public link of one or more iCloud Shared Albums on your phone: a photos.icloud.com/shared/album link, or an older icloud.com/sharedalbum one (Public Website on). The TV downloads each photo once, at Full HD or the album's largest size, every six hours, and keeps showing them when Apple cannot be reached. Videos are skipped. At most 300 photos and 100 MB.",
       "preview": "",
       "kind": "service",
       "permissions": [
@@ -67,9 +67,10 @@
       ],
       "luna": [],
       "files": {
-        "addon.json": "7912565108d6147f6b63e82d5845c40c48cd395a59db121169b0b1ce14785269",
-        "phone.js": "722521f21b5f7775bd45e3fcb3d12d7f9e0bcc9cbacc94ebc8c7f226538f6444",
-        "service.js": "4e58b463ec904b9c5f7f6f139419006a0e69fa351d50c9425e7e4e9424c12fee"
+        "addon.json": "b3001ab653027ca9252479203ebccf8158260d63f1faf2323ccc192a3348f64f",
+        "cloudkit.js": "3fb803a9c79d3d918356f090d948d3e3c394cc9c92da2abf908029cd1aa4caa7",
+        "phone.js": "e29118058dceb341c54d5f12a989fb26754c776606c26cf632cc1054e1503d86",
+        "service.js": "4385274412764188d1525aaa0ed3fcc870f7301f99631479b5ca06c208251b8f"
       }
     },
     {

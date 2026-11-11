@@ -11,7 +11,7 @@ function showLogin(s){$('login').className='';$('main').className='hide';$('sum'
 function ago(x){if(!x)return t('never');var m=Math.round((Date.now()-x)/60000);return m<1?t('just now'):m<60?fm('%d min ago',m):m<1440?fm('%d h ago',Math.round(m/60)):fm('%d days ago',Math.round(m/1440))}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
 function albums(list){var box=$('al');box.innerHTML='';list.forEach(function(a){var r=el('div','al'),i=el('div','ai');
- i.appendChild(el('b','',a.name||t('Shared album')));i.appendChild(el('small','',fm('%d photos in the album · %d on the TV',a.count,a.photos)+' · '+a.hint));
+ i.appendChild(el('b','',a.name||t('Shared album')));i.appendChild(el('small','',fm('%s photos in the album · %d on the TV',a.count+(a.more?'+':''),a.photos)+' · '+a.hint));
  if(a.error)i.appendChild(el('small','er',t(a.error)));r.appendChild(i);var b=el('button','rm',t('Remove'));b.setAttribute('data-id',a.id);r.appendChild(b);box.appendChild(r)});
  $('albox').className=list.length?'':'hide'}
 function state(){return api('state').then(function(i){S=i;$('login').className='hide';$('main').className='';
@@ -24,7 +24,7 @@ function loadPhotos(){api('photos',{}).then(function(r){var ps=r.photos||[];$('i
 $('ipg').onclick=function(e){var x=e.target.closest('[data-h]');if(!x)return;var off=!/off/.test(x.className);api('hide',{id:x.getAttribute('data-h'),hidden:off}).then(function(){x.className='ph'+(off?' off':'');state()})};
 $('al').onclick=function(e){var b=e.target.closest('[data-id]');if(!b)return;if(confirm(t('Remove this album? Its photos are removed from the TV.')))api('remove',{id:b.getAttribute('data-id')}).then(function(r){if(r.error)return msg(t(r.error),1);msg(t('Album removed.'));state();loadPhotos()})};
 $('ia').onclick=function(){var v=$('il').value;if(!v.trim())return msg(t('Paste the link of a shared album'),1);msg(t('Reading the album…'));api('add',{links:v}).then(function(r){if(r.error)return msg(t(r.error),1);
- var out=(r.added||[]).map(function(a){return fm('Added %s (%d photos).',a.name,a.count)}).concat((r.errors||[]).map(function(x){return (x.album?x.album+': ':'')+t(x.error)}));
+ var out=(r.added||[]).map(function(a){return fm('Added %s (%s photos).',a.name,a.count+(a.more?'+':''))}).concat((r.errors||[]).map(function(x){return (x.album?x.album+': ':'')+t(x.error)}));
  if(r.added&&r.added.length)$('il').value='';msg(out.join(' '),!(r.added&&r.added.length));state();setTimeout(loadPhotos,8000)},function(e){msg(e.error||t('The TV did not answer. Is the phone on the same Wi-Fi?'),1)})};
 $('isy').onclick=function(){api('sync',{}).then(function(){msg(t('Syncing…'));setTimeout(state,1500)})};
 $('idc').onclick=function(){if(confirm(t('Remove every album? Their photos are removed from the TV.')))api('disconnect',{}).then(function(){$('iphb').className='hide';msg(t('Every album was removed.'));state()})};
@@ -48,8 +48,8 @@ button.p{background:#f5f6f8;color:#111;font-weight:600;border:0}textarea,input{t
 <div id=login class=hide><p>${T('Enter the code shown on the TV.')}</p><input id=code inputmode=numeric autocomplete=one-time-code><button class=p id=go>${T('Continue')}</button></div>
 <div id=main class=hide>
 <div id=msg></div>
-<p>${T('In Photos on your iPhone or Mac, open the shared album, then its people settings, and turn on Public Website. Share the link and paste it here (one per line for several albums).')}</p>
-<textarea id=il placeholder="https://www.icloud.com/sharedalbum/#..." autocomplete=off autocapitalize=off spellcheck=false></textarea>
+<p>${T('In Photos on your iPhone or Mac, share the album with a public link (for an older shared album: its people settings, then Public Website). Paste the link here, one per line for several albums.')}</p>
+<textarea id=il placeholder="https://photos.icloud.com/shared/album/..." autocomplete=off autocapitalize=off spellcheck=false></textarea>
 <button class=p id=ia>${T('Test and save')}</button>
 <div id=albox class=hide><h2>${T('Albums')}</h2><div id=al></div></div>
 <div id=ist></div>

@@ -1,10 +1,10 @@
 {
   "id": "icloud",
   "name": "iCloud Shared Album",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "kind": "service",
-  "description": "Photos from your iCloud Shared Albums (shared as a public website) as the Home wallpaper, synced to the TV.",
-  "about": "Paste the public link of one or more iCloud Shared Albums on your phone (in Photos: the album's people settings, Public Website on). The TV downloads each photo once, at Full HD or the album's largest size, every six hours, and keeps showing them when Apple cannot be reached. Videos are skipped. At most 300 photos and 100 MB.",
+  "description": "Photos from your iCloud Shared Albums (shared with a public link) as the Home wallpaper, synced to the TV.",
+  "about": "Paste the public link of one or more iCloud Shared Albums on your phone: a photos.icloud.com/shared/album link, or an older icloud.com/sharedalbum one (Public Website on). The TV downloads each photo once, at Full HD or the album's largest size, every six hours, and keeps showing them when Apple cannot be reached. Videos are skipped. At most 300 photos and 100 MB.",
   "entry": { "service": "service.js" },
   "permissions": ["net.fetch"],
   "provides": ["wallpapers"]

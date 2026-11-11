@@ -96,11 +96,12 @@ run(async () => {
   const M = require(path.join(addonDir, 'service.js'));
 
   // ---- the link, the partition, the hosts ----
+  const stream = l => JSON.stringify(M.parseLink(l)) === JSON.stringify({ kind: 'stream', token: TOKEN });
   ok(
-    M.parseLink('https://www.icloud.com/sharedalbum/#' + TOKEN) === TOKEN &&
-      M.parseLink('  https://www.icloud.com/sharedalbum/fr-fr/#' + TOKEN + '\n') === TOKEN &&
-      M.parseLink('https://icloud.com/sharedalbum/#' + TOKEN + ';0A000000-0000-4000-8000-000000000001') === TOKEN &&
-      M.parseLink(TOKEN) === TOKEN,
+    stream('https://www.icloud.com/sharedalbum/#' + TOKEN) &&
+      stream('  https://www.icloud.com/sharedalbum/fr-fr/#' + TOKEN + '\n') &&
+      stream('https://icloud.com/sharedalbum/#' + TOKEN + ';0A000000-0000-4000-8000-000000000001') &&
+      stream(TOKEN),
     'a public link gives its token, with a language, a photo after ";" or none, and a bare token works too'
   );
   ok(
@@ -113,7 +114,7 @@ run(async () => {
       'https://www.icloud.com/sharedalbum/#' + TOKEN + '/../x',
       '',
       'B1z/../../etc',
-    ].every(l => M.parseLink(l) === ''),
+    ].every(l => M.parseLink(l) === null),
     'anything that is not such a link is refused (plain http, another host, another path, a bad token)'
   );
   ok(
@@ -514,4 +515,203 @@ run(async () => {
   await sleep(50);
   p = await phone('GET', '/').catch(() => ({ code: 0 }));
   ok(p.code === 0, 'stop() closes the settings page');
+  // ---- the newer kind: https://photos.icloud.com/shared/album/<id>, read from CloudKit ----
+  const CK = require(path.join(addonDir, 'cloudkit.js'));
+  const CKID = '0Ab_TestCloudKitAlbum9xYz', // the invented id of the fixtures
+    CKTOKEN = 'TestAccessTokenForTheAnonymousReader000000000000',
+    ckLink = 'https://photos.icloud.com/shared/album/' + CKID;
+  const kindOf = l => JSON.stringify(M.parseLink(l));
+  ok(
+    kindOf(ckLink) === JSON.stringify({ kind: 'cloudkit', token: CKID }) &&
+      kindOf(ckLink + '/') === kindOf(ckLink) &&
+      kindOf(ckLink + '?lang=fr') === kindOf(ckLink) &&
+      kindOf(' ' + ckLink + '#x\n') === kindOf(ckLink),
+    'a photos.icloud.com shared album link is told apart from the older kind by the link'
+  );
+  ok(
+    [
+      'http://photos.icloud.com/shared/album/' + CKID,
+      'https://photos.icloud.com.evil.example/shared/album/' + CKID,
+      'https://evil.example/shared/album/' + CKID,
+      'https://photos.icloud.com/shared/gallery/' + CKID,
+      'https://photos.icloud.com/shared/album/short',
+      'https://photos.icloud.com/shared/album/' + CKID + '/../x',
+      'https://photos.icloud.com/shared/album/' + CKID + ' x',
+    ].every(l => M.parseLink(l) === null),
+    'and anything else is refused (plain http, another host or path, a bad id)'
+  );
+  const resolved = fixture('ck-resolve.json');
+  const sh = CK.parseResolve(resolved);
+  ok(
+    sh.partition === 'https://p42-ckdatabasews.icloud.com' &&
+      sh.token === CKTOKEN &&
+      sh.name === 'Test CloudKit album' &&
+      sh.zoneID.zoneName,
+    'the resolve answer gives the partition, the access token, the zone and the title'
+  );
+  ok(!/Testfirst|Testlast|owner@example/.test(JSON.stringify(sh)), "and nothing of the owner's name or e-mail address is kept");
+  const resolveErr = mut => {
+    const j = JSON.parse(JSON.stringify(resolved));
+    mut(j.results[0]);
+    try {
+      CK.parseResolve(j);
+      return '';
+    } catch (e) {
+      return e.message;
+    }
+  };
+  ok(/does not find this album/.test(resolveErr(r => (r.serverErrorCode = 'NOT_FOUND'))), 'an id Apple does not know is reported');
+  ok(
+    /needs an Apple sign-in/.test(resolveErr(r => delete r.anonymousPublicAccess)) &&
+      /needs an Apple sign-in/.test(resolveErr(r => (r.requireAppleLogin = true))),
+    'an album that is not open to anyone with the link says it needs a sign-in'
+  );
+  ok(
+    [
+      'https://evil.example',
+      'http://p42-ckdatabasews.icloud.com',
+      'https://p42-ckdatabasews.icloud.com.evil.example',
+      'https://p42-ckdatabasews.icloud.com:8443',
+    ].every(h => /does not trust/.test(resolveErr(r => (r.anonymousPublicAccess.databasePartition = h)))),
+    'a database partition that is not https://p<NN>-ckdatabasews.icloud.com is refused'
+  );
+  ok(/does not understand/.test(resolveErr(r => (r.databaseScope = 'PRIVATE'))), 'and so is any database but the shared one');
+  const ckPhotos = CK.photosOf(fixture('ck-query-1.json').records.concat(fixture('ck-query-2.json').records), M.assetUrl);
+  const ckId = n => '0B000000-0000-4000-8000-00000000000' + n;
+  ok(
+    ckPhotos.map(x => x.guid).join() === [1, 2, 3, 5].map(ckId).join(),
+    'the photos come newest first by their date, without the video, the hidden one, and one whose pictures are on a strange host'
+  );
+  const ckPick = (n, size) => (M.pick(ckPhotos.filter(x => x.guid === ckId(n))[0].derivs, size)[0] || {}).sum;
+  ok(
+    ckPick(1, '4k') === 'AckSumM1m0000' && ckPick(1, 'hd') === 'AckSumM1m0000',
+    "a HEIC original is never taken: Apple's 2048-pixel JPEG is"
+  );
+  ok(
+    ckPick(2, '4k') === 'AckSumM2o0000' && ckPick(2, 'hd') === 'AckSumM2m0000',
+    'a JPEG original is taken at 4K, the 2048-pixel JPEG at Full HD'
+  );
+  ok(
+    ckPick(3, '4k') === 'AckSumM3m0000' && ckPhotos.filter(x => x.guid === ckId(3))[0].derivs.length === 1,
+    'an original that needs turning is never used (old Chromium ignores the EXIF orientation)'
+  );
+  ok(ckPick(5, '4k') === 'AckSumA5f0000' && ckPick(5, 'hd') === 'AckSumA5m0000', 'an edited photo is shown as edited');
+  ok(
+    ckPhotos.every(x => x.derivs.every(d => /^https:\/\/cvws\.icloud-content\.com\/B\/Test\w+\/photo\.jpg\?o=/.test(d.url))),
+    'the file name in the download address is filled in'
+  );
+
+  // the sync against a stand-in for CloudKit
+  const ckCalls = [];
+  let ckDown = false,
+    ckPages = [fixture('ck-query-1.json'), fixture('ck-query-2.json')];
+  const ckRead = (url, o) => {
+    ckCalls.push({ url, o });
+    if (o.redirects !== 0) return Promise.reject(new Error('the add-on must follow redirects itself (redirects: 0)'));
+    if (ckDown) return Promise.reject(new Error('could not connect'));
+    const u = new URL(url),
+      q = {};
+    u.searchParams.forEach((v, k) => (q[k] = v));
+    const send = (st, obj) =>
+      Promise.resolve({ status: st, headers: {}, body: Buffer.isBuffer(obj) ? obj : Buffer.from(JSON.stringify(obj)) });
+    if (u.hostname === 'ckdatabasews.icloud.com' && u.pathname === '/database/1/com.apple.photos.cloud/production/public/records/resolve') {
+      const b = JSON.parse(o.body);
+      return b.shortGUIDs[0].value === CKID && q.sharing_url_key === CKID
+        ? send(200, resolved)
+        : send(200, { results: [{ shortGUID: b.shortGUIDs[0], serverErrorCode: 'NOT_FOUND', reason: 'Cannot resolve shortGUID' }] });
+    }
+    if (
+      u.hostname === 'p42-ckdatabasews.icloud.com' &&
+      u.pathname === '/database/1/com.apple.photos.cloud/production/shared/records/query'
+    ) {
+      if (q.publicAccessAuthToken !== CKTOKEN || q.sharing_url_key !== CKID) return send(401, { serverErrorCode: 'AUTHENTICATION_FAILED' });
+      const b = JSON.parse(o.body);
+      if (b.query.recordType !== 'CPLAssetAndMasterByAssetDateWithoutHiddenOrDeleted' || b.zoneID.zoneName !== sh.zoneID.zoneName)
+        return send(400, {});
+      return send(200, b.continuationMarker === 'TestContinuationMarker1' ? ckPages[1] : ckPages[0]);
+    }
+    if (u.hostname === 'cvws.icloud-content.com' && /\/photo\.jpg$/.test(u.pathname)) return send(200, JPEG);
+    return Promise.reject(new Error('the stand-in got a request for ' + u.hostname));
+  };
+  const ckConfig = memoryConfig({}),
+    ckLogs = [];
+  const ckData = path.join(process.env.CYTV_DIR, 'addon-data', 'icloud-ck');
+  nc.mkdirp(ckData);
+  const ck = M.create(
+    Object.assign({}, ctx, {
+      dataDir: ckData,
+      log: l => ckLogs.push(String(l)),
+      fetch: { read: ckRead },
+      settings: {
+        get: () => Object.assign({}, ((ckConfig.get().addons || {}).icloud || {}).settings),
+        set: o =>
+          ckConfig.update('addon:icloud', c => {
+            c.addons = c.addons || {};
+            c.addons.icloud = { settings: Object.assign({}, (c.addons.icloud || {}).settings, o) };
+          }),
+      },
+    })
+  );
+  size = '4k';
+  r = await ck.wallpapers.settings({});
+  await sleep(50);
+  p = await phone('POST', '/api/add', { links: 'https://photos.icloud.com/shared/album/0Ab_UnknownCloudKitAlb00' }, r.code);
+  ok(
+    /does not find this album/.test(p.j.errors[0].error) && p.j.errors[0].album === '…lb00',
+    'an unknown album is reported by its last four characters'
+  );
+  p = await phone('POST', '/api/add', { links: ckLink }, r.code);
+  ok(
+    p.j.ok && p.j.added[0].name === 'Test CloudKit album' && p.j.added[0].count === 4,
+    'Test and save reads the album over both pages: ' + JSON.stringify(p.j)
+  );
+  await ck.sync();
+  d = ck.details();
+  ok(
+    d.photos === 4 && !d.error && d.albums[0].kind === 'cloudkit' && d.albums[0].hint === '…9xYz',
+    'the sync downloads its four photos: ' + JSON.stringify(d)
+  );
+  const ckGot = ckCalls.filter(c => /icloud-content/.test(c.url)).map(c => c.url);
+  ok(
+    ckGot.length === 4 && ckGot.some(u => /TestM2o\//.test(u)) && ckGot.some(u => /TestA5f\//.test(u)),
+    'at 4K: the JPEG original and the edited full-size JPEG'
+  );
+  ok(
+    ckCalls.every(c => /^https:\/\/(ckdatabasews|p42-ckdatabasews)\.icloud\.com\/|^https:\/\/cvws\.icloud-content\.com\//.test(c.url)) &&
+      ckCalls.filter(c => /ckdatabasews/.test(c.url)).every(c => c.o.method === 'POST' && c.o.headers['content-type'] === 'text/plain'),
+    'every request goes to CloudKit or the picture host named in its answer'
+  );
+  const ckAll = JSON.stringify([d, ck.wallpapers.status(), ckLogs, fs.readFileSync(path.join(ckData, 'index.json'), 'utf8')]);
+  ok(
+    ckAll.indexOf(CKID) < 0 && ckAll.indexOf(CKTOKEN) < 0,
+    'neither the album id nor the access token is in a reply, a log line or the index'
+  );
+  ok(!/Testfirst|Testlast|owner@example/.test(ckAll + JSON.stringify(ckConfig.get())), "nor the owner's name or e-mail address, anywhere");
+  let n1 = ckCalls.length;
+  await ck.sync();
+  ok(
+    ckCalls.slice(n1).every(c => /ckdatabasews/.test(c.url)) && ckCalls.length - n1 === 3,
+    'a second sync reads the album (resolve and two pages) and downloads nothing'
+  );
+  // a long sync: the download addresses are read again once the listing is old
+  size = 'hd';
+  M.LIMITS.freshMs = -1;
+  n1 = ckCalls.length;
+  await ck.sync();
+  ok(
+    ckCalls.slice(n1).filter(c => /records\/resolve/.test(c.url)).length === 2 &&
+      ckCalls.slice(n1).filter(c => /TestM2m\//.test(c.url)).length === 1,
+    'when the listing is older than its addresses last, the album is read again before downloading (Full HD: the 2048 JPEG)'
+  );
+  M.LIMITS.freshMs = 10 * 60 * 1000;
+  // a photo that left the album; then CloudKit cannot be reached
+  ckPages = [fixture('ck-query-1.json'), fixture('ck-query-2.json')];
+  ckPages[1].records = ckPages[1].records.filter(x => !/5/.test(x.recordName.slice(-1)) && !/AckMaster5/.test(x.recordName));
+  await ck.sync();
+  ok(ck.details().photos === 3 && !ck.wallpapers.file(ckId(5)), 'a photo that left the album is deleted');
+  ckDown = true;
+  await ck.sync();
+  ok(ck.details().photos === 3 && ck.details().error === 'could not connect', 'when Apple cannot be reached the photos stay');
+  ckDown = false;
+  ck.stop();
 });

@@ -2,18 +2,22 @@
 //   dataDir/photos/<photo guid>.jpg   photos of the albums, downloaded by a sync and kept, so showing one never needs Apple
 //   dataDir/index.json                what each file is (size, Apple's checksum, album), each album's name, partition host and last
 //                                     error, and how the last sync went; only listed files are deleted
-// The settings (the albums' tokens, hidden photos) are this add-on's settings in config.json (addons.icloud.settings). A token is what
-// follows "#" in the album's public link and is all it takes to read the album: it goes only into the path of requests to Apple's
-// shared-streams hosts, shows as its last four characters at most and is not logged.
+// The settings (the albums' tokens and kinds, hidden photos) are this add-on's settings in config.json (addons.icloud.settings). A token
+// is the album's part of its public link and is all it takes to read the album: it goes only to Apple (in the path of shared-streams
+// requests, in the query of CloudKit ones), shows as its last four characters at most and is not logged.
 //
-// Apple's public shared-album web API is undocumented; it is the one the album's page on icloud.com uses:
+// Two kinds of link, told apart by the link itself:
+//   https://www.icloud.com/sharedalbum/#<token>        the shared-streams service, below
+//   https://photos.icloud.com/shared/album/<id>       CloudKit, in cloudkit.js
+// Apple's public shared-streams web API is undocumented; it is the one the album's page on icloud.com uses:
 //   POST https://p<NN>-sharedstreams.icloud.com/<token>/sharedstreams/webstream {"streamCtag":null}
 //     -> 200 {streamName, photos: [{photoGuid, dateCreated, mediaAssetType?, derivatives: {<key>: {checksum, fileSize, width, height}}}]}
 //     -> 330 when the album lives on another partition: the host is in the X-Apple-MMe-Host header or the body field of that name
 //   POST .../webasseturls {"photoGuids": [...]}
 //     -> 200 {items: {<derivative checksum>: {url_location, url_path, url_expiry}}, locations: {<host>: {scheme, hosts}}}
 // The partition of the first request is read from the token (base 62); a wrong guess is corrected by the 330. Only https requests to
-// p<NN>-sharedstreams.icloud.com, and downloads from hosts under icloud-content.com or icloud.com, are made; every redirect is checked.
+// p<NN>-sharedstreams.icloud.com, ckdatabasews.icloud.com and p<NN>-ckdatabasews.icloud.com, and downloads from hosts under
+// icloud-content.com or icloud.com, are made; every redirect is checked.
 // The phone page (settings(): a short-lived server on the LAN, port 8804, needs the code shown on the TV) adds and removes albums and
 // hides photos.
 const crypto = require('crypto'),
@@ -21,9 +25,11 @@ const crypto = require('crypto'),
   http = require('http'),
   path = require('path'),
   { URL } = require('url');
-const phone = require('./phone');
+const phone = require('./phone'),
+  cloudkit = require('./cloudkit');
 
-const LIMITS = { photos: 300, bytes: 100 * 1024 * 1024, file: 12 * 1024 * 1024, albums: 10 };
+// freshMs: a CloudKit listing's download addresses work for about half an hour; older than this, the album is read again
+const LIMITS = { photos: 300, bytes: 100 * 1024 * 1024, file: 12 * 1024 * 1024, albums: 10, freshMs: 10 * 60 * 1000 };
 const PAIR_PORT = 8804, // after the Agent tools page (8803)
   PAIR_MS = 15 * 60 * 1000,
   SYNC_MS = 6 * 3600 * 1000,
@@ -33,22 +39,24 @@ const PAIR_PORT = 8804, // after the Agent tools page (8803)
 const TOKEN = /^[A-Za-z0-9_-]{10,64}$/,
   GUID = /^[A-Za-z0-9-]{8,64}$/,
   SUM = /^[A-Za-z0-9]{8,128}$/,
-  ALBUM = /^[0-9a-f]{12}$/,
   STREAM_HOST = /^p\d{1,4}-sharedstreams\.icloud\.com$/,
   LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-// the token of a public link (https://www.icloud.com/sharedalbum/#<token>, with or without a language in the path or a photo after
-// ";"), or a bare token; '' for anything else
+// the album of a public link, {kind, token}, or null:
+//   https://www.icloud.com/sharedalbum/#<token> (with or without a language in the path or a photo after ";"), or a bare token: 'stream'
+//   https://photos.icloud.com/shared/album/<id> (a query or a fragment after it is ignored): 'cloudkit'
 function parseLink(s) {
   const t = String(s || '').trim();
-  if (TOKEN.test(t)) return t;
-  const m =
+  if (TOKEN.test(t)) return { kind: 'stream', token: t };
+  let m =
     /^https:\/\/(?:www\.)?icloud\.com\/sharedalbum\/(?:[A-Za-z]{2}(?:[-_][A-Za-z]{2,4})?\/)?#([A-Za-z0-9_-]{10,64})(?:;[A-Za-z0-9_-]{0,80})?$/.exec(
       t
     );
-  return m ? m[1] : '';
+  if (m) return { kind: 'stream', token: m[1] };
+  m = /^https:\/\/photos\.icloud\.com\/shared\/album\/([A-Za-z0-9_-]{15,64})\/?(?:[?#][^\s]{0,200})?$/.exec(t);
+  return m && cloudkit.SHORT.test(m[1]) ? { kind: 'cloudkit', token: m[1] } : null;
 }
 const albumId = token => crypto.createHash('sha256').update(token).digest('hex').slice(0, 12);
 const hint = token => '…' + String(token).slice(-4);
@@ -134,8 +142,8 @@ function create(ctx) {
   const cfg = () => {
     const s = Object.assign({ albums: [], hidden: [] }, ctx.settings.get());
     const albums = (Array.isArray(s.albums) ? s.albums : [])
-      .filter(a => a && TOKEN.test(String(a.token || '')))
-      .map(a => ({ id: albumId(a.token), token: a.token }));
+      .filter(a => a && (a.kind === 'cloudkit' ? cloudkit.SHORT : TOKEN).test(String(a.token || '')))
+      .map(a => ({ id: albumId(a.token), token: a.token, kind: a.kind === 'cloudkit' ? 'cloudkit' : 'stream' }));
     const hidden = (Array.isArray(s.hidden) ? s.hidden : []).filter(x => typeof x === 'string' && GUID.test(x));
     return { albums, hidden };
   };
@@ -222,9 +230,12 @@ function create(ctx) {
     }
     throw new Error('Apple moved the album too many times');
   }
-  async function readAlbum(token, host) {
-    const r = await apple(token, host || firstHost(token), 'webstream', { streamCtag: null });
-    return Object.assign({ host: r.host }, parseStream(r.json));
+  // {host, name, photos, more}: the photos newest first; a CloudKit photo's derivatives carry their download address
+  async function readAlbum(a, host) {
+    if (a.kind === 'cloudkit')
+      return Object.assign({ host: '' }, await cloudkit.readAlbum(fetch.read, a.token, assetUrl, LIMITS.photos + 50));
+    const r = await apple(a.token, host || firstHost(a.token), 'webstream', { streamCtag: null });
+    return Object.assign({ host: r.host, more: false }, parseStream(r.json));
   }
   // the download addresses of some photos, by derivative checksum; an address on a host that is not Apple's is left out
   async function assetUrls(token, host, guids) {
@@ -242,6 +253,15 @@ function create(ctx) {
       const u = assetUrl('https://' + loc + it.url_path);
       if (u && new URL(u).hostname === loc) out[sum] = u;
     }
+    return out;
+  }
+  // the download addresses of some photos of a CloudKit album, from its listing, read again when that is old
+  async function cloudkitUrls(a, listed, batch) {
+    if (Date.now() - listed[a.id].at > LIMITS.freshMs) listed[a.id] = { at: Date.now(), photos: (await readAlbum(a)).photos };
+    const byGuid = {},
+      out = {};
+    listed[a.id].photos.forEach(p => (byGuid[p.guid] = p));
+    for (const w of batch) for (const d of (byGuid[w.guid] || { derivs: [] }).derivs) if (d.url) out[d.sum] = d.url;
     return out;
   }
   // one picture, following at most a few redirects, each to an Apple host over https
@@ -266,6 +286,7 @@ function create(ctx) {
   }
 
   // ---- adding and removing albums ----
+  const stored = a => ({ token: a.token, kind: a.kind });
   async function addLinks(text) {
     const parts = String(text || '')
       .split(/[\s,]+/)
@@ -275,11 +296,12 @@ function create(ctx) {
     const added = [],
       errors = [];
     for (const part of parts) {
-      const token = parseLink(part);
-      if (!token) {
+      const link = parseLink(part);
+      if (!link) {
         errors.push({ album: '', error: 'not the link of an iCloud Shared Album' });
         continue;
       }
+      const token = link.token;
       const c = cfg(),
         id = albumId(token);
       if (c.albums.some(a => a.id === id)) {
@@ -291,14 +313,14 @@ function create(ctx) {
         continue;
       }
       try {
-        const a = await readAlbum(token);
+        const a = await readAlbum(link);
         const st = albumState(id);
-        Object.assign(st, { host: a.host, name: a.name, count: a.photos.length, error: '', ok: Date.now() });
+        Object.assign(st, { host: a.host, name: a.name, count: a.photos.length, more: a.more, error: '', ok: Date.now() });
         // read again: the settings may have changed while Apple answered
         const now = cfg().albums.filter(x => x.id !== id);
-        save({ albums: now.map(x => ({ token: x.token })).concat([{ token }]) });
+        save({ albums: now.map(stored).concat([stored(link)]) });
         saveIdx();
-        added.push({ id, name: a.name, count: a.photos.length });
+        added.push({ id, name: a.name, count: a.photos.length, more: a.more });
         ctx.log('album ' + hint(token) + ' added (' + a.photos.length + ' photos)');
       } catch (e) {
         errors.push({ album: hint(token), error: message(e) });
@@ -310,7 +332,7 @@ function create(ctx) {
   function removeAlbum(id) {
     const c = cfg();
     if (!c.albums.some(a => a.id === id)) return { error: 'no such album' };
-    save({ albums: c.albums.filter(a => a.id !== id).map(a => ({ token: a.token })) });
+    save({ albums: c.albums.filter(a => a.id !== id).map(stored) });
     for (const pid of Object.keys(idx().photos)) if (idx().photos[pid].album === id) dropPhoto(pid);
     delete idx().albums[id];
     saveIdx();
@@ -353,6 +375,7 @@ function create(ctx) {
     try {
       util.mkdirp(PH);
       const mine = {},
+        listed = {},
         failed = {},
         want = [],
         seen = {};
@@ -363,8 +386,9 @@ function create(ctx) {
       for (const a of c.albums) {
         const as = albumState(a.id);
         try {
-          const r = await readAlbum(a.token, as.host);
-          Object.assign(as, { host: r.host, name: r.name, count: r.photos.length, error: '', ok: Date.now() });
+          const r = await readAlbum(a, as.host);
+          Object.assign(as, { host: r.host, name: r.name, count: r.photos.length, more: r.more, error: '', ok: Date.now() });
+          listed[a.id] = { at: Date.now(), photos: r.photos };
           for (const p of r.photos)
             if (!seen[p.guid]) {
               seen[p.guid] = 1;
@@ -404,11 +428,14 @@ function create(ctx) {
           const batch = mineTodo.slice(i, i + BATCH);
           let urls;
           try {
-            urls = await assetUrls(
-              a.token,
-              albumState(a.id).host,
-              batch.map(w => w.guid)
-            );
+            urls =
+              a.kind === 'cloudkit'
+                ? await cloudkitUrls(a, listed, batch)
+                : await assetUrls(
+                    a.token,
+                    albumState(a.id).host,
+                    batch.map(w => w.guid)
+                  );
           } catch (e) {
             failedDl += batch.length;
             st.error = message(e);
@@ -482,7 +509,16 @@ function create(ctx) {
       configured: c.albums.length > 0,
       albums: c.albums.map(a => {
         const as = idx().albums[a.id] || {};
-        return { id: a.id, hint: hint(a.token), name: as.name || '', count: as.count || 0, photos: onTv[a.id] || 0, error: as.error || '' };
+        return {
+          id: a.id,
+          kind: a.kind,
+          hint: hint(a.token),
+          name: as.name || '',
+          count: as.count || 0,
+          more: !!as.more,
+          photos: onTv[a.id] || 0,
+          error: as.error || '',
+        };
       }),
       photos: shown().length,
       hidden: c.hidden.length,
