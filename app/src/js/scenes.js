@@ -13,11 +13,13 @@
    as custom scenes (no cut-out, a darker shade at the top) with the photographer in the bottom corner. Without one nothing changes. */
 var SCENES = (function () {
   var COUCH = [
-    { id: 'night', fg: true },
-    { id: 'golden', fg: true },
-    { id: 'water', fg: false, water: 0.55 } /* the clock sits on the water: under the line a blurred reflection */,
-    { id: 'fog', fg: true },
-    { id: 'dawn', fg: true },
+    /* tint: the mean colour of the scene's top right (under the top buttons and the clock), for surface.tint: a file of the page may
+       not be read back on the TV */
+    { id: 'night', fg: true, tint: [87, 97, 114] },
+    { id: 'golden', fg: true, tint: [80, 126, 135] },
+    { id: 'water', fg: false, water: 0.55, tint: [153, 204, 238] } /* the clock sits on the water: under the line a blurred reflection */,
+    { id: 'fog', fg: true, tint: [239, 237, 238] },
+    { id: 'dawn', fg: true, tint: [195, 202, 210] },
   ];
   var addonLib = null /* the scenes of an add-on, as custom scenes, or null */,
     addonKey = '',
@@ -361,7 +363,7 @@ var SCENES = (function () {
       w = th && th.wallpaper;
     if (on) {
       var s = lib[cur];
-      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'));
+      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'), custom ? null : s.tint);
     } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
     else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
     else INK.set('', 0, night);

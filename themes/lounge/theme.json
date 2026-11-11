@@ -14,7 +14,8 @@
     "pillRing": 0,
     "menuAlpha": 0.92,
     "rowRadius": 16,
-    "ink": "auto"
+    "ink": "auto",
+    "tint": 0.35
   },
   "type": {
     "fontFile": "inter.woff2",
@@ -36,7 +37,7 @@
     "align": "right",
     "x": 51,
     "y": 53,
-    "scale": 0.43,
+    "scale": 0.46,
     "style": "pill"
   },
   "bar": {
@@ -74,11 +75,12 @@
     "focusScale": 1.22,
     "panelPad": 40,
     "iconScale": 1.14,
-    "panelRim": 0.35
+    "panelRim": 0.35,
+    "chevron": true
   },
   "grid": {
     "mode": "push",
-    "dockUp": 140,
+    "dockUp": 60,
     "align": "left",
     "cols": 6,
     "tileH": 150,
@@ -91,7 +93,8 @@
     "focusScale": 1.22,
     "peek": 24,
     "scroll": "row",
-    "glassDim": 0.5
+    "glassDim": 0.5,
+    "hideTop": true
   },
   "tile": {
     "gloss": 0.22,
@@ -115,7 +118,9 @@
     "sceneSecs": 60,
     "motion": "smooth",
     "scenesYield": true,
-    "wallpaperDim": 0.12
+    "wallpaperDim": 0,
+    "lateDim": false,
+    "bottomShade": 0.45
   },
   "cards": {
     "style": "glass"

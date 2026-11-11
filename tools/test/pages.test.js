@@ -514,4 +514,11 @@ run(async () => {
     /f\.variable \? ';font-weight:1 1000' : ''/.test(tjs) && /f\.variable\?';font-weight:1 1000':''/.test(pk),
     'the launcher and the Inputs list declare a variable theme font for every weight'
   );
+  ok(
+    /\[data-gtop="hide"\]\.grid-open #bar,\s*\[data-gtop="hide"\]\.grid-open #clock \{\s*opacity: 0;\s*pointer-events: none;/.test(hcss) &&
+      /#bshade \{\s*display: none;/.test(hcss) &&
+      /'data-gtop'/.test(tjs) &&
+      /'data-bshade'/.test(tjs),
+    'the hidden status area cannot be clicked, and the bottom shade is not drawn unless the theme asks for it'
+  );
 });

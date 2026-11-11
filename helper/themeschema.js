@@ -66,6 +66,13 @@ const SCHEMA = [
     'light',
     'Text and icons of the `glass` top buttons and the `pill` clock. `light`: white; `auto`: dark over a bright picture and white over a dark one, measured once per picture (Wallpapers photo, scene, wallpaper) behind them.',
   ],
+  [
+    'surface.tint',
+    'num',
+    [0, 0.8],
+    0,
+    "How much of the colour of the picture behind them tints the glass of the `glass` top buttons and the `pill` clock: the opacity of a layer of the picture's mean colour there, measured once per picture like `surface.ink`.",
+  ],
   ['type.font', 'enum', ['default', 'serif', 'mono'], 'default', "The typeface: the TV's own, a serif or a monospace."],
   [
     'type.fontFile',
@@ -208,6 +215,13 @@ const SCHEMA = [
   ['dock.panel', 'num', [0, 0.6], 0, 'Opacity of a translucent panel behind the dock tiles; 0 for none.'],
   ['dock.panelPad', 'int', [0, 60], 24, 'Space between the panel and the tiles, in px.'],
   ['dock.panelRim', 'num?', [0, 0.8], null, "Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`."],
+  [
+    'dock.chevron',
+    'bool',
+    null,
+    false,
+    'A small chevron centred 35 px above the dock while the grid is closed, the way to the rest of the apps.',
+  ],
   ['dock.tileAlpha', 'num', [0, 1], 1, 'Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles.'],
   [
     'dock.tileFrost',
@@ -287,6 +301,13 @@ const SCHEMA = [
   ],
   ['grid.overlayH', 'int', [200, 900], 510, 'Visible height of the overlay grid before it scrolls, in px.'],
   [
+    'grid.hideTop',
+    'bool',
+    null,
+    false,
+    'The top buttons and the clock fade out while the grid (`overlay` or `push`) is open; they come back with the dock row, the only row they are reached from.',
+  ],
+  [
     'grid.iconScale',
     'num',
     [0.5, 2.5],
@@ -357,6 +378,14 @@ const SCHEMA = [
     'A file name in `themes/wallpapers/`: `.jpg`, `.png` or `.webp`, at most 1.5 MB; drawn at 1920 x 1080.',
   ],
   ['effects.wallpaperDim', 'num', [0, 0.9], 0.4, 'How far the wallpaper is darkened with the background colour.'],
+  [
+    'effects.bottomShade',
+    'num',
+    [0, 0.8],
+    0,
+    'A soft shade from y 600 to the bottom of the screen behind the dock, black at this opacity at the bottom, while the grid is closed: the picture stays bright and the dock stays readable.',
+  ],
+  ['effects.lateDim', 'bool', null, true, 'Darken the scenes a little from 10 pm to 6 am.'],
   [
     'effects.scenes',
     'enum',
@@ -753,9 +782,20 @@ function resolve(t, accent) {
     out.rowScroll = { top: viewTop, dockUp: v['grid.dockUp'] };
   }
   if (v['clock.style'] === 'pill') attrs.cstyle = 'pill';
+  if (v['dock.chevron']) attrs.chev = 'on';
+  if (v['grid.hideTop']) attrs.gtop = 'hide';
+  if (!v['effects.lateDim']) attrs.late = 'off';
+  if (v['effects.bottomShade'] > 0) {
+    attrs.bshade = 'on';
+    vars['--bshade-a'] = String(v['effects.bottomShade']);
+  }
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
+  if (v['surface.tint'] > 0) {
+    attrs.tint = 'on';
+    vars['--tint-a'] = String(v['surface.tint']);
+  }
   // the weights, spacing and optical size of the text: set only by a theme that changes them, read by the launcher and the Inputs list
   [
     ['type.weightTitle', '--w-title'],

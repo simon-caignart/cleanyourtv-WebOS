@@ -162,6 +162,41 @@ run(async () => {
       dark([255, 255, 255]) && dark([160, 160, 160]) && !dark([128, 128, 128]) && !dark([0, 0, 0]),
       'the ink turns dark over white and light grey, and stays white over mid grey and black'
     );
+    // surface.tint: the glass takes the colour of the picture behind it (a built-in scene's own colour, or the page colour without one)
+    const fakeBody = attrs => {
+      const cls = new Set(),
+        style = {};
+      return {
+        cls,
+        style: {
+          setProperty: (k, v) => (style[k] = v),
+          removeProperty: k => delete style[k],
+          get: k => style[k],
+        },
+        attrs,
+        getAttribute: k => (k in attrs ? attrs[k] : null),
+        hasAttribute: k => k in attrs,
+        classList: {
+          add: (...c) => c.forEach(x => cls.add(x)),
+          remove: (...c) => c.forEach(x => cls.delete(x)),
+          toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)),
+        },
+      };
+    };
+    const tb = fakeBody({ 'data-inkmode': 'auto', 'data-tint': 'on' }),
+      tctx = { $: () => null, document: { body: tb }, setTimeout: f => f(), clearTimeout: () => {} };
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'app', 'src', 'js', 'ink.js'), 'utf8'), tctx);
+    tctx.INK.set('', 0, [7, 8, 11], true, [80, 126, 135]);
+    const scene = tb.cls.has('tinted') && tb.cls.has('ink-dark') && tb.style.get('--ink-tint') === '80,126,135';
+    tctx.INK.set('', 0, [10, 20, 30]);
+    const bare = tb.cls.has('tinted') && !tb.cls.has('ink-dark') && tb.style.get('--ink-tint') === '10,20,30';
+    delete tb.attrs['data-tint'];
+    tctx.INK.set('', 0, [250, 250, 250]);
+    const untinted = !tb.cls.has('tinted') && tb.cls.has('ink-dark') && tb.style.get('--ink-tint') === undefined;
+    ok(
+      scene && bare && untinted,
+      "the glass takes a built-in scene's colour or the page colour, and none once the theme drops the tint (the ink still follows)"
+    );
     // grid.scroll row: (ex, row top, row height with its name, row step, safe top, safe bottom)
     ok(
       lctx.rowScroll(0, 411, 217, 260, 150, 1020) === 0 && lctx.rowScroll(0, 671, 217, 260, 150, 1020) === 0,
@@ -217,6 +252,24 @@ run(async () => {
   ok(
     !('--press-s' in plain.vars) && !('launch' in plain.attrs) && !('--launch-sg' in plain.vars),
     'by default a held tile sinks to 0.96 and a launch dims it, with no new keys in the reply'
+  );
+  const tinted = themeMod.resolve(themeMod.normalize({ surface: { tint: 0.35 } }, 'tinted'));
+  ok(
+    tinted.attrs.tint === 'on' && tinted.vars['--tint-a'] === '0.35' && !('tint' in plain.attrs) && !('--tint-a' in plain.vars),
+    'surface.tint reaches the launcher, and by default the glass is not tinted, with no new keys in the reply'
+  );
+  const calmTop = themeMod.resolve(
+    themeMod.normalize({ dock: { chevron: true }, grid: { hideTop: true }, effects: { lateDim: false, bottomShade: 0.45 } }, 'calmtop')
+  );
+  ok(
+    calmTop.attrs.chev === 'on' &&
+      calmTop.attrs.gtop === 'hide' &&
+      calmTop.attrs.late === 'off' &&
+      calmTop.attrs.bshade === 'on' &&
+      calmTop.vars['--bshade-a'] === '0.45' &&
+      ['chev', 'gtop', 'late', 'bshade'].every(k => !(k in plain.attrs)) &&
+      !('--bshade-a' in plain.vars),
+    'the chevron, the status area hidden in the grid, no night dimming and the bottom shade reach the launcher; none by default'
   );
   // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
   const peeking = themeMod.resolve(

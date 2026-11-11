@@ -182,7 +182,7 @@ body {
    (surface.ink, ink.js) */
 [data-cstyle="pill"] #clock {
   height: var(--pill-h);
-  padding: 0 calc(var(--pill-h) * 0.45);
+  padding: 0 calc(var(--pill-h) * 0.31);
   border-radius: calc(var(--pill-h) / 2);
   background: rgba(255, 255, 255, var(--dock-panel));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
@@ -280,9 +280,16 @@ body.ink-dark[data-bar="glass"] #bar .pill:not(.f),
   color: rgba(28, 28, 30, 0.88);
   text-shadow: none;
 }
-/* the ink changes while the capsule and the buttons are faded out */
+/* surface.tint: a layer of the picture's mean colour over the glass fill (ink.js sets the colour once per picture) */
+body.tinted[data-bar="glass"] #bar .pill:not(.f),
+.tinted[data-cstyle="pill"] #clock {
+  background-image: linear-gradient(rgba(var(--ink-tint), var(--tint-a)), rgba(var(--ink-tint), var(--tint-a)));
+}
+/* the ink and the tint change while the capsule and the buttons are faded out */
 [data-inkmode="auto"] #bar,
-[data-inkmode="auto"] #clock {
+[data-inkmode="auto"] #clock,
+[data-tint] #bar,
+[data-tint] #clock {
   transition: opacity calc(0.2s * var(--spd)) linear;
 }
 .ink-swap #bar,
@@ -1664,6 +1671,61 @@ body.scenes-on {
   transition-duration: calc(0.1s * var(--spd));
   transition-timing-function: linear;
 }
+/* grid.hideTop: the top buttons and the clock leave while the grid is open */
+[data-gtop="hide"] #bar,
+[data-gtop="hide"] #clock {
+  transition: opacity calc(0.3s * var(--spd)) ease;
+}
+[data-gtop="hide"].grid-open #bar,
+[data-gtop="hide"].grid-open #clock {
+  opacity: 0;
+  pointer-events: none;
+}
+/* effects.lateDim off: the scenes keep their light at night */
+body[data-late="off"] .scene .late {
+  opacity: 0;
+}
+/* effects.bottomShade: one static layer over the picture behind the dock, under the frosted glass of the open grid */
+#bshade {
+  display: none;
+}
+[data-bshade] #bshade {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 600px;
+  width: 1920px;
+  height: 480px;
+  z-index: 1;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, calc(var(--bshade-a) * 0.35)) 45%,
+    rgba(0, 0, 0, calc(var(--bshade-a) * 0.8)) 80%,
+    rgba(0, 0, 0, var(--bshade-a))
+  );
+  transition: opacity calc(0.5s * var(--spd)) ease;
+}
+[data-bshade].grid-open #bshade {
+  opacity: 0;
+}
+/* dock.chevron: a thin chevron above the platter at rest */
+[data-chev] #dock::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -47px;
+  width: 28px;
+  height: 12px;
+  margin-left: -14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='12' viewBox='0 0 28 12'%3E%3Cpath d='M2 10.5 14 2l12 8.5' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat;
+  opacity: 0.6;
+  transition: opacity calc(0.3s * var(--spd)) ease;
+  pointer-events: none;
+}
+[data-chev].grid-open #dock::after {
+  opacity: 0;
+}
 /* menus */
 #ov {
   position: absolute;
@@ -2319,7 +2381,7 @@ body.ts-on.scenes-on[data-cards="glass"].grid-open #sglass {
   transform: none;
 }
 </style></head><body>
-<div id="homepage"><div class="glow" id="gA"></div><div class="glow" id="gB"></div><img id="focus-art" alt="">
+<div id="homepage"><div id="bshade"></div><div class="glow" id="gA"></div><div class="glow" id="gB"></div><img id="focus-art" alt="">
 <div id="top"><div id="clock"><div id="greet"></div><div id="time"></div><div id="date"></div></div><div id="bar"></div></div>
 <div id="shelf"><div id="name"></div></div>
 <div id="cards"></div><div id="cs"></div><input id="csq" type="text" autocomplete="off">
@@ -3233,6 +3295,11 @@ var TH0 = {
     'data-peek',
     'data-gscroll',
     'data-inkmode',
+    'data-tint',
+    'data-chev',
+    'data-gtop',
+    'data-late',
+    'data-bshade',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,
@@ -5106,13 +5173,15 @@ function csFind(type, q) {
     }
   );
 }
-/* ---------- surface.ink auto: dark or white ink for the glass top buttons and the pill clock. The glass stays clear, like the dock's;
-   what changes is its content, from how bright the picture is under the buttons and the clock. Measured once per picture on a 32 x 18
-   copy (no work per frame); the change happens while the buttons and the clock are faded out. ---------- */
+/* ---------- surface.ink auto and surface.tint: the glass top buttons and the pill clock follow the picture under them. The glass stays
+   clear, like the dock's; with ink auto its content turns dark over a bright picture, and with a tint the glass takes some of the
+   picture's colour. Measured once per picture on a 32 x 18 copy (no work per frame); the change happens while the buttons and the clock
+   are faded out. ---------- */
 var INK = (function () {
   var cv = null,
     seen = null,
     dark = false,
+    tint = '',
     swapT = 0;
   var lin = function (c) {
     c /= 255;
@@ -5142,7 +5211,8 @@ var INK = (function () {
       h: Math.max(1, Math.min(18, Math.ceil(box.b / 60)) - y0),
     };
   }
-  /* the mean light of that part of the picture (linear, 0 to 1); throws when the picture may not be read */
+  /* the mean light of that part of the picture (l: linear, 0 to 1) and its mean colour (c: [r, g, b]); throws when the picture may not
+     be read */
   function measure(img) {
     if (!cv) {
       cv = document.createElement('canvas');
@@ -5153,48 +5223,75 @@ var INK = (function () {
       c = cells();
     x.drawImage(img, 0, 0, 32, 18);
     var d = x.getImageData(c.x, c.y, c.w, c.h).data,
-      sum = 0;
-    for (var k = 0; k < d.length; k += 4) sum += luma([d[k], d[k + 1], d[k + 2]]);
-    return sum / (d.length / 4);
+      sum = 0,
+      rgb = [0, 0, 0],
+      n = d.length / 4;
+    for (var k = 0; k < d.length; k += 4) {
+      sum += luma([d[k], d[k + 1], d[k + 2]]);
+      rgb[0] += d[k];
+      rgb[1] += d[k + 1];
+      rgb[2] += d[k + 2];
+    }
+    return {
+      l: sum / n,
+      c: rgb.map(function (v) {
+        return v / n;
+      }),
+    };
   }
-  function show(d) {
-    if (d === dark) return;
+  /* d: dark ink; col: the colour of the picture ([r, g, b]), or null when it is not known (the glass is then not tinted) */
+  function show(d, col) {
+    var b = document.body,
+      t = col && b.hasAttribute('data-tint') ? col.map(Math.round).join(',') : '';
+    if (b.getAttribute('data-inkmode') !== 'auto') d = false;
+    if (d === dark && t === tint) return;
     dark = d;
-    var b = document.body;
+    tint = t;
     b.classList.add('ink-swap');
     clearTimeout(swapT);
     swapT = setTimeout(function () {
       b.classList.toggle('ink-dark', dark);
+      b.classList.toggle('tinted', !!tint);
+      if (tint) b.style.setProperty('--ink-tint', tint);
+      else b.style.removeProperty('--ink-tint');
       b.classList.remove('ink-swap');
     }, 200);
   }
-  /* src: the picture behind Home ('' for none); dim: how far it is darkened with the page colour night ([r, g, b]); bright: what is known
-     about a picture that cannot be read (a scene marked as having a bright sky) */
-  function set(src, dim, night, bright) {
+  /* src: the picture behind Home ('' for none); dim: how far it is darkened with the page colour night ([r, g, b]); bright and col: what
+     is known about a picture that cannot be read (a scene marked as having a bright sky, a built-in scene's colour) */
+  function set(src, dim, night, bright, col) {
     var b = document.body;
-    if (b.getAttribute('data-inkmode') !== 'auto') {
+    if (b.getAttribute('data-inkmode') !== 'auto' && !b.hasAttribute('data-tint')) {
       clearTimeout(swapT);
       dark = false;
+      tint = '';
       seen = null;
-      b.classList.remove('ink-dark', 'ink-swap');
+      b.classList.remove('ink-dark', 'ink-swap', 'tinted');
+      b.style.removeProperty('--ink-tint');
       return;
     }
-    var key = src + '|' + dim + '|' + (bright ? 1 : 0);
+    var key = [src, dim, bright ? 1 : 0, col, night, b.getAttribute('data-inkmode'), b.hasAttribute('data-tint')].join('|');
     if (key === seen) return;
     seen = key;
-    if (!src) return show(!!bright || luma(night) > INK_DARK);
+    if (!src) return col ? show(!!bright, col) : show(!!bright || luma(night) > INK_DARK, night);
     var i = new Image();
     i.crossOrigin = 'anonymous';
     i.onload = function () {
       if (seen !== key) return;
       try {
-        show(measure(i) * (1 - dim) + luma(night) * dim > INK_DARK);
+        var m = measure(i);
+        show(
+          m.l * (1 - dim) + luma(night) * dim > INK_DARK,
+          m.c.map(function (v, k) {
+            return v * (1 - dim) + night[k] * dim;
+          })
+        );
       } catch (e) {
-        show(!!bright);
+        show(!!bright, col || null);
       }
     };
     i.onerror = function () {
-      if (seen === key) show(!!bright);
+      if (seen === key) show(!!bright, col || null);
     };
     i.src = src;
   }
@@ -5217,11 +5314,13 @@ var INK_DARK = 0.25;
    as custom scenes (no cut-out, a darker shade at the top) with the photographer in the bottom corner. Without one nothing changes. */
 var SCENES = (function () {
   var COUCH = [
-    { id: 'night', fg: true },
-    { id: 'golden', fg: true },
-    { id: 'water', fg: false, water: 0.55 } /* the clock sits on the water: under the line a blurred reflection */,
-    { id: 'fog', fg: true },
-    { id: 'dawn', fg: true },
+    /* tint: the mean colour of the scene's top right (under the top buttons and the clock), for surface.tint: a file of the page may
+       not be read back on the TV */
+    { id: 'night', fg: true, tint: [87, 97, 114] },
+    { id: 'golden', fg: true, tint: [80, 126, 135] },
+    { id: 'water', fg: false, water: 0.55, tint: [153, 204, 238] } /* the clock sits on the water: under the line a blurred reflection */,
+    { id: 'fog', fg: true, tint: [239, 237, 238] },
+    { id: 'dawn', fg: true, tint: [195, 202, 210] },
   ];
   var addonLib = null /* the scenes of an add-on, as custom scenes, or null */,
     addonKey = '',
@@ -5565,7 +5664,7 @@ var SCENES = (function () {
       w = th && th.wallpaper;
     if (on) {
       var s = lib[cur];
-      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'));
+      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'), custom ? null : s.tint);
     } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
     else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
     else INK.set('', 0, night);
