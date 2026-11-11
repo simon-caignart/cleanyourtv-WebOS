@@ -1,0 +1,87 @@
+{
+  "name": "Lounge",
+  "author": "simoncaignart",
+  "description": "A streaming-box home screen: six wide icons over a landscape, no focus ring, the focused app lifts with a soft shadow; Down turns the row into the first row of the grid over frosted glass.",
+  "colors": {
+    "night": "#000000",
+    "panel": "#1c1c1e",
+    "ink": "#ffffff",
+    "accent": "#ffffff",
+    "pill": "#ffffff"
+  },
+  "surface": {
+    "pillAlpha": 0.18,
+    "pillRing": 0,
+    "menuAlpha": 0.92,
+    "rowRadius": 16
+  },
+  "type": {
+    "fontFile": "inter.woff2",
+    "scale": 1
+  },
+  "clock": {
+    "show": false
+  },
+  "bar": {
+    "show": true,
+    "style": "round",
+    "labels": "hide",
+    "anchor": "top",
+    "align": "right",
+    "x": 90,
+    "y": 60,
+    "size": 52,
+    "gap": 12
+  },
+  "strip": {
+    "style": "dots",
+    "labels": "current"
+  },
+  "shelf": {
+    "show": false
+  },
+  "dock": {
+    "anchor": "bottom",
+    "align": "center",
+    "y": 250,
+    "count": 6,
+    "w": 250,
+    "h": 150,
+    "gap": 48,
+    "radius": 20,
+    "panel": 0,
+    "tileAlpha": 1,
+    "tileFrost": 0,
+    "lift": 0,
+    "focusScale": 1.15
+  },
+  "grid": {
+    "mode": "push",
+    "dockUp": 170,
+    "align": "left",
+    "cols": 6,
+    "tileH": 150,
+    "gapX": 48,
+    "gapY": 72,
+    "radius": 20,
+    "x": 90,
+    "width": 1740,
+    "clipTop": 150,
+    "focusScale": 1.15
+  },
+  "tile": {
+    "gloss": 0.2,
+    "border": 0,
+    "ringWidth": 0,
+    "ringOffset": 0
+  },
+  "effects": {
+    "glow": 0,
+    "speed": 1,
+    "scenes": "couch",
+    "sceneSecs": 60
+  },
+  "cards": {
+    "style": "glass"
+  }
+}
