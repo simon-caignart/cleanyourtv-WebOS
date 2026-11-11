@@ -38,7 +38,8 @@ const POS = ['left', 'center', 'right'],
   TOPBOT = ['top', 'bottom'];
 
 // [key, type, range or choices, default, what it does]. Types: color (#rrggbb), color? (a colour, or null for "the accent"), num, int
-// (range [lo, hi]), enum (choices), bool, auto (an int range, or null for "worked out from the other values"), file (a wallpaper or font
+// (range [lo, hi]), enum (choices), bool, auto (an int range, or null for "worked out from the other values"), num? (a num range, or null
+// for "worked out from the other values"), file (a wallpaper or font
 // file name, checked apart from the rest).
 const SCHEMA = [
   ['colors.night', 'color', null, '#07080b', 'Page background.'],
@@ -86,9 +87,9 @@ const SCHEMA = [
   [
     'clock.style',
     'enum',
-    ['text', 'glass'],
+    ['text', 'glass', 'pill'],
     'text',
-    '`text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date.',
+    '`text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a small rounded translucent pill, readable on any background (frosted with the scene when `effects.scenes` is on); place and size it with the other clock settings.',
   ],
   ['bar.show', 'bool', null, true, 'Show the top buttons (Inputs, Settings, Customise, ...).'],
   [
@@ -155,6 +156,7 @@ const SCHEMA = [
   ['dock.radius', 'int', [0, 80], 36, 'Corner radius of dock tiles.'],
   ['dock.panel', 'num', [0, 0.6], 0, 'Opacity of a translucent panel behind the dock tiles; 0 for none.'],
   ['dock.panelPad', 'int', [0, 60], 24, 'Space between the panel and the tiles, in px.'],
+  ['dock.panelRim', 'num?', [0, 0.8], null, "Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`."],
   ['dock.tileAlpha', 'num', [0, 1], 1, 'Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles.'],
   [
     'dock.tileFrost',
@@ -211,7 +213,20 @@ const SCHEMA = [
   ],
   ['grid.clipTop', 'int', [0, 600], 300, 'Where scrolled rows disappear at the top, in px (`below` mode).'],
   ['grid.focusScale', 'num', [1, 1.4], 1.12, 'Scale of the focused tile.'],
-  ['grid.overlayDim', 'num', [0, 1], 0.95, 'Opacity of the layer behind the overlay grid.'],
+  [
+    'grid.overlayDim',
+    'num',
+    [0, 1],
+    0.95,
+    'Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass).',
+  ],
+  [
+    'grid.glassDim',
+    'num',
+    [0, 0.9],
+    0.34,
+    'How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm.',
+  ],
   ['grid.overlayH', 'int', [200, 900], 510, 'Visible height of the overlay grid before it scrolls, in px.'],
   [
     'grid.iconScale',
@@ -328,11 +343,11 @@ function check(row, v) {
   if (type === 'color?') return v === '' || v === null ? null : hex(v);
   if (type === 'bool') return typeof v === 'boolean' ? v : undefined;
   if (type === 'enum') return spec.indexOf(v) >= 0 ? v : undefined;
-  if (type === 'num' || type === 'int' || type === 'auto') {
-    if (type === 'auto' && (v === null || v === '')) return null;
+  if (type === 'num' || type === 'int' || type === 'auto' || type === 'num?') {
+    if ((type === 'auto' || type === 'num?') && (v === null || v === '')) return null;
     if (typeof v !== 'number' || !isFinite(v)) return undefined;
     const c = Math.min(spec[1], Math.max(spec[0], v));
-    return type === 'num' ? c : Math.round(c);
+    return type === 'num' || type === 'num?' ? c : Math.round(c);
   }
   return undefined;
 }
@@ -651,6 +666,9 @@ function resolve(t, accent) {
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
   }
   if (peek) attrs.peek = 'on';
+  if (v['clock.style'] === 'pill') attrs.cstyle = 'pill';
+  if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
+  if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
   if (v['tile.launch'] !== 'dim') {
     attrs.launch = v['tile.launch'];

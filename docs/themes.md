@@ -169,7 +169,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `clock.y` | 0 to 900 | `54` | Distance from the top or bottom edge, in px. |
 | `clock.scale` | 0.6 to 2.5 | `1` | Scale of the time. |
 | `clock.dateScale` | 0.6 to 2 | `1` | Scale of the date. |
-| `clock.style` | `text`, `glass` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. |
+| `clock.style` | `text`, `glass`, `pill` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a small rounded translucent pill, readable on any background (frosted with the scene when `effects.scenes` is on); place and size it with the other clock settings. |
 | **bar** | | | |
 | `bar.show` | `true` or `false` | `true` | Show the top buttons (Inputs, Settings, Customise, ...). |
 | `bar.style` | `pill`, `round`, `flat` | `pill` | `pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background. |
@@ -209,6 +209,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `dock.radius` | 0 to 80 | `36` | Corner radius of dock tiles. |
 | `dock.panel` | 0 to 0.6 | `0` | Opacity of a translucent panel behind the dock tiles; 0 for none. |
 | `dock.panelPad` | 0 to 60 | `24` | Space between the panel and the tiles, in px. |
+| `dock.panelRim` | 0 to 0.8 or empty | empty | Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`. |
 | `dock.tileAlpha` | 0 to 1 | `1` | Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles. |
 | `dock.tileFrost` | 0 to 1 | `0` | Frost over the resting (unfocused) dock tiles and their icons; 0 for none. Calms loud tile colours without leaving a floating icon square, because the tile and its icon dim together. The focused tile keeps its full colour. |
 | `dock.tileFrostColor` | `#rrggbb` | `#ffffff` | Tint of the dock-tile frost (`dock.tileFrost`): a light colour for a glassy frost, a dark one to deepen the tiles. |
@@ -230,7 +231,8 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.peek` | 0 to 120 | `0` | `push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used). |
 | `grid.clipTop` | 0 to 600 | `300` | Where scrolled rows disappear at the top, in px (`below` mode). |
 | `grid.focusScale` | 1 to 1.4 | `1.12` | Scale of the focused tile. |
-| `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the layer behind the overlay grid. |
+| `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass). |
+| `grid.glassDim` | 0 to 0.9 | `0.34` | How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm. |
 | `grid.overlayH` | 200 to 900 | `510` | Visible height of the overlay grid before it scrolls, in px. |
 | `grid.iconScale` | 0.5 to 2.5 | `1` | Extra scale of the icons in the app grid only; multiplies `tile.iconScale`. The tile does not change size. |
 | **tile** | | | |

@@ -149,8 +149,10 @@ var SCENES = (function () {
   }
   /* the glass behind the grid: the scene's blurred copy and the tint, drawn once per scene; the previous one stays until the new loads */
   function drawFrost(src) {
-    if (!frost || src === frostSrc) return;
-    frostSrc = src;
+    var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
+      key = src && src + '|' + dim;
+    if (!frost || key === frostSrc) return;
+    frostSrc = key;
     var cv = frost.firstChild,
       x = cv.getContext('2d');
     if (!src) {
@@ -159,11 +161,11 @@ var SCENES = (function () {
     }
     var i = new Image();
     i.onload = function () {
-      if (frostSrc !== src) return;
+      if (frostSrc !== key) return;
       x.drawImage(i, 0, 0, cv.width, cv.height);
       var gr = x.createLinearGradient(0, 0, 0, cv.height);
-      gr.addColorStop(0, 'rgba(16,14,26,0.34)');
-      gr.addColorStop(1, 'rgba(16,14,26,0.46)');
+      gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');
+      gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
       x.fillStyle = gr;
       x.fillRect(0, 0, cv.width, cv.height);
     };
@@ -334,6 +336,7 @@ var SCENES = (function () {
   }
   /* glass cards: the blurred scene behind each card, lined up with the screen; without scenes the CSS gives a plain frosted panel */
   function glassCards() {
+    pillGlass();
     var cards = $('cards');
     if (!cards) return;
     var els2 = cards.children,
@@ -353,6 +356,20 @@ var SCENES = (function () {
       el.style.backgroundSize = '100% 100%,1920px 1080px';
       el.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
     }
+  }
+  /* the pill clock (clock.style pill) on the blurred scene, lined up with the screen, under a tint that keeps white text readable */
+  function pillGlass() {
+    var ck = $('clock'),
+      g = on && document.body.getAttribute('data-cstyle') === 'pill' ? fillOf(lib[cur]) : '';
+    if (!ck) return;
+    if (!g) {
+      ck.style.backgroundImage = '';
+      return;
+    }
+    var r = ck.getBoundingClientRect();
+    ck.style.backgroundImage = 'linear-gradient(rgba(16,14,26,0.42),rgba(16,14,26,0.42)),' + g;
+    ck.style.backgroundSize = '100% 100%,1920px 1080px';
+    ck.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
   }
   /* the clock's typeface must be in before the glass is measured */
   try {

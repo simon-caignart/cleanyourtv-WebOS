@@ -216,6 +216,25 @@ run(async () => {
     !('peek' in plain.attrs) && !('peek' in noPeek.attrs) && noPeek.gt === plain.gt,
     'without push mode (or by default) there is no peek and the grid stays where it was'
   );
+  // clock.style pill, dock.panelRim and grid.glassDim: a clock readable on any scene, a brighter platter rim, a calmer glass
+  const calm = themeMod.resolve(
+    themeMod.normalize({ clock: { style: 'pill' }, dock: { panel: 0.1, panelRim: 0.35 }, grid: { glassDim: 0.5 } }, 'calm')
+  );
+  ok(
+    calm.attrs.cstyle === 'pill' && calm.vars['--dock-rim'] === '0.35' && calm.glassDim === 0.5,
+    'the pill clock, the panel rim and the darkness of the glass reach the launcher'
+  );
+  const rims = [0.9, -1, '', null, 'x'].map(
+    x => themeMod.normalize({ dock: { panelRim: x } }, 'rim', themeMod.DEFAULTS).v['dock.panelRim']
+  );
+  ok(
+    rims[0] === 0.8 && rims[1] === 0 && rims[2] === null && rims[3] === null && rims[4] === null,
+    'an optional number is clamped, and empty or invalid leaves it worked out from dock.panel'
+  );
+  ok(
+    !('--dock-rim' in plain.vars) && !('glassDim' in plain) && !('cstyle' in plain.attrs),
+    'by default the rim follows the panel, the glass keeps its tint and the clock is text, with no new keys in the reply'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

@@ -172,6 +172,21 @@ body {
   margin-left: 22px;
   padding-top: 14px;
 }
+/* clock.style pill: the time in a small translucent pill; with scenes, scenes.js lays the blurred scene under its tint */
+[data-cstyle="pill"] #clock {
+  height: 58px;
+  padding: 0 26px;
+  border-radius: 29px;
+  background-color: rgba(var(--night-rgb), 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+[data-cstyle="pill"] #date {
+  padding-top: 0;
+  margin-left: 14px;
+}
 [data-clock="stack"] #clock {
   flex-direction: column;
   align-items: var(--clock-ai);
@@ -301,7 +316,7 @@ body {
   padding: var(--dock-pad);
   border-radius: calc(var(--dock-rad) + var(--dock-pad));
   background: rgba(255, 255, 255, var(--dock-panel));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, calc(var(--dock-panel) * 1.4));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
 }
 #dock > * + * {
   margin-left: var(--dock-gap);
