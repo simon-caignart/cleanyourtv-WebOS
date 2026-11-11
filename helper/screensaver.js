@@ -10,7 +10,8 @@
 //   GET  /api/screensaver/live/<add-on>   {url, credit}: the photo a live source (Unsplash) gave Home last, so the saver shows the same
 //   GET  /api/screensaver/videos   {videos: [{id, url, title}], from}: the films of the first add-on that provides "videos" and has
 //        some (the Aerials add-on); the page plays them and falls back to the photos above when there are none or they do not play
-//        and lang, clock: the language and the clock format Home uses (the Language setting, '' for the TV's; auto, 12 or 24)
+//        and lang, clock: the language and the clock format Home uses (the Language setting, else the TV's menu language; auto,
+//        12 or 24)
 //   POST /api/screensaver/active   {returnValue}   the launcher reports a key: the TV is in use, do not open the page over it
 //   POST /api/screensaver/dismiss  {returnValue}   close the page: the app that was on screen comes back
 // The page keeps LG's own screen-saver window type, and a page that stayed up would keep the remote. The page closes itself on the
@@ -19,6 +20,7 @@
 const fs = require('fs');
 const P = require('./paths'),
   web = require('./web'),
+  i18n = require('./i18n'),
   { isLandscape } = require('./wallpapers');
 
 const SA = 'com.webos.app.screensaver',
@@ -110,9 +112,26 @@ function cleanVideos(l) {
 function create(ctx) {
   const { luna, config } = ctx;
   const wp = () => ctx.feature('wallpapers');
-  // the clock and the date as Home has them (app/src/js/clock.js): the Language setting ('' follows the TV, which the page reads
-  // itself) and the Clock setting
-  const lang = () => String((config.get() || {}).lang || '');
+  // The clock and the date as Home has them (app/src/js/clock.js): the language and the Clock setting. The language is resolved here,
+  // never '': the Language setting, else the TV's menu language (settingsservice localeInfo, locales.UI: a TV can have its menus in
+  // French while its TV locale, which the page's own webOSSystem.locale gives, is en-GB), else the language Home reported, else English.
+  let uiLocale = '',
+    uiAt = 0;
+  async function lang() {
+    const set = String((config.get() || {}).lang || '');
+    if (set) return set;
+    if (!uiLocale || Date.now() - uiAt > 600000) {
+      try {
+        const r = await luna('luna://com.webos.settingsservice/getSystemSettings', { keys: ['localeInfo'] });
+        const ui = r && r.settings && r.settings.localeInfo && r.settings.localeInfo.locales && r.settings.localeInfo.locales.UI;
+        if (typeof ui === 'string' && /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(ui)) {
+          uiLocale = ui;
+          uiAt = Date.now();
+        }
+      } catch (_) {}
+    }
+    return uiLocale || i18n.screen() || 'en';
+  }
   const clock = () => (['12', '24'].indexOf((config.get() || {}).clock) >= 0 ? config.get().clock : 'auto');
   // the settings: style (kenburns, the default, or classic) and show (aerials, photos or both; '' the default: aerials when an add-on
   // has films, else photos)
@@ -159,7 +178,8 @@ function create(ctx) {
   };
   // What Home has behind it now, in Home's own order (app/src/js/scenes.js, wall.js, theme.js), so the saver shows the same:
   //   1. the theme's scenes: an add-on's scenes where one provides them (Seasons), else the five landscapes of the launcher (couch),
-  //      or the theme's own scenes (custom); they take the place of the wallpaper and of Wallpapers, as on Home
+  //      or the theme's own scenes (custom); they take the place of the wallpaper and of Wallpapers, as on Home, unless the theme
+  //      lets them yield (effects.scenesYield: scenes.yield) and Wallpapers is on with photos
   //   2. Wallpapers switched on and something in the library: the library (uploads, source add-ons, live sources)
   //   3. the theme's wallpaper
   //   4. nothing: the clock on black
@@ -171,7 +191,9 @@ function create(ctx) {
     try {
       t = th ? th.resolved() : null;
     } catch (_) {}
-    if (t && t.scenes) {
+    // with effects.scenesYield the scenes step aside for Wallpapers when it is on with photos, as on Home (app/src/js/scenes.js)
+    const lib = c.wall && c.wall.on ? photos() : [];
+    if (t && t.scenes && !(t.scenes.yield && lib.length)) {
       if (t.scenes.set === 'custom' && Array.isArray(t.scenes.lib) && t.scenes.lib.length)
         return {
           photos: t.scenes.lib.map(s => '/api/theme/scene/' + t.scenes.id + '/' + s.image),
@@ -194,10 +216,7 @@ function create(ctx) {
       return { photos: COUCH.map(id => '/api/screensaver/scene/' + id), credits: {}, from: 'scenes' };
     }
     // Wallpapers on with an empty library: Home's wall.js switches its layer off (sync() -> off()) and the theme's wallpaper shows
-    if (c.wall && c.wall.on) {
-      const lib = photos();
-      if (lib.length) return { photos: lib, credits: {}, from: 'wallpapers' };
-    }
+    if (lib.length) return { photos: lib, credits: {}, from: 'wallpapers' };
     if (t && t.wallpaper)
       return { photos: ['/api/theme/wallpaper/' + t.wallpaper.id + '/' + t.wallpaper.file], credits: {}, from: 'theme' };
     return { photos: [], credits: {}, from: '' };
@@ -361,7 +380,7 @@ function create(ctx) {
         credits: b.credits,
         from: b.from,
         every: EVERY_S[st.style],
-        lang: lang(),
+        lang: await lang(),
         clock: clock(),
         slides: slides(shuffle(b.photos.slice()), sizesOf(b.photos)),
         style: st.style,

@@ -15,7 +15,8 @@ LG's screen saver back.
 - **What Home has behind it**, worked out in Home's own order, changed every 16 seconds with Ken Burns and every 25 with Classic (see
   [Photo styles](#photo-styles); a new photo starts when the page opens):
     1. the theme's **scenes**: the five landscapes of the couch scenes (or an add-on's scenes in their place, such as Seasons, with
-       their credit line), or a theme's own scenes;
+       their credit line), or a theme's own scenes; a theme whose scenes give way to Wallpapers (`effects.scenesYield`) shows
+       them only while Wallpapers is off or has no photos, as Home does;
     2. else, with [Wallpapers](wallpapers.md) on, the **wallpaper library**: uploads from the phone, the photos of a source add-on
        (Immich), and a live source (Unsplash: the photo Home shows now, with the photographer's name; the saver does not ask the
        source for another, which would make Home skip one; right after the service starts, the photo the saver fetched first is
@@ -23,8 +24,8 @@ LG's screen saver back.
        Home when its photo changes);
     3. else the **theme's wallpaper**.
 - **The clock and the date**, bottom right, solid white over the photo: no transparency, so it stays readable on a bright picture.
-  They are in Home's language and clock format: the manager's **Language** (or the TV's own language when it follows the TV) and
-  Customise > **Clock** (automatic, 12 or 24 hour).
+  They are in Home's language and clock format: the manager's **Language**, or while it follows the TV, the TV's menu language (which
+  can differ from the TV's own locale), and Customise > **Clock** (automatic, 12 or 24 hour).
   It sits in the same corner all the time, which is the one thing to watch on a panel that retains static content.
 - **Nothing behind Home** (a plain theme, Wallpapers off): the clock and date alone, on black.
 
