@@ -59,6 +59,13 @@ const SCHEMA = [
   ['surface.pillRadius', 'int', [0, 60], 32, 'Corner radius of the top buttons (pill style only).'],
   ['surface.menuAlpha', 'num', [0.5, 1], 0.97, 'Opacity of the dark layer behind menus.'],
   ['surface.rowRadius', 'int', [0, 50], 30, 'Corner radius of menu rows.'],
+  [
+    'surface.glass',
+    'num',
+    [0.2, 0.8],
+    0.5,
+    'Opacity of the dark glass of the `glass` top buttons and the `pill` clock: a dark fill with a thin light rim, so white text and icons read on white and on black backgrounds.',
+  ],
   ['type.font', 'enum', ['default', 'serif', 'mono'], 'default', "The typeface: the TV's own, a serif or a monospace."],
   [
     'type.fontFile',
@@ -95,11 +102,18 @@ const SCHEMA = [
   [
     'bar.style',
     'enum',
-    ['pill', 'round', 'flat'],
+    ['pill', 'round', 'flat', 'glass'],
     'pill',
-    '`pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background.',
+    '`pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background; `glass`: icon only in a dark glass circle (`surface.glass`) that turns solid white with a dark icon when focused, like the `pill` clock.',
   ],
-  ['bar.labels', 'enum', ['auto', 'show', 'hide'], 'auto', 'Button labels: `auto` shows them except in the `round` style.'],
+  ['bar.labels', 'enum', ['auto', 'show', 'hide'], 'auto', 'Button labels: `auto` shows them except in the `round` and `glass` styles.'],
+  [
+    'bar.besideClock',
+    'bool',
+    null,
+    false,
+    'Put the buttons right beside the clock, `bar.gap` apart and centred on its row, however wide the time is. Needs the clock and the buttons on the same side (`left` or `right`) and both counted from the top; `bar.x` and `bar.y` are then not used.',
+  ],
   ['bar.anchor', 'enum', TOPBOT, 'top', 'Which screen edge `bar.y` counts from.'],
   ['bar.align', 'enum', POS, 'right', 'Which side `bar.x` counts from.'],
   ['bar.x', 'int', [0, 900], 96, 'Distance from that side, in px. Not used when centred.'],
@@ -558,7 +572,8 @@ function resolve(t, accent) {
       : place('top', v['dock.align'], v['dock.x'], dockTop - viewTop);
   const clock = place(v['clock.anchor'], v['clock.align'], v['clock.x'], v['clock.y']),
     bar = place(v['bar.anchor'], v['bar.align'], v['bar.x'], v['bar.y']);
-  const labels = v['bar.labels'] === 'auto' ? (v['bar.style'] === 'round' ? 'hide' : 'show') : v['bar.labels'];
+  const labels =
+    v['bar.labels'] === 'auto' ? (v['bar.style'] === 'round' || v['bar.style'] === 'glass' ? 'hide' : 'show') : v['bar.labels'];
   const FONT = {
     default: '"LG Smart UI","Helvetica Neue",Helvetica,Arial,sans-serif',
     serif: 'Georgia,"Times New Roman",Times,serif',
@@ -578,7 +593,7 @@ function resolve(t, accent) {
     '--fs': String(v['type.scale']),
     '--pill-bg': 'rgba(' + pill.join(',') + ',' + v['surface.pillAlpha'] + ')',
     '--pill-ring': 'rgba(' + pill.join(',') + ',' + v['surface.pillRing'] + ')',
-    '--pill-r': v['bar.style'] === 'round' ? '50%' : px(v['surface.pillRadius']),
+    '--pill-r': v['bar.style'] === 'round' || v['bar.style'] === 'glass' ? '50%' : px(v['surface.pillRadius']),
     '--pill-h': px(v['bar.size']),
     '--bar-gap': px(v['bar.gap']),
     '--menu-bg': 'rgba(' + night.join(',') + ',' + v['surface.menuAlpha'] + ')',
@@ -680,6 +695,15 @@ function resolve(t, accent) {
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
   }
   if (peek) attrs.peek = 'on';
+  if (v['surface.glass'] !== 0.5) vars['--glass-a'] = String(v['surface.glass']);
+  if (
+    v['bar.besideClock'] &&
+    v['bar.align'] === v['clock.align'] &&
+    v['bar.align'] !== 'center' &&
+    v['bar.anchor'] === 'top' &&
+    v['clock.anchor'] === 'top'
+  )
+    out.barClock = { side: v['bar.align'], x: v['clock.x'], y: v['clock.y'], gap: v['bar.gap'] };
   if (push && v['grid.scroll'] === 'row') {
     attrs.gscroll = 'row';
     out.rowScroll = { top: viewTop, dockUp: v['grid.dockUp'] };

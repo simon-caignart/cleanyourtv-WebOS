@@ -507,6 +507,7 @@ function tick() {
   }
   tickCards();
   SCENES.tick();
+  placeBar();
 }
 setInterval(tick, 15000);
 tick();

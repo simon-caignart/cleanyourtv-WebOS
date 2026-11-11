@@ -155,6 +155,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `surface.pillRadius` | 0 to 60 | `32` | Corner radius of the top buttons (pill style only). |
 | `surface.menuAlpha` | 0.5 to 1 | `0.97` | Opacity of the dark layer behind menus. |
 | `surface.rowRadius` | 0 to 50 | `30` | Corner radius of menu rows. |
+| `surface.glass` | 0.2 to 0.8 | `0.5` | Opacity of the dark glass of the `glass` top buttons and the `pill` clock: a dark fill with a thin light rim, so white text and icons read on white and on black backgrounds. |
 | **type** | | | |
 | `type.font` | `default`, `serif`, `mono` | `default` | The typeface: the TV's own, a serif or a monospace. |
 | `type.fontFile` | a file name | none | A typeface of the theme: a file in the theme's folder, `.woff2`, `.woff`, `.ttf` or `.otf`, at most 400 KB, used for all text. Characters it lacks come from `type.font`. Its licence must allow redistribution; put the licence file in the folder too. |
@@ -173,8 +174,9 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `clock.style` | `text`, `glass`, `pill` | `text` | `text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a small rounded translucent pill, readable on any background (frosted with the scene when `effects.scenes` is on); place and size it with the other clock settings. |
 | **bar** | | | |
 | `bar.show` | `true` or `false` | `true` | Show the top buttons (Inputs, Settings, Customise, ...). |
-| `bar.style` | `pill`, `round`, `flat` | `pill` | `pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background. |
-| `bar.labels` | `auto`, `show`, `hide` | `auto` | Button labels: `auto` shows them except in the `round` style. |
+| `bar.style` | `pill`, `round`, `flat`, `glass` | `pill` | `pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background; `glass`: icon only in a dark glass circle (`surface.glass`) that turns solid white with a dark icon when focused, like the `pill` clock. |
+| `bar.labels` | `auto`, `show`, `hide` | `auto` | Button labels: `auto` shows them except in the `round` and `glass` styles. |
+| `bar.besideClock` | `true` or `false` | `false` | Put the buttons right beside the clock, `bar.gap` apart and centred on its row, however wide the time is. Needs the clock and the buttons on the same side (`left` or `right`) and both counted from the top; `bar.x` and `bar.y` are then not used. |
 | `bar.anchor` | `top`, `bottom` | `top` | Which screen edge `bar.y` counts from. |
 | `bar.align` | `left`, `center`, `right` | `right` | Which side `bar.x` counts from. |
 | `bar.x` | 0 to 900 | `96` | Distance from that side, in px. Not used when centred. |

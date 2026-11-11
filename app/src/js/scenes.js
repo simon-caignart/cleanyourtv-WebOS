@@ -382,7 +382,6 @@ var SCENES = (function () {
   }
   /* glass cards: the blurred scene behind each card, lined up with the screen; without scenes the CSS gives a plain frosted panel */
   function glassCards() {
-    pillGlass();
     var cards = $('cards');
     if (!cards) return;
     var els2 = cards.children,
@@ -402,20 +401,6 @@ var SCENES = (function () {
       el.style.backgroundSize = '100% 100%,1920px 1080px';
       el.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
     }
-  }
-  /* the pill clock (clock.style pill) on the blurred scene, lined up with the screen, under a tint that keeps white text readable */
-  function pillGlass() {
-    var ck = $('clock'),
-      g = on && document.body.getAttribute('data-cstyle') === 'pill' ? fillOf(lib[cur]) : '';
-    if (!ck) return;
-    if (!g) {
-      ck.style.backgroundImage = '';
-      return;
-    }
-    var r = ck.getBoundingClientRect();
-    ck.style.backgroundImage = 'linear-gradient(rgba(16,14,26,0.42),rgba(16,14,26,0.42)),' + g;
-    ck.style.backgroundSize = '100% 100%,1920px 1080px';
-    ck.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
   }
   /* the clock's typeface must be in before the glass is measured */
   try {

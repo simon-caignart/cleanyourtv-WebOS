@@ -269,6 +269,33 @@ run(async () => {
       !('scenes' in themeMod.resolve(themeMod.normalize({ effects: { scenesYield: true } }, 'noscenes'))),
     'effects.scenesYield reaches the launcher with the scenes, and means nothing without them'
   );
+  // bar.style glass, surface.glass and bar.besideClock: the status area of a streaming box, dark glass that reads on any background
+  const status = themeMod.resolve(
+    themeMod.normalize(
+      {
+        bar: { style: 'glass', besideClock: true, align: 'right', gap: 14 },
+        clock: { style: 'pill', align: 'right', x: 51, y: 53 },
+        surface: { glass: 0.55 },
+      },
+      'status'
+    )
+  );
+  ok(
+    status.attrs.bar === 'glass' &&
+      status.attrs.labels === 'hide' &&
+      status.vars['--pill-r'] === '50%' &&
+      status.vars['--glass-a'] === '0.55' &&
+      status.barClock.side === 'right' &&
+      status.barClock.x === 51 &&
+      status.barClock.y === 53 &&
+      status.barClock.gap === 14,
+    'glass buttons are icon-only circles in the dark glass, and the bar can stand beside the clock'
+  );
+  const apart = themeMod.resolve(themeMod.normalize({ bar: { besideClock: true, align: 'right' }, clock: { align: 'left' } }, 'apart'));
+  ok(
+    !('barClock' in apart) && !('barClock' in plain) && !('--glass-a' in plain.vars),
+    'the bar stays where it is when the clock is on the other side, and by default, with no new keys in the reply'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

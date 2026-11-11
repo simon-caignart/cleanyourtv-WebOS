@@ -177,16 +177,15 @@ body {
   margin-left: 22px;
   padding-top: 14px;
 }
-/* clock.style pill: the time in a small translucent pill; with scenes, scenes.js lays the blurred scene under its tint */
+/* clock.style pill: the time in a small dark glass capsule (surface.glass) as tall as the top buttons, readable on any background */
 [data-cstyle="pill"] #clock {
-  height: 58px;
-  padding: 0 26px;
-  border-radius: 29px;
-  background-color: rgba(var(--night-rgb), 0.42);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  height: var(--pill-h);
+  padding: 0 calc(var(--pill-h) * 0.45);
+  border-radius: calc(var(--pill-h) / 2);
+  background: rgba(20, 20, 24, var(--glass-a, 0.5));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 [data-cstyle="pill"] #date {
   padding-top: 0;
@@ -256,6 +255,23 @@ body {
   width: var(--pill-h);
   padding: 0;
   justify-content: center;
+}
+/* bar.style glass: dark glass circles with a light rim (surface.glass), white icons; focused, a solid white circle with a dark icon. The
+   id keeps it above the dark-text rules some scenes give the other styles over a bright sky. */
+[data-bar="glass"] .pill {
+  width: var(--pill-h);
+  padding: 0;
+  justify-content: center;
+}
+body[data-bar="glass"] #bar .pill:not(.f) {
+  background: rgba(20, 20, 24, var(--glass-a, 0.5));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+body[data-bar="glass"] #bar .pill.f {
+  background: #fff;
+  color: #0b0c10;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 [data-bar="flat"] .pill {
   background: none;
@@ -3215,6 +3231,7 @@ function applyTheme(t) {
     dockBottom: !!t.dockBottom,
     label: t.label || null,
     rows: t.rowScroll || null,
+    barClock: t.barClock || null,
   };
   lastTheme = t;
   /* the name follows the dock (shelf.dockAlign) only while that is on; otherwise it keeps the theme's own margin (--name-x) */
@@ -3223,9 +3240,27 @@ function applyTheme(t) {
   sh.style.paddingRight = '';
   /* scenes and the glass clock (scenes.js) */
   if (window.SCENES) SCENES.apply(t);
+  placeBar();
+  /* the theme's typeface changes the time's width once it has loaded */
+  if (TH.barClock) {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeBar);
+    setTimeout(placeBar, 1500);
+  }
   applyShelfPref();
 }
 
+/* bar.besideClock: the buttons stand right beside the clock, bar.gap apart, centred on its row (the button row is 12 px taller than a
+   button). The time's width changes with the minute and the language, so this is worked out again whenever the time is drawn. Left and
+   right are the theme's sides; rtl.css mirrors them like the rest. */
+function placeBar() {
+  var b = TH.barClock,
+    st = document.documentElement.style;
+  if (!b || !lastTheme) return;
+  var w = $('clock').offsetWidth;
+  if (!w) return;
+  st.setProperty(b.side === 'right' ? '--bar-r' : '--bar-l', b.x + w + b.gap + 'px');
+  st.setProperty('--bar-t', b.y - 6 + 'px');
+}
 /* line the app name up with the left edge of the dock (shelf.dockAlign). The dock is centred on a width that depends on how many apps
    are shown, so its left edge is not known until rebuild: work it out from the tile count (n), the tile width, the gap and the panel
    padding, with no layout read, and set the name's leading padding to match. Exact for a centred dock in either text direction. */
@@ -5375,7 +5410,6 @@ var SCENES = (function () {
   }
   /* glass cards: the blurred scene behind each card, lined up with the screen; without scenes the CSS gives a plain frosted panel */
   function glassCards() {
-    pillGlass();
     var cards = $('cards');
     if (!cards) return;
     var els2 = cards.children,
@@ -5395,20 +5429,6 @@ var SCENES = (function () {
       el.style.backgroundSize = '100% 100%,1920px 1080px';
       el.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
     }
-  }
-  /* the pill clock (clock.style pill) on the blurred scene, lined up with the screen, under a tint that keeps white text readable */
-  function pillGlass() {
-    var ck = $('clock'),
-      g = on && document.body.getAttribute('data-cstyle') === 'pill' ? fillOf(lib[cur]) : '';
-    if (!ck) return;
-    if (!g) {
-      ck.style.backgroundImage = '';
-      return;
-    }
-    var r = ck.getBoundingClientRect();
-    ck.style.backgroundImage = 'linear-gradient(rgba(16,14,26,0.42),rgba(16,14,26,0.42)),' + g;
-    ck.style.backgroundSize = '100% 100%,1920px 1080px';
-    ck.style.backgroundPosition = '0 0,' + -Math.round(r.left) + 'px ' + -Math.round(r.top) + 'px';
   }
   /* the clock's typeface must be in before the glass is measured */
   try {
@@ -8246,6 +8266,7 @@ function tick() {
   }
   tickCards();
   SCENES.tick();
+  placeBar();
 }
 setInterval(tick, 15000);
 tick();
