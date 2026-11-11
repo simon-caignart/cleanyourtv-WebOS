@@ -146,6 +146,10 @@ The launch showed a grey "loading" screen with a spinner for a second, like any 
   The safety close rests on that one string of LG's, seen on the tested TV: a build that reports `Active` with another `processing`
   while the page is up would see the page closed and opened again. To keep one odd reading from doing that, the service closes the
   page only after a minute and at two readings in a row (10 seconds apart) without "Screen Saver" in `processing`.
+- A page the service opened itself (the fallback over an idle launcher) is not in `tvpowerd`'s saver slot: on an LG OLED C4 (webOS 25)
+  the power state read `Active` with no `processing` all along, so the check above closed that page after about a minute, often at the
+  end of the first film. For a page it opened, the service reads the app in front instead, which stays Home while the page is up, and
+  closes the page only when another app is in front at two readings in a row.
 - The page keeps LG's `screenSaver` window type: that is what makes `tvpowerd` arm it again after a dismissal (with `overlay` it started
   once and then stayed at `Screen Saver Ready`, see [When it appears](#when-it-appears)).
 - "Closing it gives the app underneath back" was seen with the earlier `overlay` manifest, where the first key closed the page and gave
