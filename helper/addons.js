@@ -34,7 +34,7 @@ const PERMISSIONS = ['net.fetch', 'config.own', 'notify', 'key.guide', 'luna'];
 const CLAIMS = ['digits', 'colors', 'back'];
 // what an add-on can provide to a part of the service (wallpapers: photo sources, see helper/wallpapers.js; cards: cards for Home with
 // their own page, data and actions, see helper/cardcatalog.js; tools: abilities the voice assistant may use, see helper/answers.js)
-const PROVIDES = ['wallpapers', 'cards', 'scenes', 'tools'];
+const PROVIDES = ['wallpapers', 'cards', 'scenes', 'tools', 'videos'];
 // where the user may put the page strip ('' leaves it to the theme)
 const POSITIONS = ['', 'top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const ID = /^[a-z][a-z0-9-]{1,31}$/;

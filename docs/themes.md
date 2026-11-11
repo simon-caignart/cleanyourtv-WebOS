@@ -252,6 +252,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper is darkened with the background colour. |
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |
 | `effects.sceneSecs` | 10 to 600 | `20` | Seconds each scene stays (`effects.scenes`). |
+| `effects.topShelf` | `true` or `false` | `false` | Top Shelf: while an app in the dock is focused, its backdrop (a picture chosen on the phone, App icons) cross-fades in behind Home; in the app grid a blurred copy of it. Apps without one show the usual background. **Customise** > **Top Shelf** overrides it. |
 | **cards** | | | |
 | `cards.style` | `flat`, `glass` | `flat` | `glass`: the weather and Home Assistant cards sit on frosted glass (a blurred copy of the scene behind them, no live blur). |
 <!-- schema:end -->

@@ -172,6 +172,7 @@ function setFocus(nr, nc, first) {
   if (n.textContent !== nm) n.textContent = nm;
   if (first) glowNow(e);
   else glowSoon(e);
+  TOPSHELF.focus(e, r);
   var sh = 0;
   if (TH.push) {
     /* the grid sits under the dock: focusing it scrolls everything up (the dock stops at its 'up' position) and the grid fades in */

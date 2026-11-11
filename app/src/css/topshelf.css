@@ -1,0 +1,36 @@
+/* ---------- Top Shelf (topshelf.js): the focused dock app's backdrop behind Home, two small canvases that cross-fade, and its blurred
+   copy behind the app grid, each stretched over the screen. Over the scenes, Wallpapers and the glow (z-index 1), under the dock, the
+   grid, the clock and the cards. Only opacity is animated; an unseen layer keeps an opacity just above 0, so it stays resident and a
+   fade does not have to build it first. ---------- */
+.tsb,
+.tsg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 1;
+  opacity: 0.004;
+  pointer-events: none;
+  will-change: opacity;
+}
+.tsb {
+  transition: opacity calc(0.6s * var(--spd)) linear;
+}
+.tsb.on {
+  opacity: 1;
+}
+.tsg {
+  transition: opacity calc(0.5s * var(--spd)) linear;
+}
+.ts-on.ts-grid .tsg.has {
+  opacity: 1;
+}
+/* the backdrop takes the place of the scenes' frosted glass and of a photo's credit line */
+body.ts-on.scenes-on[data-cards="glass"].grid-open #sglass {
+  opacity: 0;
+}
+.ts-on #wpc,
+.ts-on #scredit {
+  visibility: hidden;
+}

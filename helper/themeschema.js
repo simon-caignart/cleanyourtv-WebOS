@@ -249,6 +249,13 @@ const SCHEMA = [
   ],
   ['effects.sceneSecs', 'int', [10, 600], 20, 'Seconds each scene stays (`effects.scenes`).'],
   [
+    'effects.topShelf',
+    'bool',
+    null,
+    false,
+    'Top Shelf: while an app in the dock is focused, its backdrop (a picture chosen on the phone, App icons) cross-fades in behind Home; in the app grid a blurred copy of it. Apps without one show the usual background. **Customise** > **Top Shelf** overrides it.',
+  ],
+  [
     'cards.style',
     'enum',
     ['flat', 'glass'],
@@ -601,6 +608,7 @@ function resolve(t, accent) {
     vars['--tlabel-fs'] = px(size);
     out.label = { dock: v['tile.labelDock'], size, dockScale: v['dock.focusScale'], gridScale: v['grid.focusScale'], lift: v['dock.lift'] };
   }
+  if (v['effects.topShelf']) out.topShelf = true;
   // only a theme that changes the page strip carries this key, so the replies for the other themes stay as they were
   if (SCHEMA.some(r => String(r[0]).indexOf('strip.') === 0 && v[/** @type {string} */ (r[0])] !== r[3]))
     out.strip = {

@@ -1,6 +1,7 @@
 // Custom app icons (the bundled add-on icons): a picture kept per app (picture types, the size limit, app ids, a new picture replacing the old one),
 // the phone page (the code, the apps without the inputs, upload, reset, the app chosen on Home in the QR code), the launcher's Reset
-// icon, and apps.js: GET /icon/<app id> sends the custom picture first and /api/apps marks the app with iv.
+// icon, and apps.js: GET /icon/<app id> sends the custom picture first and /api/apps marks the app with iv. Backdrops (Top Shelf): a 16:9
+// picture and its blurred copy per app, their limits, the phone page's upload and reset, and what Home asks (/api/icons/backdrops).
 const fs = require('fs'),
   http = require('http'),
   path = require('path');
@@ -89,6 +90,46 @@ run(async () => {
     'reset removes the picture, once'
   );
 
+  // ---- backdrops: the picture, then its blurred copy (the glass) ----
+  const bdir = path.join(dir, 'backdrop');
+  ok(/no backdrop/.test(I.setGlass('com.example.app', JPEG)), 'a blurred copy without a backdrop is refused');
+  ok(
+    I.setBackdrop('com.example.app', PNG) === '' && /backdrop[\\/]com\.example\.app\.png$/.test(I.findBackdrop('com.example.app')),
+    'a backdrop is kept for an app'
+  );
+  ok(I.find('com.example.app') === '', 'a backdrop is not an icon');
+  ok(
+    /1\.5 MB/.test(I.setBackdrop('com.example.app', Buffer.concat([JPEG, Buffer.alloc(1536 * 1024)]))),
+    'a backdrop over 1.5 MB is refused'
+  );
+  ok(I.setBackdrop('../x', JPEG) === 'not an app', 'a name that is not an app id is refused');
+  ok(/JPEG, PNG or WebP/.test(I.setBackdrop('com.example.app', Buffer.from('<svg/>'))), 'a file that is not a picture is refused');
+  ok(/JPEG/.test(I.setGlass('com.example.app', PNG)), 'the blurred copy must be a JPEG');
+  ok(
+    /256 KB/.test(I.setGlass('com.example.app', Buffer.concat([JPEG, Buffer.alloc(256 * 1024)]))),
+    'a blurred copy over 256 KB is refused'
+  );
+  ok(I.setGlass('com.example.app', JPEG) === '' && I.findGlass('com.example.app') !== '', 'the blurred copy is kept beside it');
+  let bd = I.backdrops();
+  ok(
+    Object.keys(bd).length === 1 && typeof bd['com.example.app'].v === 'number' && bd['com.example.app'].g === 1,
+    'the backdrops list the app, with the version and the glass copy: ' + JSON.stringify(bd)
+  );
+  ok(
+    I.setBackdrop('com.example.app', JPEG) === '' &&
+      /\.jpg$/.test(I.findBackdrop('com.example.app')) &&
+      I.findGlass('com.example.app') === '' &&
+      fs.readdirSync(bdir).filter(n => n !== 'glass').length === 1,
+    'a new backdrop replaces the old one, also of another type, and drops the old blurred copy: ' + fs.readdirSync(bdir).join(' ')
+  );
+  ok(I.backdrops()['com.example.app'].g === undefined, 'without the blurred copy the list says so');
+  ok(
+    I.removeBackdrop('com.example.app') === true &&
+      I.findBackdrop('com.example.app') === '' &&
+      I.removeBackdrop('com.example.app') === false,
+    'a backdrop is reset, once'
+  );
+
   // ---- the phone page, with a stand-in for apps.js ----
   const own = path.join(tmp, 'app-own');
   fs.mkdirSync(own);
@@ -125,7 +166,8 @@ run(async () => {
     'the phone page opens with a 6-digit code; the QR code carries the app chosen on Home'
   );
   ok(
-    JSON.stringify(r.j.sizes) === JSON.stringify({ tile: { w: 472, h: 300 }, grid: { w: 330, h: 300 }, icon: 512 }),
+    JSON.stringify(r.j.sizes) ===
+      JSON.stringify({ tile: { w: 472, h: 300 }, grid: { w: 330, h: 300 }, icon: 512, backdrop: { w: 3840, h: 2160 } }),
     "the sizes that fit the theme's tiles, in the screen's pixels (scale 2 on a 4K TV): " + JSON.stringify(r.j.sizes)
   );
   await sleep(100);
@@ -161,6 +203,52 @@ run(async () => {
   ok(p.j.apps[0].tile === true, 'the page marks it as Full tile');
   p = await phone('POST', '/api/reset', { id: 'com.example.app' }, code);
   ok(p.j.ok === true && I.find('com.example.app') === '', 'Reset on the phone gives the app its own icon again');
+  // a backdrop from the phone: the picture, then its blurred copy; Home asks which apps have one and loads them over loopback
+  p = await phone('GET', '/api/state', undefined, code);
+  ok(
+    p.j.apps[0].backdrop === false && p.j.sizes.backdrop.w === 3840 && p.j.sizes.backdrop.h === 2160,
+    'the page offers a backdrop at 3840 x 2160 (4K)'
+  );
+  p = await phone('POST', '/api/backdrop/com.example.app/glass', JPEG, code, 'image/jpeg');
+  ok(p.code === 400, 'the blurred copy comes after the picture');
+  p = await phone('POST', '/api/backdrop/com.other.app', JPEG, code, 'image/jpeg');
+  ok(p.code === 400, 'a backdrop for an app that is not installed is refused');
+  // the service stops reading at the limit and drops the connection, so the client sees an error or a reset
+  p = await phone('POST', '/api/backdrop/com.example.app', Buffer.concat([JPEG, Buffer.alloc(1600 * 1024)]), code, 'image/jpeg').catch(
+    e => ({ code: e.code })
+  );
+  ok(
+    (p.code === 400 || p.code === 'ECONNRESET' || p.code === 'EPIPE') && !I.findBackdrop('com.example.app'),
+    'a backdrop over 1.5 MB is refused while it arrives: ' + p.code
+  );
+  p = await phone('POST', '/api/backdrop/com.example.app', JPEG, code, 'image/jpeg');
+  ok(p.code === 200 && I.findBackdrop('com.example.app'), 'a backdrop is uploaded');
+  p = await phone('POST', '/api/backdrop/com.example.app/glass', JPEG, code, 'image/jpeg');
+  ok(p.code === 200 && I.findGlass('com.example.app'), 'and its blurred copy');
+  p = await phone('GET', '/api/state', undefined, code);
+  ok(p.j.apps[0].backdrop === true && p.j.apps[0].custom === false, 'the page marks the app as having a backdrop, not an icon');
+  p = await phone('GET', '/api/backdrop/com.example.app', undefined, code);
+  ok(p.code === 200, 'the page shows the backdrop');
+  r = await call(ic, '/api/icons/backdrops');
+  ok(r.j.backdrops['com.example.app'] && r.j.backdrops['com.example.app'].g === 1, 'Home learns which apps have a backdrop: ' + r.out);
+  const ls = await serve((q, res) => ic.handle(q, res, q.url.split('?')[0], async () => ({})));
+  let lg = await get(ls.url + '/api/icons/backdrop/com.example.app?v=1');
+  ok(lg.code === 200 && lg.type === 'image/jpeg' && lg.body.equals(JPEG), 'Home loads the backdrop');
+  lg = await get(ls.url + '/api/icons/backdrop/com.example.app/glass');
+  ok(lg.code === 200 && lg.body.equals(JPEG), 'and its blurred copy');
+  lg = await get(ls.url + '/api/icons/backdrop/com.none.app');
+  ok(lg.code === 404, 'an app without a backdrop has none');
+  ls.server.close();
+  p = await phone('POST', '/api/backdrop-reset', { id: 'com.example.app' }, code);
+  ok(
+    p.j.removed === true && !I.findBackdrop('com.example.app') && !I.findGlass('com.example.app'),
+    'Reset on the phone removes the backdrop and its copy'
+  );
+  I.setBackdrop('com.example.app', JPEG);
+  r = await call(ic, '/api/icons/backdrop/reset', 'POST', { id: 'com.example.app' });
+  ok(r.j.removed === true && !I.findBackdrop('com.example.app'), "the launcher's Reset backdrop removes it too");
+  r = await call(ic, '/api/icons/backdrop/reset', 'POST', { id: '../x' });
+  ok(r.code === 400, 'a backdrop reset for a name that is not an app id is refused');
 
   // ---- the launcher's Reset icon, and the status ----
   I.set('com.example.app', PNG);

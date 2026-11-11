@@ -2,7 +2,9 @@
 <!-- CleanYourTV screen saver: replaces LG's screen saver app (docs/screensaver.md). Photos come from the wallpaper library through
      the service (GET /api/screensaver/photos; the pictures from /api/wallpapers/photo/..., a live source's current photo from
      /api/wallpapers/live/<add-on>, as on Home), with the clock and date in
-     the corner. Written for the TV's Chromium 68 and up: ES5 style, only opacity changes, nothing else animates.
+     the corner. With an add-on that provides films (Aerials, GET /api/screensaver/videos) it plays those instead, cross-faded, with the
+     place's name for a few seconds at the start, and goes back to the photos when they do not play.
+     Written for the TV's Chromium 68 and up: ES5 style, only opacity changes, nothing else animates.
      The first key, click or touch closes the page and the app that was on screen comes back. -->
 <html lang="en">
   <head>
@@ -37,6 +39,50 @@
       }
       #p0.on,
       #p1.on {
+        opacity: 1;
+      }
+      /* the films: two layers, so one can fade in over the other */
+      #v0,
+      #v1 {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+        opacity: 0;
+        transition: opacity 1.4s linear;
+      }
+      #v0.on,
+      #v1.on {
+        opacity: 1;
+      }
+      /* the film that fades in is over the one it replaces, which stays until the fade is over */
+      #v0.top,
+      #v1.top {
+        z-index: 1;
+      }
+      #scrim,
+      #place,
+      #credit,
+      #clock {
+        z-index: 2;
+      }
+      /* the place, bottom left, for a few seconds at the start of a film */
+      #place {
+        position: fixed;
+        left: 4.6vw;
+        bottom: 4.6vh;
+        max-width: 50vw;
+        font-size: 1.6vw;
+        font-weight: 300;
+        letter-spacing: 0.06em;
+        text-shadow: 0 1px 18px rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        transition: opacity 1.2s linear;
+      }
+      #place.on {
         opacity: 1;
       }
       #scrim {
@@ -89,7 +135,10 @@
   <body>
     <div id="p0"></div>
     <div id="p1"></div>
+    <video id="v0" muted playsinline preload="auto"></video>
+    <video id="v1" muted playsinline preload="auto"></video>
     <div id="scrim"></div>
+    <div id="place"></div>
     <div id="credit"></div>
     <div id="clock">
       <div id="time"></div>
@@ -245,6 +294,164 @@
         return String(c).toUpperCase();
       }
 
+      /* ---------- films from an add-on (Aerials): one plays while the next one loads in the other layer and fades in once it plays,
+         about ten seconds before the first one ends. When the next one does not start, it is tried again alone once the first one has
+         ended: if it plays then, this TV cannot play two at once and goes on with one at a time (the film fades to black and the next
+         one fades in); if it fails again, the film was the problem. Three films in a row that do not play, and the photos come back. */
+      var films = [],
+        fpos = 0,
+        V = [el('v0'), el('v1')],
+        cur = -1 /* the layer on screen */,
+        busy = false,
+        single = false,
+        alone = false /* the next film failed beside another one: try it alone */,
+        fails = 0,
+        moved = 0,
+        filmsOn = false,
+        watch = 0,
+        placeT = 0;
+      function stopFilm(v) {
+        v.onplaying = v.onerror = v.ontimeupdate = v.onended = null;
+        v.className = '';
+        try {
+          v.pause();
+        } catch (e) {}
+        v.removeAttribute('src');
+        try {
+          v.load(); /* lets the decoder go */
+        } catch (e) {}
+      }
+      function showPlace(t) {
+        var p = el('place');
+        clearTimeout(placeT);
+        p.textContent = t || '';
+        p.className = t ? 'on' : '';
+        placeT = setTimeout(function () {
+          p.className = '';
+        }, 7000);
+      }
+      /* the film in layer k: ok once it plays, no when it fails or has not started after 20 seconds */
+      function playFilm(k, f, ok, no) {
+        var v = V[k],
+          over = false,
+          t = setTimeout(function () {
+            end(no);
+          }, 20000);
+        function end(fn) {
+          if (over) return;
+          over = true;
+          clearTimeout(t);
+          v.onplaying = v.onerror = null;
+          fn();
+        }
+        v._near = false;
+        v.muted = true;
+        v.onplaying = function () {
+          end(ok);
+        };
+        v.onerror = function () {
+          end(no);
+        };
+        v.src = f.url;
+        try {
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) {}
+      }
+      /* the end of a film is near (or it ended, failed or stalled): the next one */
+      function advance(ended) {
+        if (busy || !filmsOn) return;
+        busy = true;
+        var f = films[fpos++ % films.length];
+        if (!single && !alone && !ended && cur >= 0) {
+          var k = cur ^ 1;
+          return playFilm(
+            k,
+            f,
+            function () {
+              fadeTo(k, f);
+            },
+            function () {
+              stopFilm(V[k]);
+              fpos--; /* the same film again, alone, when the one on screen ends */
+              alone = true;
+              busy = false;
+            }
+          );
+        }
+        var was = cur,
+          into = cur >= 0 ? cur : 0;
+        if (was >= 0) V[was].className = '';
+        setTimeout(
+          function () {
+            if (was >= 0) stopFilm(V[was]);
+            cur = -1;
+            var tried = alone;
+            alone = false;
+            playFilm(
+              into,
+              f,
+              function () {
+                if (tried) single = true; /* it plays alone, not beside another one */
+                fadeTo(into, f);
+              },
+              function () {
+                stopFilm(V[into]);
+                busy = false;
+                if (++fails >= 3) toPhotos();
+                else advance(true);
+              }
+            );
+          },
+          was >= 0 ? 1500 : 0
+        );
+      }
+      function fadeTo(k, f) {
+        var old = cur,
+          v = V[k];
+        cur = k;
+        fails = 0;
+        busy = false;
+        moved = Date.now();
+        v.className = 'on top';
+        if (old >= 0 && old !== k) V[old].className = 'on';
+        showPlace(f.title);
+        if (old >= 0 && old !== k)
+          setTimeout(function () {
+            if (cur !== old) stopFilm(V[old]);
+          }, 1600);
+        v.ontimeupdate = function () {
+          moved = Date.now();
+          var left = v.duration - v.currentTime;
+          if (!v._near && left >= 0 && left < (single ? 1.5 : 12)) {
+            v._near = true;
+            advance(false);
+          }
+        };
+        v.onended = v.onerror = function () {
+          if (V[cur] === v) advance(true);
+        };
+      }
+      function startFilms(list) {
+        filmsOn = true;
+        films = shuffle(list.slice());
+        fpos = 0;
+        advance(true);
+        /* a film that stops moving for half a minute (the network) is passed over */
+        watch = setInterval(function () {
+          if (filmsOn && !busy && cur >= 0 && Date.now() - moved > 30000) advance(true);
+        }, 5000);
+      }
+      function toPhotos() {
+        filmsOn = false;
+        clearInterval(watch);
+        stopFilm(V[0]);
+        stopFilm(V[1]);
+        cur = -1;
+        showPlace('');
+        load();
+      }
+
       var credits = {};
       function load() {
         return get(API + '/api/screensaver/photos?cc=' + encodeURIComponent(country())).then(function (r) {
@@ -265,9 +472,15 @@
         started = true;
         tickClock();
         setInterval(tickClock, 10000);
-        load();
+        /* films when an add-on has them, else the photos */
+        get(API + '/api/screensaver/videos').then(function (r) {
+          if (r && r.videos && r.videos.length) startFilms(r.videos);
+          else load();
+        });
         /* the library changes (photos uploaded from the phone): read it again every ten minutes */
-        setInterval(load, 600000);
+        setInterval(function () {
+          if (!filmsOn) load();
+        }, 600000);
       }
 
       /* keep the screen dark until the page is ready, then fade in the first photo; never stay on top of the system:

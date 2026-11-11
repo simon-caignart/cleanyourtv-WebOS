@@ -1,10 +1,10 @@
 {
   "id": "icons",
   "name": "App icons",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "kind": "service",
-  "description": "A picture of your own for an app, chosen on a phone, shown on Home and in the Inputs list instead of the app's own icon.",
-  "about": "Your own picture for an app, chosen on a phone. Hold OK on an app and choose Change icon, scan the code, pick a picture and see it in a dock tile and a grid tile before you send it. Shows on Home and in the Inputs list; Reset gives the app its own icon back. It also gives the voice assistant and AI agents one tool, icons (which apps have a picture of their own).",
+  "description": "A picture of your own for an app, chosen on a phone, shown on Home and in the Inputs list instead of the app's own icon; and a backdrop per app for Home's Top Shelf.",
+  "about": "Your own picture for an app, chosen on a phone. Hold OK on an app and choose Change icon, scan the code, pick a picture and see it in a dock tile and a grid tile before you send it. Shows on Home and in the Inputs list; Reset gives the app its own icon back. With Top Shelf on (Customise > Look), each app can also get a backdrop, a 16:9 picture shown behind Home while the app is focused in the dock. It also gives the voice assistant and AI agents one tool, icons (which apps have a picture of their own).",
   "entry": {
     "service": "service.js"
   },

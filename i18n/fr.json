@@ -916,5 +916,21 @@
  "Logged out. This phone was removed from the TV’s list.": "Déconnecté. Ce téléphone a été retiré de la liste du téléviseur.",
  "The TV cannot be reached right now, so it cannot be told. This phone stops controlling the TV and everything it stored about the TV is deleted, but the TV keeps listing it until you remove it in the manager app. To use it again you pair with a new code.": "Le téléviseur est injoignable pour le moment, il ne peut donc pas être prévenu. Ce téléphone ne commande plus le téléviseur et tout ce qu’il a enregistré à son sujet est supprimé, mais le téléviseur le garde dans sa liste tant que vous ne le retirez pas dans l’application de gestion. Pour le réutiliser, il faut l’associer avec un nouveau code.",
  "The TV could not be reached: its list is left as it is": "Le téléviseur était injoignable : sa liste reste telle quelle",
- "Logged out on this phone. The TV could not be reached, so it still lists this phone: remove it in the manager app, Phone remote, Paired phones.": "Déconnecté sur ce téléphone. Le téléviseur était injoignable et garde ce téléphone dans sa liste : retirez-le dans l’application de gestion, Télécommande sur téléphone, Téléphones associés."
+ "Logged out on this phone. The TV could not be reached, so it still lists this phone: remove it in the manager app, Phone remote, Paired phones.": "Déconnecté sur ce téléphone. Le téléviseur était injoignable et garde ce téléphone dans sa liste : retirez-le dans l’application de gestion, Télécommande sur téléphone, Téléphones associés.",
+ "Backdrop": "Fond",
+ "Add": "Ajouter",
+ "Backdrop: %s pixels (16:9), shown behind the dock while the app is focused there. Edges that don’t fit are trimmed, keeping the middle.": "Fond : %s pixels (16:9), affiché derrière le dock quand l’app y est sélectionnée. Les bords qui dépassent sont rognés, le milieu est gardé.",
+ "Backdrop: shown behind the dock on Home while this app is focused there (Top Shelf).": "Fond : affiché derrière le dock de l’accueil quand cette app y est sélectionnée (Top Shelf).",
+ "This picture cannot be read here. Try a JPEG or PNG.": "Cette image ne peut pas être lue ici. Essayez un JPEG ou un PNG.",
+ "Backdrop changed. Go back to Home on the TV to see it.": "Fond changé. Revenez à l’accueil sur la TV pour le voir.",
+ "Backdrop reset.": "Fond supprimé.",
+ "the picture is larger than 1.5 MB": "l’image dépasse 1,5 Mo",
+ "the blurred copy is larger than 256 KB": "la copie floutée dépasse 256 Ko",
+ "no backdrop for this app": "pas de fond pour cette app",
+ "Change backdrop": "Changer le fond",
+ "Reset backdrop": "Supprimer le fond",
+ "%s has no backdrop now.": "%s n’a plus de fond.",
+ "Could not reset the backdrop. Try again in a moment.": "Impossible de supprimer le fond. Réessayez dans un instant.",
+ "Top Shelf": "Top Shelf",
+ "For Top Shelf: <b>Add</b> on the <b>Backdrop</b> line under an app, then a picture.": "Pour Top Shelf : <b>Ajouter</b> sur la ligne <b>Fond</b> sous une app, puis une image."
 }
