@@ -213,7 +213,37 @@ const SCHEMA = [
     1,
     'Extra scale of the icons in the app grid only; multiplies `tile.iconScale`. The tile does not change size.',
   ],
-  ['tile.gloss', 'num', [0, 1], 0, 'A light highlight on every tile.'],
+  ['tile.gloss', 'num', [0, 1], 0, 'A light highlight on every tile, or only on the focused tile with `tile.highlight` `focus`.'],
+  [
+    'tile.highlight',
+    'enum',
+    ['all', 'focus'],
+    'all',
+    '`all`: `tile.gloss` on every tile; `focus`: only on the focused tile, as a soft light near its top edge with a thin bright rim at the top and left (`tile.rim`), fading in as the tile grows.',
+  ],
+  ['tile.rim', 'num', [0, 1], 0.5, 'Opacity of the bright rim of the focused tile (`tile.highlight` `focus`).'],
+  [
+    'tile.shadow',
+    'enum',
+    ['focus', 'soft'],
+    'focus',
+    '`focus`: a dark shadow under the focused tile; `soft`: every tile casts a faint shadow, and a deeper one under the focused tile fades in as it grows.',
+  ],
+  [
+    'tile.press',
+    'num',
+    [0.8, 1.3],
+    0.96,
+    'Scale of a tile while OK is held down, of its resting size; above 1 it sinks from its focused size without shrinking below rest.',
+  ],
+  [
+    'tile.launch',
+    'enum',
+    ['dim', 'zoom'],
+    'dim',
+    '`dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens.',
+  ],
+  ['tile.shadowStrength', 'num', [0, 1], 1, 'Strength of the `soft` shadows (`tile.shadow`).'],
   ['tile.border', 'num', [0, 0.6], 0, 'Opacity of a thin outline on every tile.'],
   ['tile.ringWidth', 'int', [0, 10], 4, 'Width of the focus ring, in px; 0 for none.'],
   ['tile.ringOffset', 'int', [0, 14], 4, 'Space between a tile and its focus ring, in px.'],
@@ -232,6 +262,13 @@ const SCHEMA = [
   ['effects.focusIcon', 'bool', null, false, 'Show the focused app icon as a large, dim background image.'],
   ['effects.glowColor', 'enum', ['app', 'accent'], 'app', '`app`: taken from the focused icon; `accent`: the accent colour.'],
   ['effects.speed', 'num', [0, 2], 1, 'Animation speed multiplier; 0 switches the animations off.'],
+  [
+    'effects.motion',
+    'enum',
+    ['spring', 'smooth'],
+    'spring',
+    '`spring`: the focused tile grows quickly with a small bounce; `smooth`: no bounce, the new tile grows in about a quarter of a second while the old one shrinks back more slowly, and when the grid opens the page and the grid move together. Both are scaled by `effects.speed`.',
+  ],
   [
     'effects.wallpaper',
     'file',
@@ -602,6 +639,22 @@ function resolve(t, accent) {
     wallpaper: w ? { id: t.id, file: w, dim: v['effects.wallpaperDim'] } : null,
   };
   if (v['effects.focusIcon']) out.focusIcon = true;
+  // the look and motion of a streaming box (tile.highlight, tile.shadow, effects.motion): only a theme that changes them carries these
+  if (v['effects.motion'] !== 'spring') attrs.motion = v['effects.motion'];
+  if (v['tile.highlight'] !== 'all') {
+    attrs.hl = v['tile.highlight'];
+    vars['--rim'] = String(v['tile.rim']);
+  }
+  if (v['tile.shadow'] !== 'focus') {
+    attrs.tshadow = v['tile.shadow'];
+    vars['--shadow-k'] = String(v['tile.shadowStrength']);
+  }
+  if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
+  if (v['tile.launch'] !== 'dim') {
+    attrs.launch = v['tile.launch'];
+    vars['--launch-sd'] = String(Math.round(v['dock.focusScale'] * 130) / 100);
+    vars['--launch-sg'] = String(Math.round(v['grid.focusScale'] * 130) / 100);
+  }
   // only a theme that names the focused app under its tile carries this, so the replies for the other themes stay as they were
   if (v['tile.label'] !== 'none') {
     const size = Math.round(v['tile.labelSize'] * v['type.scale']);

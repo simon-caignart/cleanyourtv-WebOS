@@ -159,6 +159,44 @@ run(async () => {
       'the room a name takes under a row: the grown tile, the gap and one line; none without names'
     );
   }
+  // effects.motion, tile.highlight and tile.shadow: the motion and the focus look of a streaming box, only in the themes that use them
+  const box = themeMod.resolve(
+    themeMod.normalize(
+      { effects: { motion: 'smooth' }, tile: { highlight: 'focus', rim: 0.7, shadow: 'soft', shadowStrength: 0.6 } },
+      'box'
+    )
+  );
+  ok(
+    box.attrs.motion === 'smooth' &&
+      box.attrs.hl === 'focus' &&
+      box.attrs.tshadow === 'soft' &&
+      box.vars['--rim'] === '0.7' &&
+      box.vars['--shadow-k'] === '0.6',
+    'smooth motion, the highlight on the focused tile and soft shadows reach the launcher'
+  );
+  ok(
+    !('motion' in plain.attrs) &&
+      !('hl' in plain.attrs) &&
+      !('tshadow' in plain.attrs) &&
+      !('--rim' in plain.vars) &&
+      !('--shadow-k' in plain.vars),
+    'by default the spring motion, the gloss on every tile and the focus shadow, with no new keys in the reply'
+  );
+  // tile.press and tile.launch: how deep a held tile sinks, and a launch that zooms the tile away
+  const pressed = themeMod.resolve(
+    themeMod.normalize({ tile: { press: 1.11, launch: 'zoom' }, grid: { focusScale: 1.22 }, dock: { focusScale: 1.2 } }, 'pressed')
+  );
+  ok(
+    pressed.vars['--press-s'] === '1.11' &&
+      pressed.attrs.launch === 'zoom' &&
+      pressed.vars['--launch-sg'] === '1.59' &&
+      pressed.vars['--launch-sd'] === '1.56',
+    'tile.press sets the held scale and tile.launch zoom grows the tile to 1.3 times its focused size'
+  );
+  ok(
+    !('--press-s' in plain.vars) && !('launch' in plain.attrs) && !('--launch-sg' in plain.vars),
+    'by default a held tile sinks to 0.96 and a launch dims it, with no new keys in the reply'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

@@ -422,8 +422,19 @@ body {
   object-fit: fill;
 }
 .tile.press {
-  transform: scale(0.96) !important;
+  transform: scale(var(--press-s, 0.96)) !important;
   transition-duration: calc(0.06s * var(--spd));
+}
+/* tile.launch zoom: the tile grows past its focused size and fades out while the app opens (input.js puts it back when Home hides) */
+[data-launch="zoom"] .tile.launching {
+  transform: scale(var(--launch-sg)) !important;
+  opacity: 0;
+  transition:
+    transform calc(0.4s * var(--spd)) cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity calc(0.4s * var(--spd)) cubic-bezier(0.4, 0, 1, 1) !important;
+}
+[data-launch="zoom"] #dock .tile.launching {
+  transform: scale(var(--launch-sd)) !important;
 }
 .tile.moving {
   z-index: 10;
@@ -562,6 +573,96 @@ body {
 #grid .tile.f {
   transform: scale(var(--grid-fs));
 }
+/* effects.motion smooth: no bounce. The new tile grows quickly (--t-grow), the old one shrinks back more slowly (--t-shrink): the
+   transition of the state being entered applies, so .f carries the grow and the plain tile the shrink. Held keys shorten both. */
+[data-motion="smooth"] {
+  --t-grow: 0.25s;
+  --t-shrink: 0.5s;
+}
+[data-motion="smooth"] .tile,
+[data-motion="smooth"] .pill {
+  transition: transform calc(var(--t-shrink) * var(--spd)) cubic-bezier(0.4, 0, 0.3, 1);
+}
+[data-motion="smooth"] .tile.f,
+[data-motion="smooth"] .pill.f {
+  transition-duration: calc(var(--t-grow) * var(--spd));
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* OK held: the tile sinks without a bounce; on release it grows back with the focus timing */
+[data-motion="smooth"] .tile.f.press {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: ease-out;
+}
+[data-motion="smooth"].snap .tile,
+[data-motion="smooth"].snap .pill {
+  transition-duration: calc(0.08s * var(--spd));
+}
+/* tile.shadow soft: a faint shadow under every tile, and the focused tile's deeper one on its own layer (.tsh, tiles.js) that fades in
+   while the tile grows, so it grows with it. The layer sits under the tile's content; an outer shadow is never drawn under its own box. */
+.tsh {
+  display: none;
+}
+[data-tshadow="soft"] .tsh {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 !important;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+}
+[data-tshadow="soft"] .tile.f .tsh {
+  opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+}
+/* pressed: the tile comes closer to the surface, its shadow gets shorter */
+[data-tshadow="soft"] .tile.f.press .tsh {
+  opacity: 0.55;
+}
+[data-tshadow="soft"] .tile,
+[data-tshadow="soft"] .tile.f {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--tile-border)),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
+}
+[data-tshadow="soft"] .tile.fill.f {
+  box-shadow:
+    0 0 0 var(--ring-w) var(--focus),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
+}
+/* a Full tile crops its picture with rounded corners of its own instead of overflow, which would cut the shadow off */
+[data-tshadow="soft"] .tile.fill {
+  overflow: visible;
+}
+[data-tshadow="soft"] .tile.fill img {
+  border-radius: inherit;
+}
+/* tile.highlight focus: the gloss only on the focused tile, a soft light spot centred a third of the way along its top edge, and a thin
+   bright rim strongest at the top and left; it fades in with the focus. */
+[data-hl="focus"] .tile::after {
+  opacity: 0;
+  background: radial-gradient(circle at 33% 0%, rgba(255, 255, 255, var(--gloss)), rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    inset 1px 2px 0 rgba(255, 255, 255, var(--rim, 0.5)),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(0.3 * var(--rim, 0.5)));
+  will-change: opacity;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+}
+[data-hl="focus"] .tile.f::after {
+  opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+}
+.snap .tsh,
+.snap .tile::after {
+  transition: none;
+}
 /* Moon uses one warm glass frame that slides between the focused dock and grid tiles. */
 [data-theme="moon"] #dock .tile.f::before,
 [data-theme="moon"] #grid .tile.f::before {
@@ -615,10 +716,11 @@ body {
   opacity: 0;
   pointer-events: none;
   will-change: opacity;
-  transition: opacity calc(0.12s * var(--spd)) linear;
+  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
 .tlabel.on {
   opacity: 1;
+  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
 }
 .snap .tlabel {
   transition: none;
@@ -1463,6 +1565,21 @@ body.scenes-on {
   background: var(--acc);
   box-shadow: none;
   transform: scale(1.1);
+}
+/* effects.motion smooth: the page and everything that fades with it when the grid opens or closes share one duration and one curve,
+   so they read as a single motion (here, after the rules they override) */
+[data-motion="smooth"] {
+  --t-page: 0.5s;
+}
+[data-motion="smooth"] #scroll {
+  transition: transform calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-motion="smooth"] #grid,
+[data-motion="smooth"] #scroll::before,
+[data-motion="smooth"] #sglass,
+[data-motion="smooth"] #shelf,
+[data-motion="smooth"] .card {
+  transition: opacity calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* menus */
 #ov {
@@ -2855,13 +2972,13 @@ function tile(a) {
   hit(d);
   if (a.sys) {
     d.innerHTML = svg(a.icon) + '<div class="slab">' + 'LG Home' + '</div>';
-    return d;
+    return shade(d);
   }
   if (a.input) {
     d.innerHTML = svg('hdmi') + '<div class="slab"></div><div class="slab sub"></div>';
     var f = hsl2rgb(hashHue(a.id), 0.3, 0.3);
     paint(d, { c: f, b: hsl2rgb(hashHue(a.id), 0.3, 0.16) });
-    return inputTile(d, a);
+    return inputTile(shade(d), a);
   }
   var known = colors[a.id];
   if (known) {
@@ -2911,6 +3028,14 @@ function tile(a) {
   i.src = a.id === '__live' && !a.iv ? LIVE_ICON : API + '/icon/' + encodeURIComponent(a.id) + (a.iv ? '?v=' + a.iv : '');
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
+  return shade(d);
+}
+/* the focused tile's soft shadow (tile.shadow soft): its own layer, so it fades in with the focus and grows with the tile instead of
+   switching on at once. Last child, so the tile's other children keep their places (inputTile counts them). */
+function shade(d) {
+  var s = document.createElement('i');
+  s.className = 'tsh';
+  d.appendChild(s);
   return d;
 }
 
@@ -3001,7 +3126,20 @@ var TH0 = {
   themeStrip = null /* the page strip's look and place in this theme (addons.js); null: the defaults */,
   lastTheme = null,
   themeKeys = [],
-  themeAttrs = ['data-theme', 'data-bar', 'data-labels', 'data-clock', 'data-grid', 'data-galign', 'data-cstyle', 'data-cards'];
+  themeAttrs = [
+    'data-theme',
+    'data-bar',
+    'data-labels',
+    'data-clock',
+    'data-grid',
+    'data-galign',
+    'data-cstyle',
+    'data-cards',
+    'data-motion',
+    'data-hl',
+    'data-tshadow',
+    'data-launch',
+  ];
 function applyTheme(t) {
   var st = document.documentElement.style,
     b = document.body,
@@ -8195,6 +8333,11 @@ document.addEventListener('visibilitychange', function () {
     }
     WALL.hidden();
     stopMoving(); /* leaving Home while a tile is moved keeps where it is now */
+    /* a tile that zoomed away for a launch (tile.launch zoom) is back in its place when Home shows again */
+    if (document.body.getAttribute('data-launch') === 'zoom') {
+      var lz = document.querySelectorAll('.tile.launching');
+      for (var li = 0; li < lz.length; li++) lz[li].classList.remove('launching');
+    }
     SCENES.hidden();
     if (LIVE.on) LIVE.exit();
     closeRunningMenu();

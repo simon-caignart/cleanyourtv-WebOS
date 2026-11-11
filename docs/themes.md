@@ -233,7 +233,13 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.overlayH` | 200 to 900 | `510` | Visible height of the overlay grid before it scrolls, in px. |
 | `grid.iconScale` | 0.5 to 2.5 | `1` | Extra scale of the icons in the app grid only; multiplies `tile.iconScale`. The tile does not change size. |
 | **tile** | | | |
-| `tile.gloss` | 0 to 1 | `0` | A light highlight on every tile. |
+| `tile.gloss` | 0 to 1 | `0` | A light highlight on every tile, or only on the focused tile with `tile.highlight` `focus`. |
+| `tile.highlight` | `all`, `focus` | `all` | `all`: `tile.gloss` on every tile; `focus`: only on the focused tile, as a soft light near its top edge with a thin bright rim at the top and left (`tile.rim`), fading in as the tile grows. |
+| `tile.rim` | 0 to 1 | `0.5` | Opacity of the bright rim of the focused tile (`tile.highlight` `focus`). |
+| `tile.shadow` | `focus`, `soft` | `focus` | `focus`: a dark shadow under the focused tile; `soft`: every tile casts a faint shadow, and a deeper one under the focused tile fades in as it grows. |
+| `tile.press` | 0.8 to 1.3 | `0.96` | Scale of a tile while OK is held down, of its resting size; above 1 it sinks from its focused size without shrinking below rest. |
+| `tile.launch` | `dim`, `zoom` | `dim` | `dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens. |
+| `tile.shadowStrength` | 0 to 1 | `1` | Strength of the `soft` shadows (`tile.shadow`). |
 | `tile.border` | 0 to 0.6 | `0` | Opacity of a thin outline on every tile. |
 | `tile.ringWidth` | 0 to 10 | `4` | Width of the focus ring, in px; 0 for none. |
 | `tile.ringOffset` | 0 to 14 | `4` | Space between a tile and its focus ring, in px. |
@@ -248,6 +254,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.focusIcon` | `true` or `false` | `false` | Show the focused app icon as a large, dim background image. |
 | `effects.glowColor` | `app`, `accent` | `app` | `app`: taken from the focused icon; `accent`: the accent colour. |
 | `effects.speed` | 0 to 2 | `1` | Animation speed multiplier; 0 switches the animations off. |
+| `effects.motion` | `spring`, `smooth` | `spring` | `spring`: the focused tile grows quickly with a small bounce; `smooth`: no bounce, the new tile grows in about a quarter of a second while the old one shrinks back more slowly, and when the grid opens the page and the grid move together. Both are scaled by `effects.speed`. |
 | `effects.wallpaper` | a file name | none | A file name in `themes/wallpapers/`: `.jpg`, `.png` or `.webp`, at most 1.5 MB; drawn at 1920 x 1080. |
 | `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper is darkened with the background colour. |
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |

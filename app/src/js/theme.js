@@ -20,7 +20,20 @@ var TH0 = {
   themeStrip = null /* the page strip's look and place in this theme (addons.js); null: the defaults */,
   lastTheme = null,
   themeKeys = [],
-  themeAttrs = ['data-theme', 'data-bar', 'data-labels', 'data-clock', 'data-grid', 'data-galign', 'data-cstyle', 'data-cards'];
+  themeAttrs = [
+    'data-theme',
+    'data-bar',
+    'data-labels',
+    'data-clock',
+    'data-grid',
+    'data-galign',
+    'data-cstyle',
+    'data-cards',
+    'data-motion',
+    'data-hl',
+    'data-tshadow',
+    'data-launch',
+  ];
 function applyTheme(t) {
   var st = document.documentElement.style,
     b = document.body,
