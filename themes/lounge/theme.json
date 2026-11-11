@@ -105,7 +105,8 @@
     "scenes": "couch",
     "sceneSecs": 60,
     "motion": "smooth",
-    "scenesYield": true
+    "scenesYield": true,
+    "wallpaperDim": 0.12
   },
   "cards": {
     "style": "glass"
