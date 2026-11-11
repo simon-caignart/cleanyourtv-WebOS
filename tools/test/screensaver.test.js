@@ -197,6 +197,22 @@ run(async () => {
   cfgNow = { wall: { on: true } };
   themeNow = null;
 
+  // the clock and the date in Home's language and clock format: the page gets the settings with the photos and formats with them,
+  // not with the browser's own default (which on the TV is not the TV's language)
+  {
+    x = await call(f, '/api/screensaver/photos');
+    ok(x.j.lang === '' && x.j.clock === 'auto', "without settings: the TV's language (the page reads its locale) and the automatic clock");
+    cfgNow = { wall: { on: true }, lang: 'fr', clock: '24' };
+    x = await call(f, '/api/screensaver/photos');
+    ok(x.j.lang === 'fr' && x.j.clock === '24', 'the Language and Clock settings go to the page: ' + x.j.lang + ' ' + x.j.clock);
+    cfgNow = { wall: { on: true } };
+    const page = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');
+    ok(
+      !/toLocale(Date|Time)String\(undefined/.test(page) && /toLocaleTimeString\(LOC,/.test(page) && /toLocaleDateString\(LOC,/.test(page),
+      'the page formats the time and the date with that language, not the browser default'
+    );
+  }
+
   // the page asks for each kind of id the way Home's wall.js does: a file from the library, or the live source's current photo
   {
     const html = fs.readFileSync(path.join(root, 'screensaver', 'app', 'index.html'), 'utf8');

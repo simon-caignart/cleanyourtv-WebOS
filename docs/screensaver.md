@@ -22,6 +22,8 @@ LG's screen saver back.
        Home when its photo changes);
     3. else the **theme's wallpaper**.
 - **The clock and the date**, bottom right, solid white over the photo: no transparency, so it stays readable on a bright picture.
+  They are in Home's language and clock format: the manager's **Language** (or the TV's own language when it follows the TV) and
+  Customise > **Clock** (automatic, 12 or 24 hour).
   It sits in the same corner all the time, which is the one thing to watch on a panel that retains static content.
 - **Nothing behind Home** (a plain theme, Wallpapers off): the clock and date alone, on black.
 

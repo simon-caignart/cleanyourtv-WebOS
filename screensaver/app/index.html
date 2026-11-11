@@ -267,14 +267,25 @@
       function pad(n) {
         return (n < 10 ? '0' : '') + n;
       }
+      /* the time and the date in Home's language and clock format (app/src/js/clock.js): the Language setting from the service, else
+         the TV's own locale; the Clock setting (auto: the language's own way, 12 or 24 hours) */
+      var LOC = (window.webOSSystem && webOSSystem.locale) || navigator.language || 'en-GB',
+        CLOCK = 'auto';
+      function useClock(r) {
+        if (r && r.lang) LOC = r.lang;
+        if (r && (r.clock === '12' || r.clock === '24' || r.clock === 'auto')) CLOCK = r.clock;
+        tickClock();
+      }
       function tickClock() {
         var d = new Date(),
-          h = d.getHours(),
-          m = d.getMinutes();
-        el('time').textContent = pad(h) + ':' + pad(m);
+          o = { hour: 'numeric', minute: '2-digit' };
+        if (CLOCK === '24') o.hourCycle = 'h23';
+        else if (CLOCK === '12') o.hourCycle = 'h12';
         try {
-          el('date').textContent = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+          el('time').textContent = d.toLocaleTimeString(LOC, o);
+          el('date').textContent = d.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long' });
         } catch (e) {
+          el('time').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
           el('date').textContent = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
         }
       }
@@ -455,6 +466,7 @@
       var credits = {};
       function load() {
         return get(API + '/api/screensaver/photos?cc=' + encodeURIComponent(country())).then(function (r) {
+          useClock(r);
           credits = r.credits || {};
           list = (r.photos || []).slice();
           if (typeof r.every === 'number') every = r.every;

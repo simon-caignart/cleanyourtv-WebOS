@@ -7,6 +7,7 @@
 //   GET  /api/screensaver/live/<add-on>   {url, credit}: the photo a live source (Unsplash) gave Home last, so the saver shows the same
 //   GET  /api/screensaver/videos   {videos: [{id, url, title}], from}: the films of the first add-on that provides "videos" and has
 //        some (the Aerials add-on); the page plays them and falls back to the photos above when there are none or they do not play
+//        and lang, clock: the language and the clock format Home uses (the Language setting, '' for the TV's; auto, 12 or 24)
 //   POST /api/screensaver/active   {returnValue}   the launcher reports a key: the TV is in use, do not open the page over it
 //   POST /api/screensaver/dismiss  {returnValue}   close the page: the app that was on screen comes back
 // The page keeps LG's own screen-saver window type, and a page that stayed up would keep the remote. The page closes itself on the
@@ -74,6 +75,10 @@ function cleanVideos(l) {
 function create(ctx) {
   const { luna, config } = ctx;
   const wp = () => ctx.feature('wallpapers');
+  // the clock and the date as Home has them (app/src/js/clock.js): the Language setting ('' follows the TV, which the page reads
+  // itself) and the Clock setting
+  const lang = () => String((config.get() || {}).lang || '');
+  const clock = () => (['12', '24'].indexOf((config.get() || {}).clock) >= 0 ? config.get().clock : 'auto');
   // the library as Home shows it: uploads (u/<id>) and the photos of source add-ons (s/<add-on>/<id>), which the page loads from
   // /api/wallpapers/photo/, and live sources (l/<add-on>, Unsplash), whose current photo the page asks /api/wallpapers/live/<add-on>
   // for, as Home's wall.js does. An id of another kind is left out: the page would not know how to show it.
@@ -268,7 +273,7 @@ function create(ctx) {
       // ?cc=<country>: the page passes the TV's country, as the launcher does for the scenes of an add-on (Seasons picks by it)
       const m = /[?&]cc=([A-Za-z]{2,3})(?:&|$)/.exec(req.url || '');
       const b = await background(m ? m[1].toUpperCase() : '');
-      return json({ photos: b.photos, credits: b.credits, from: b.from, every: EVERY_S });
+      return json({ photos: b.photos, credits: b.credits, from: b.from, every: EVERY_S, lang: lang(), clock: clock() });
     }
     if (u === '/api/screensaver/videos') return json(await videos());
     // a live source's photo: the one Home has now (wallpapers.js liveCurrent), not the next one the source would hand out
