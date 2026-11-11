@@ -33,6 +33,7 @@ var TH0 = {
     'data-hl',
     'data-tshadow',
     'data-launch',
+    'data-peek',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,

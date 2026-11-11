@@ -357,7 +357,8 @@ body {
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
 }
-[data-grid="push"].grid-open #grid {
+[data-grid="push"].grid-open #grid,
+[data-grid="push"][data-peek] #grid {
   opacity: 1;
   pointer-events: auto;
 }
@@ -3103,6 +3104,7 @@ var TH0 = {
     'data-hl',
     'data-tshadow',
     'data-launch',
+    'data-peek',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,

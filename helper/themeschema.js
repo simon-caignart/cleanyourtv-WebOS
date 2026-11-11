@@ -197,11 +197,18 @@ const SCHEMA = [
   ['grid.cols', 'int', [4, 14], 10, 'Columns.'],
   ['grid.tileH', 'int', [80, 240], 151, 'Height of a tile, in px; the width follows from the columns.'],
   ['grid.gapX', 'int', [6, 60], 24, 'Horizontal space between tiles, in px.'],
-  ['grid.gapY', 'int', [6, 60], 26, 'Vertical space between tiles, in px.'],
+  ['grid.gapY', 'int', [6, 140], 26, 'Vertical space between tiles, in px.'],
   ['grid.radius', 'int', [0, 100], 34, 'Corner radius of tiles.'],
   ['grid.x', 'int', [0, 900], 96, 'Distance of the grid from the left edge, in px.'],
   ['grid.width', 'int', [600, 1920], 1728, 'Width of the grid, in px.'],
   ['grid.y', 'auto', [0, 1000], null, 'Distance of the grid from the top edge, in px. Empty: under the dock, or 290 for an overlay.'],
+  [
+    'grid.peek',
+    'int',
+    [0, 120],
+    0,
+    '`push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used).',
+  ],
   ['grid.clipTop', 'int', [0, 600], 300, 'Where scrolled rows disappear at the top, in px (`below` mode).'],
   ['grid.focusScale', 'num', [1, 1.4], 1.12, 'Scale of the focused tile.'],
   ['grid.overlayDim', 'num', [0, 1], 0.95, 'Opacity of the layer behind the overlay grid.'],
@@ -514,7 +521,8 @@ function resolve(t, accent) {
   const dockY = v['dock.y'] !== null ? v['dock.y'] : dockBottom ? 68 : 360;
   const dockTop = dockBottom ? 1080 - dockY - dockH : dockY; // where the dock's top is when the grid has no focus
   const viewTop = overlay ? 0 : Math.min(v['grid.clipTop'], push ? Math.min(dockTop, v['grid.dockUp']) : dockY);
-  const gridY = v['grid.y'] !== null ? v['grid.y'] : overlay ? 290 : dockTop + dockH + 60;
+  const peek = push ? v['grid.peek'] : 0;
+  const gridY = peek ? 1080 - peek : v['grid.y'] !== null ? v['grid.y'] : overlay ? 290 : dockTop + dockH + 60;
   const dock =
     dockBottom && overlay
       ? place('bottom', v['dock.align'], v['dock.x'], dockY)
@@ -642,6 +650,7 @@ function resolve(t, accent) {
     attrs.tshadow = v['tile.shadow'];
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
   }
+  if (peek) attrs.peek = 'on';
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
   if (v['tile.launch'] !== 'dim') {
     attrs.launch = v['tile.launch'];

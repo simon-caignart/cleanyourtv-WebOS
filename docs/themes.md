@@ -222,11 +222,12 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.cols` | 4 to 14 | `10` | Columns. |
 | `grid.tileH` | 80 to 240 | `151` | Height of a tile, in px; the width follows from the columns. |
 | `grid.gapX` | 6 to 60 | `24` | Horizontal space between tiles, in px. |
-| `grid.gapY` | 6 to 60 | `26` | Vertical space between tiles, in px. |
+| `grid.gapY` | 6 to 140 | `26` | Vertical space between tiles, in px. |
 | `grid.radius` | 0 to 100 | `34` | Corner radius of tiles. |
 | `grid.x` | 0 to 900 | `96` | Distance of the grid from the left edge, in px. |
 | `grid.width` | 600 to 1920 | `1728` | Width of the grid, in px. |
 | `grid.y` | px, 0 to 1000 | empty | Distance of the grid from the top edge, in px. Empty: under the dock, or 290 for an overlay. |
+| `grid.peek` | 0 to 120 | `0` | `push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used). |
 | `grid.clipTop` | 0 to 600 | `300` | Where scrolled rows disappear at the top, in px (`below` mode). |
 | `grid.focusScale` | 1 to 1.4 | `1.12` | Scale of the focused tile. |
 | `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the layer behind the overlay grid. |

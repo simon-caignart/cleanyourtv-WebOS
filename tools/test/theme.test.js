@@ -197,6 +197,25 @@ run(async () => {
     !('--press-s' in plain.vars) && !('launch' in plain.attrs) && !('--launch-sg' in plain.vars),
     'by default a held tile sinks to 0.96 and a launch dims it, with no new keys in the reply'
   );
+  // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
+  const peeking = themeMod.resolve(
+    themeMod.normalize(
+      {
+        dock: { anchor: 'bottom', y: 65, h: 150, panel: 0.1, panelPad: 40 },
+        grid: { mode: 'push', dockUp: 60, peek: 24, gapY: 110, y: 500 },
+      },
+      'peek'
+    )
+  );
+  ok(
+    peeking.attrs.peek === 'on' && peeking.push.gridTop === 1056 && peeking.push.up === 725 && peeking.gapY === 110,
+    'grid.peek places the first row 24 px into the screen, the page moves it up with the dock, and the row gap goes past 60'
+  );
+  const noPeek = themeMod.resolve(themeMod.normalize({ grid: { mode: 'below', peek: 24 } }, 'nopeek'));
+  ok(
+    !('peek' in plain.attrs) && !('peek' in noPeek.attrs) && noPeek.gt === plain.gt,
+    'without push mode (or by default) there is no peek and the grid stays where it was'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(
