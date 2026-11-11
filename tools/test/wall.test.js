@@ -16,7 +16,8 @@ function make(cfg, photos) {
   const shown = [],
     intervals = [];
   const holder = { insertBefore() {} };
-  const els = {};
+  const els = {},
+    created = [];
   const context = {
     cfg,
     API: 'http://tv',
@@ -38,18 +39,36 @@ function make(cfg, photos) {
       });
     },
     document: {
-      createElement: () => layerEl(),
+      createElement: () => {
+        const e = layerEl();
+        created.push(e);
+        return e;
+      },
       body: { classList: { add() {}, remove() {} } },
     },
   };
   context.cfg.wallpapers = { stamp: '1:1' };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'app', 'src', 'js', 'wall.js'), 'utf8'), context);
-  return { WALL: vm.runInContext('WALL', context), shown, intervals, tick: ms => (now += ms) };
+  return { WALL: vm.runInContext('WALL', context), shown, intervals, created, tick: ms => (now += ms) };
 }
 
 run(async () => {
   const photos = ['a', 'b', 'c'];
+
+  // the darkening of the photos: the theme's effects.wallpaperDim also when the theme has no wallpaper of its own (it was always 0.4)
+  const dimOf = theme => {
+    const d = make({ wall: { on: true, secs: 900 }, theme }, photos);
+    d.WALL.sync();
+    const layer = d.created.filter(e => e.className === 'wpd')[0];
+    return layer && layer.style.background;
+  };
+  ok(
+    dimOf({ nightRgb: '0, 0, 0', wallDim: 0 }) === 'rgba(0, 0, 0,0)' &&
+      dimOf({ nightRgb: '0, 0, 0' }) === 'rgba(0, 0, 0,0.4)' &&
+      dimOf({ nightRgb: '0, 0, 0', wallDim: 0.2, wallpaper: { dim: 0.6 } }) === 'rgba(0, 0, 0,0.6)',
+    "a theme without a wallpaper darkens the photos by its own wallpaperDim, 0.4 by default, and a theme's wallpaper keeps its own"
+  );
 
   // an interval of 15 minutes: Home opening again within that time keeps the photo on screen
   let w = make({ wall: { on: true, secs: 900 } }, photos);

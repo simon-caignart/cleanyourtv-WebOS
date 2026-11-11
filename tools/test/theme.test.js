@@ -271,6 +271,11 @@ run(async () => {
       !('--bshade-a' in plain.vars),
     'the chevron, the status area hidden in the grid, no night dimming and the bottom shade reach the launcher; none by default'
   );
+  const bright = themeMod.resolve(themeMod.normalize({ effects: { wallpaperDim: 0 } }, 'bright'));
+  ok(
+    bright.wallDim === 0 && !('wallDim' in plain),
+    'a theme without a wallpaper of its own still sends how far Wallpapers photos are darkened (only when it is not 0.4)'
+  );
   const glassDock = themeMod.resolve(themeMod.normalize({ dock: { glass: true } }, 'glassdock'));
   ok(
     glassDock.dockGlass === true && glassDock.attrs.dglass === 'on' && !('dockGlass' in plain) && !('dglass' in plain.attrs),

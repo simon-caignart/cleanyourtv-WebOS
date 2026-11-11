@@ -18,7 +18,7 @@ In the launcher, **Customise** > **Wallpapers**:
 | New photo | When the photo changes: each time Home opens, or every 10 or 30 seconds, every minute, or every 3, 5, 15 or 60 minutes. With an interval, the photo changes on that interval while Home is on screen, and opening Home changes it only if that long has passed since the last change. The photos cross-fade. |
 | Add photos... | Opens the manager app on its Wallpapers screen. |
 
-The photo is chosen at random and darkened like a theme's wallpaper (the theme's own darkening, or 40 % when it has none). With
+The photo is chosen at random and darkened like a theme's wallpaper, by the theme's `effects.wallpaperDim` (40 % unless the theme sets it), also when the theme has no wallpaper of its own. With
 no photos in the library, Home looks as before. The theme **Still** switches the cross-fade off along with the other animations.
 
 ## Adding photos

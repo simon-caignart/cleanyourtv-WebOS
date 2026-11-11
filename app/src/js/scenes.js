@@ -443,7 +443,7 @@ var SCENES = (function () {
     if (on) {
       var s = lib[cur];
       INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'), custom ? null : s.tint);
-    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
+    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : th && th.wallDim != null ? th.wallDim : 0.4, night);
     else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
     else INK.set('', 0, night);
   }

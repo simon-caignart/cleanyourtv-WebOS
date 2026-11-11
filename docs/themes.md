@@ -277,7 +277,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.speed` | 0 to 2 | `1` | Animation speed multiplier; 0 switches the animations off. |
 | `effects.motion` | `spring`, `smooth` | `spring` | `spring`: the focused tile grows quickly with a small bounce; `smooth`: no bounce, the new tile grows in about a quarter of a second while the old one shrinks back more slowly, and when the grid opens the page and the grid move together. Both are scaled by `effects.speed`. |
 | `effects.wallpaper` | a file name | none | A file name in `themes/wallpapers/`: `.jpg`, `.png` or `.webp`, at most 1.5 MB; drawn at 1920 x 1080. |
-| `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper is darkened with the background colour. |
+| `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper, and Wallpapers photos, are darkened with the background colour. |
 | `effects.bottomShade` | 0 to 0.8 | `0` | A soft shade from y 600 to the bottom of the screen behind the dock, black at this opacity at the bottom, while the grid is closed: the picture stays bright and the dock stays readable. |
 | `effects.lateDim` | `true` or `false` | `true` | Darken the scenes a little from 10 pm to 6 am. |
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |

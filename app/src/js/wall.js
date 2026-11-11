@@ -46,9 +46,10 @@ var WALL = (function () {
     c.textContent = want() ? text || '' : '';
     c.style.display = c.textContent ? 'block' : 'none';
   }
+  /* effects.wallpaperDim: sent with the theme's own wallpaper, or on its own (wallDim) by a theme without one */
   function dim() {
     var th = cfg.theme || {},
-      d = th.wallpaper && th.wallpaper.dim != null ? th.wallpaper.dim : 0.4;
+      d = th.wallpaper && th.wallpaper.dim != null ? th.wallpaper.dim : th.wallDim != null ? th.wallDim : 0.4;
     layers()[2].style.background = 'rgba(' + (th.nightRgb || '7, 8, 11') + ',' + d + ')';
   }
   /* a live entry is asked of the service (/api/wallpapers/live/<add-on>): it hands over an address on the source's own server and a
