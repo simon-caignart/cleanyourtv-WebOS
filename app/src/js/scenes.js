@@ -289,6 +289,7 @@ var SCENES = (function () {
         document.body.style.setProperty('--scene-date-top', (s.date && s.date.top != null ? s.date.top : 96) + 'px');
       }
       glassCards();
+      inkUpdate();
     }, 700);
     /* after the fade: the old scene is no longer drawn, the next one gets ready */
     setTimeout(function () {
@@ -350,6 +351,20 @@ var SCENES = (function () {
     soloClock();
     arm();
     glassCards();
+    inkUpdate();
+  }
+  /* surface.ink auto (ink.js): the picture now behind Home. A built-in scene is a file of the page that may not be read back, so its
+     brightness is what the scene says (Fog and darkSky have a bright sky); add-on and theme scenes, photos and wallpapers are measured */
+  function inkUpdate() {
+    var th = lastTh,
+      night = th && th.nightRgb ? th.nightRgb.split(',').map(Number) : [7, 8, 11],
+      w = th && th.wallpaper;
+    if (on) {
+      var s = lib[cur];
+      INK.set(custom ? customBase + s.image : '', 0, night, !!s.darkSky || (!custom && s.id === 'fog'));
+    } else if (wallUrl) INK.set(wallUrl, w && w.dim != null ? w.dim : 0.4, night);
+    else if (w) INK.set(API + '/api/theme/wallpaper/' + w.id + '/' + w.file, w.dim, night);
+    else INK.set('', 0, night);
   }
   /* the glass clock without scenes: one clock with a white frosted fill */
   function soloClock() {
@@ -424,6 +439,7 @@ var SCENES = (function () {
       if (url === wallUrl) return;
       wallUrl = url;
       if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
+      else inkUpdate();
     },
     shown: function () {
       arm();

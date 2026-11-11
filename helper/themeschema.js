@@ -60,11 +60,11 @@ const SCHEMA = [
   ['surface.menuAlpha', 'num', [0.5, 1], 0.97, 'Opacity of the dark layer behind menus.'],
   ['surface.rowRadius', 'int', [0, 50], 30, 'Corner radius of menu rows.'],
   [
-    'surface.glass',
-    'num',
-    [0.2, 0.8],
-    0.5,
-    'Opacity of the dark glass of the `glass` top buttons and the `pill` clock: a dark fill with a thin light rim, so white text and icons read on white and on black backgrounds.',
+    'surface.ink',
+    'enum',
+    ['light', 'auto'],
+    'light',
+    'Text and icons of the `glass` top buttons and the `pill` clock. `light`: white; `auto`: dark over a bright picture and white over a dark one, measured once per picture (Wallpapers photo, scene, wallpaper) behind them.',
   ],
   ['type.font', 'enum', ['default', 'serif', 'mono'], 'default', "The typeface: the TV's own, a serif or a monospace."],
   [
@@ -96,7 +96,7 @@ const SCHEMA = [
     'enum',
     ['text', 'glass', 'pill'],
     'text',
-    '`text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a small rounded translucent pill, readable on any background (frosted with the scene when `effects.scenes` is on); place and size it with the other clock settings.',
+    '`text`: the time as text; `glass`: a large glass clock centred near the top (Antonio, frosted with the background). With `effects.scenes` each scene places it, and the date moves above it; the other clock settings then only set the date. `pill`: the time in a capsule of the glass of the dock panel, as tall as the top buttons (see `surface.ink`); place and size it with the other clock settings.',
   ],
   ['bar.show', 'bool', null, true, 'Show the top buttons (Inputs, Settings, Customise, ...).'],
   [
@@ -104,7 +104,7 @@ const SCHEMA = [
     'enum',
     ['pill', 'round', 'flat', 'glass'],
     'pill',
-    '`pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background; `glass`: icon only in a dark glass circle (`surface.glass`) that turns solid white with a dark icon when focused, like the `pill` clock.',
+    '`pill`: icon and label on a rounded button; `round`: icon only in a circle; `flat`: no background; `glass`: icon only in a circle of the glass of the dock panel (`dock.panel`, `dock.panelRim`) that turns solid white with a dark icon when focused, like the `pill` clock (see `surface.ink`).',
   ],
   ['bar.labels', 'enum', ['auto', 'show', 'hide'], 'auto', 'Button labels: `auto` shows them except in the `round` and `glass` styles.'],
   [
@@ -695,7 +695,7 @@ function resolve(t, accent) {
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
   }
   if (peek) attrs.peek = 'on';
-  if (v['surface.glass'] !== 0.5) vars['--glass-a'] = String(v['surface.glass']);
+  if (v['surface.ink'] !== 'light') attrs.inkmode = v['surface.ink'];
   if (
     v['bar.besideClock'] &&
     v['bar.align'] === v['clock.align'] &&
