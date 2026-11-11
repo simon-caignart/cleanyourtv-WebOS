@@ -83,7 +83,8 @@
     "gloss": 0.12,
     "border": 0,
     "ringWidth": 0,
-    "ringOffset": 0
+    "ringOffset": 0,
+    "iconScale": 1.25
   },
   "effects": {
     "glow": 0,
