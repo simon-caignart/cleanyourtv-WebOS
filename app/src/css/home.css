@@ -1592,3 +1592,25 @@ body.scenes-on {
 [data-motion="smooth"] .card {
   transition: opacity calc(var(--t-page) * var(--spd)) cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* grid.scroll row: rows and the dock fade out as the page pushes them past the clip line; a step inside the grid moves the page with
+   the focus timing, and held keys keep the page in step with the tiles */
+[data-gscroll="row"] #grid .tile {
+  transition-property: transform, opacity;
+}
+[data-gscroll="row"]:not([data-motion="smooth"]).snap #grid .tile {
+  transition-property: none;
+}
+[data-gscroll="row"] #grid .tile.gone,
+[data-gscroll="row"] #dock.gone {
+  opacity: 0;
+}
+[data-gscroll="row"] #dock {
+  transition: opacity calc(0.3s * var(--spd)) linear;
+}
+[data-gscroll="row"].gstep #scroll {
+  transition-duration: calc(0.3s * var(--spd));
+}
+[data-gscroll="row"].snap #scroll {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: linear;
+}

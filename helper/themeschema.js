@@ -211,6 +211,13 @@ const SCHEMA = [
     0,
     '`push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used).',
   ],
+  [
+    'grid.scroll',
+    'enum',
+    ['edge', 'row'],
+    'edge',
+    "`push` mode: how the open grid scrolls. `edge`: just enough to keep the focused row on screen; `row`: by whole rows, as soon as the focused row and its name would leave the screen's safe area, staying put on the way back up until the row reaches the top; rows that pass the clip line at the top fade out instead of being cut.",
+  ],
   ['grid.clipTop', 'int', [0, 600], 300, 'Where scrolled rows disappear at the top, in px (`below` mode).'],
   ['grid.focusScale', 'num', [1, 1.4], 1.12, 'Scale of the focused tile.'],
   [
@@ -666,6 +673,10 @@ function resolve(t, accent) {
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
   }
   if (peek) attrs.peek = 'on';
+  if (push && v['grid.scroll'] === 'row') {
+    attrs.gscroll = 'row';
+    out.rowScroll = { top: viewTop, dockUp: v['grid.dockUp'] };
+  }
   if (v['clock.style'] === 'pill') attrs.cstyle = 'pill';
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];

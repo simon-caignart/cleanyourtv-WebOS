@@ -229,6 +229,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.width` | 600 to 1920 | `1728` | Width of the grid, in px. |
 | `grid.y` | px, 0 to 1000 | empty | Distance of the grid from the top edge, in px. Empty: under the dock, or 290 for an overlay. |
 | `grid.peek` | 0 to 120 | `0` | `push` mode: how much of the first row of the grid shows at the bottom of the screen while the dock has the focus, in px; 0 hides the grid until it opens. Above 0 it places the grid (`grid.y` is not used). |
+| `grid.scroll` | `edge`, `row` | `edge` | `push` mode: how the open grid scrolls. `edge`: just enough to keep the focused row on screen; `row`: by whole rows, as soon as the focused row and its name would leave the screen's safe area, staying put on the way back up until the row reaches the top; rows that pass the clip line at the top fade out instead of being cut. |
 | `grid.clipTop` | 0 to 600 | `300` | Where scrolled rows disappear at the top, in px (`below` mode). |
 | `grid.focusScale` | 1 to 1.4 | `1.12` | Scale of the focused tile. |
 | `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass). |
