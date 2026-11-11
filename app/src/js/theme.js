@@ -67,10 +67,21 @@ function applyTheme(t) {
       themeKeys.push('--' + n + '-txr');
     }
   });
-  /* a theme's own typeface, served from its folder; the family name is in --font */
+  /* a theme's own typeface, served from its folder; the family name is in --font. A variable font covers every weight, so the
+     browser sets its weight axis instead of thickening the regular */
   var fs = $('tfont'),
     f = t.font,
-    css = f ? '@font-face{font-family:"CYTV Theme Font";src:url("' + API + '/api/theme/font/' + f.id + '/' + f.file + '")}' : '';
+    css = f
+      ? '@font-face{font-family:"CYTV Theme Font";src:url("' +
+        API +
+        '/api/theme/font/' +
+        f.id +
+        '/' +
+        f.file +
+        '")' +
+        (f.variable ? ';font-weight:1 1000' : '') +
+        '}'
+      : '';
   if (!fs) {
     fs = document.createElement('style');
     fs.id = 'tfont';

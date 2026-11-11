@@ -496,4 +496,22 @@ run(async () => {
     /\.glass-on #sglass \{\s*opacity: 0\.004;\s*will-change: opacity;/.test(hcss),
     'the glass stays a barely visible layer while the grid is closed, so opening only blends it in'
   );
+  // a theme's text settings: each rule keeps its own value when the theme sets none, and a variable font is declared for every weight
+  // (otherwise the browser thickens its regular for bold and shows its regular for medium)
+  const menuCss = rd('app/src/css/menus.css'),
+    tjs = rd('app/src/js/theme.js'),
+    pk = rd('picker/app/index.html');
+  ok(
+    /#time \{[^}]*font-weight: var\(--w-clock, 600\);[^}]*letter-spacing: var\(--track, -0\.02em\);/.test(hcss) &&
+      /\.tlabel \{[^}]*font-weight: var\(--w-label, 500\);/.test(hcss) &&
+      /font-variation-settings: var\(--fvs, normal\);/.test(hcss) &&
+      /#ov h2 \{[^}]*font-weight: var\(--w-title, 700\);/.test(menuCss) &&
+      /\.row \{[^}]*font-weight: var\(--w-text, 500\);/.test(menuCss) &&
+      /\.cap\{[^}]*font-weight:var\(--w-title,600\)/.test(pk),
+    "the weights, spacing and optical size of a theme apply with the page's own values as the fallback"
+  );
+  ok(
+    /f\.variable \? ';font-weight:1 1000' : ''/.test(tjs) && /f\.variable\?';font-weight:1 1000':''/.test(pk),
+    'the launcher and the Inputs list declare a variable theme font for every weight'
+  );
 });

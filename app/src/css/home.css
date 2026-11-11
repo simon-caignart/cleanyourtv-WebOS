@@ -89,6 +89,7 @@ body {
   background: var(--night);
   color: var(--ink);
   font-family: var(--font);
+  font-variation-settings: var(--fvs, normal);
 }
 body {
   background-image: var(--wall);
@@ -160,8 +161,8 @@ body {
 }
 #time {
   font-size: calc(56px * var(--fs) * var(--clock-s));
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: var(--w-clock, 600);
+  letter-spacing: var(--track, -0.02em);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -222,7 +223,7 @@ body {
   padding: 0 30px 0 24px;
   border-radius: var(--pill-r);
   font-size: calc(26px * var(--fs));
-  font-weight: 500;
+  font-weight: var(--w-label, 500);
   background: var(--pill-bg);
   box-shadow: inset 0 0 0 1px var(--pill-ring);
   transition: transform calc(0.12s * var(--spd)) cubic-bezier(0.3, 1.35, 0.5, 1);
@@ -313,8 +314,8 @@ body[data-bar="glass"] #bar .pill.f {
 }
 #name {
   font-size: calc(92px * var(--fs) * var(--name-s));
-  font-weight: 700;
-  letter-spacing: -0.028em;
+  font-weight: var(--w-title, 700);
+  letter-spacing: var(--track, -0.028em);
   line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
@@ -538,7 +539,7 @@ body[data-bar="glass"] #bar .pill.f {
 }
 .tile .t {
   font-size: calc(26px * var(--fs));
-  font-weight: 600;
+  font-weight: var(--w-label, 600);
   padding: 12px;
   text-align: center;
   line-height: 1.15;
@@ -752,7 +753,7 @@ body[data-bar="glass"] #bar .pill.f {
   top: 0;
   z-index: 5;
   font-size: var(--tlabel-fs, 29px);
-  font-weight: 500;
+  font-weight: var(--w-label, 500);
   line-height: 1.2;
   color: var(--ink);
   text-align: center;
@@ -780,7 +781,7 @@ body[data-bar="glass"] #bar .pill.f {
 }
 .slab {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: var(--w-label, 600);
   color: var(--ink2);
 }
 #grid .tile.sys {
@@ -824,6 +825,7 @@ body[data-bar="glass"] #bar .pill.f {
 .tile.inp .slab.sub {
   font-size: 18px;
   color: var(--ink2);
+  font-variation-settings: var(--fvs-s, normal);
 }
 .tile.inp .slab:empty {
   display: none;
@@ -838,6 +840,7 @@ body[data-bar="glass"] #bar .pill.f {
 }
 #dock .tile.inp .slab {
   font-size: calc(var(--dock-h) * 0.11);
+  font-variation-settings: var(--fvs-s, normal);
 }
 #dock .tile.inp .slab.sub {
   font-size: calc(var(--dock-h) * 0.085);
@@ -902,6 +905,7 @@ body.wpon {
   overflow: hidden;
   text-overflow: ellipsis;
   display: none;
+  font-variation-settings: var(--fvs-s, normal);
 }
 /* cards: small widgets in the theme's slots (app/src/js/cards.js); placed like the clock, from the slot's edges */
 #cards {
