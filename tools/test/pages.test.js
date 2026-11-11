@@ -493,7 +493,7 @@ run(async () => {
     'the glass behind the grid is drawn into a small canvas, not set as a background image'
   );
   ok(
-    /\.scenes-on\[data-cards="glass"\] #sglass \{\s*opacity: 0\.004;\s*will-change: opacity;/.test(hcss),
+    /\.glass-on #sglass \{\s*opacity: 0\.004;\s*will-change: opacity;/.test(hcss),
     'the glass stays a barely visible layer while the grid is closed, so opening only blends it in'
   );
 });

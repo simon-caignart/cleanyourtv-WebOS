@@ -261,6 +261,14 @@ run(async () => {
       !('rowScroll' in themeMod.resolve(themeMod.normalize({ grid: { scroll: 'row' } }, 'below'))),
     'by default, and outside push mode, the grid scrolls as before with no new keys in the reply'
   );
+  // effects.scenesYield: the scenes step aside for Wallpapers photos; only a theme that asks for it carries the key
+  const yields = themeMod.resolve(themeMod.normalize({ effects: { scenes: 'couch', scenesYield: true } }, 'yields'));
+  ok(
+    yields.scenes.yield === true &&
+      !('yield' in couch.scenes) &&
+      !('scenes' in themeMod.resolve(themeMod.normalize({ effects: { scenesYield: true } }, 'noscenes'))),
+    'effects.scenesYield reaches the launcher with the scenes, and means nothing without them'
+  );
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

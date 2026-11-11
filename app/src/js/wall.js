@@ -70,7 +70,12 @@ var WALL = (function () {
     im.onerror = function () {
       if (skip && !isLive(id)) skip();
     };
+    /* decoded before it is shown, so the swap does not wait for a 4K decode; the scenes and the grid glass learn of the photo */
     im.onload = function () {
+      if (im.decode) im.decode().then(put, put);
+      else put();
+    };
+    var put = function () {
       if (!want()) return;
       var l = layers(),
         on = l[side],
@@ -85,6 +90,7 @@ var WALL = (function () {
       last = Date.now();
       curCredit = text || '';
       credit(curCredit);
+      if (typeof SCENES !== 'undefined') SCENES.wall(url);
     };
     im.src = url;
   }
@@ -134,6 +140,7 @@ var WALL = (function () {
     }
     cur = '';
     curCredit = '';
+    if (typeof SCENES !== 'undefined') SCENES.wall('');
   }
   /* after the settings were read: switched on or off, a new interval, or a different set of photos */
   function sync() {

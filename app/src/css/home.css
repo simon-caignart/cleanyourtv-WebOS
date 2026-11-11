@@ -1503,7 +1503,7 @@ body.scenes-on {
   color: var(--acc-ink);
   text-shadow: none;
 }
-/* the app grid over frosted glass (scenes.js #sglass) instead of the dark layer, with scenes and glass cards */
+/* the app grid over frosted glass (scenes.js #sglass) instead of the dark layer, with scenes (or the photo they yield to) and glass cards */
 #sglass {
   position: absolute;
   left: 0;
@@ -1521,16 +1521,21 @@ body.scenes-on {
   top: 0;
   width: 1920px;
   height: 1080px;
+  opacity: 0;
+  transition: opacity 0.8s linear;
+}
+#sglass canvas.on {
+  opacity: 1;
 }
 /* while it can show, the glass is kept as a layer of its own, barely visible, so opening the grid only blends it in */
-.scenes-on[data-cards="glass"] #sglass {
+.glass-on #sglass {
   opacity: 0.004;
   will-change: opacity;
 }
-.scenes-on[data-cards="glass"].grid-open #sglass {
+.glass-on.grid-open #sglass {
   opacity: 1;
 }
-.scenes-on[data-cards="glass"] #scroll::before {
+.glass-on #scroll::before {
   display: none;
 }
 

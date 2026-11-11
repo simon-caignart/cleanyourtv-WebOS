@@ -82,6 +82,8 @@ var SCENES = (function () {
   var box = null,
     frost = null,
     frostSrc = '',
+    wallUrl = '' /* the Wallpapers photo on screen (wall.js), '' when Wallpapers is off or has none */,
+    yielded = false /* the theme's scenes stepped aside for that photo (effects.scenesYield) */,
     solo = null,
     els = [],
     cur = 0,
@@ -127,18 +129,23 @@ var SCENES = (function () {
       return el;
     });
     document.body.insertBefore(box, document.body.firstChild);
-    /* frosted glass behind the app grid (cards.style glass): the blurred scene instead of the dark layer. It is drawn into a small
-       canvas the compositor scales up: a full-screen background image would be decoded only when the grid opens and rastered again at
-       the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while the 960 x 540 canvas texture stays resident. */
-    if (!frost) {
-      frost = document.createElement('div');
-      frost.id = 'sglass';
+  }
+  /* frosted glass behind the app grid (cards.style glass): the blurred scene, or the Wallpapers photo the scenes yield to, instead of the
+     dark layer. It is drawn into small canvases the compositor scales up: a full-screen background image would be decoded only when the
+     grid opens and rastered again at the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while a 960 x 540 canvas texture
+     stays resident. Two canvases take turns, so a new picture fades in over the old one. */
+  function frostEl() {
+    if (frost) return frost;
+    frost = document.createElement('div');
+    frost.id = 'sglass';
+    for (var k = 0; k < 2; k++) {
       var cv = document.createElement('canvas');
       cv.width = 960;
       cv.height = 540;
       frost.appendChild(cv);
-      $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
     }
+    $('view').parentNode.insertBefore(frost, $('view')); /* #view is inside #homepage, not the body */
+    return frost;
   }
   function srcOf(s) {
     if (!s) return '';
@@ -147,29 +154,66 @@ var SCENES = (function () {
   function fillOf(s) {
     return s ? 'url("' + srcOf(s) + '")' : '';
   }
-  /* the glass behind the grid: the scene's blurred copy and the tint, drawn once per scene; the previous one stays until the new loads */
-  function drawFrost(src) {
+  /* the glass behind the grid: a picture and the tint, drawn once per picture once it is decoded; until then the previous one stays. A
+     scene brings its own blurred copy; a Wallpapers photo (blur) is blurred here, drawn tiny and scaled back up in steps. */
+  var frostFront = 0,
+    frostT = 0,
+    tiny = null;
+  function drawFrost(src, blur) {
     var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
-      key = src && src + '|' + dim;
-    if (!frost || key === frostSrc) return;
+      key = src && src + '|' + dim + '|' + (blur ? 1 : 0);
+    if (key === frostSrc) return;
     frostSrc = key;
-    var cv = frost.firstChild,
-      x = cv.getContext('2d');
+    var cvs = frostEl().children;
     if (!src) {
-      x.clearRect(0, 0, cv.width, cv.height);
+      clearTimeout(frostT);
+      cvs[0].classList.remove('on');
+      cvs[1].classList.remove('on');
       return;
     }
     var i = new Image();
-    i.onload = function () {
+    var draw = function () {
       if (frostSrc !== key) return;
-      x.drawImage(i, 0, 0, cv.width, cv.height);
-      var gr = x.createLinearGradient(0, 0, 0, cv.height);
+      var back = cvs[frostFront ^ 1],
+        front = cvs[frostFront],
+        x = back.getContext('2d');
+      x.drawImage(blur ? blurred(i) : i, 0, 0, back.width, back.height);
+      var gr = x.createLinearGradient(0, 0, 0, back.height);
       gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');
       gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
       x.fillStyle = gr;
-      x.fillRect(0, 0, cv.width, cv.height);
+      x.fillRect(0, 0, back.width, back.height);
+      /* the new one on top fades in; the old one stays whole under it until then */
+      back.style.zIndex = '1';
+      front.style.zIndex = '0';
+      back.classList.add('on');
+      frostFront ^= 1;
+      clearTimeout(frostT);
+      frostT = setTimeout(function () {
+        front.classList.remove('on');
+      }, 900);
+    };
+    i.onload = function () {
+      if (i.decode) i.decode().then(draw, draw);
+      else draw();
     };
     i.src = src;
+  }
+  /* a photo blurred without filters: drawn at 96 x 54, then scaled up twice with smoothing; the canvas scales the rest */
+  function blurred(img) {
+    if (!tiny)
+      tiny = [96, 192, 384].map(function (w) {
+        var c = document.createElement('canvas');
+        c.width = w;
+        c.height = (w * 9) / 16;
+        return c;
+      });
+    for (var k = 0; k < tiny.length; k++) {
+      var x = tiny[k].getContext('2d');
+      x.imageSmoothingEnabled = true;
+      x.drawImage(k ? tiny[k - 1] : img, 0, 0, tiny[k].width, tiny[k].height);
+    }
+    return tiny[tiny.length - 1];
   }
   /* the digits, and the fill placed so the blurred scene lines up with the screen behind them */
   function drawClock(el, s, text) {
@@ -267,7 +311,8 @@ var SCENES = (function () {
     lastTh = th;
     var wantCouch = !!(th && th.scenes && th.scenes.set === 'couch');
     var wantCustom = !!(th && th.scenes && th.scenes.set === 'custom' && th.scenes.lib && th.scenes.lib.length);
-    var want = wantCouch || wantCustom;
+    yielded = !!(th && th.scenes && th.scenes.yield && wallUrl);
+    var want = (wantCouch || wantCustom) && !yielded;
     secs = (th && th.scenes && th.scenes.secs) || 20;
 
     if (wantCouch) askAddon(false);
@@ -290,6 +335,7 @@ var SCENES = (function () {
 
     on = want;
     document.body.classList.toggle('scenes-on', want);
+    document.body.classList.toggle('glass-on', cardsGlass() && (want || yielded));
     if (want) {
       build();
       box.style.display = '';
@@ -341,7 +387,7 @@ var SCENES = (function () {
     if (!cards) return;
     var els2 = cards.children,
       g = cardsGlass() && on ? fillOf(lib[cur]) : '';
-    drawFrost(g ? srcOf(lib[cur]) : '');
+    drawFrost(g ? srcOf(lib[cur]) : cardsGlass() && yielded ? wallUrl : '', !g);
     for (var i = 0; i < els2.length; i++) {
       var el = els2[i];
       if (!/\bcard-(weather|ha-|frame\b)/.test(el.className)) continue;
@@ -388,6 +434,12 @@ var SCENES = (function () {
     apply: apply,
     tick: tick,
     glassCards: glassCards,
+    /* the Wallpapers photo now behind Home (wall.js), or '' */
+    wall: function (url) {
+      if (url === wallUrl) return;
+      wallUrl = url;
+      if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
+    },
     shown: function () {
       arm();
       glassCards();

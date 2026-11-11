@@ -315,6 +315,13 @@ const SCHEMA = [
   ],
   ['effects.sceneSecs', 'int', [10, 600], 20, 'Seconds each scene stays (`effects.scenes`).'],
   [
+    'effects.scenesYield',
+    'bool',
+    null,
+    false,
+    'With `effects.scenes`: the scenes show only while Wallpapers is off or has no photos; its photos take their place, and with `cards.style` glass the frosted glass behind the grid is drawn from the photo on screen.',
+  ],
+  [
     'cards.style',
     'enum',
     ['flat', 'glass'],
@@ -708,6 +715,7 @@ function resolve(t, accent) {
   if (dockBottom) out.dockBottom = true;
   if (v['effects.scenes'] !== 'off') {
     out.scenes = { set: v['effects.scenes'], secs: v['effects.sceneSecs'] };
+    if (v['effects.scenesYield']) out.scenes.yield = true;
     if (v['effects.scenes'] === 'custom' && v.customScenes) {
       out.scenes.lib = v.customScenes;
       out.scenes.id = t.id;

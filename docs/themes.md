@@ -263,6 +263,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper is darkened with the background colour. |
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |
 | `effects.sceneSecs` | 10 to 600 | `20` | Seconds each scene stays (`effects.scenes`). |
+| `effects.scenesYield` | `true` or `false` | `false` | With `effects.scenes`: the scenes show only while Wallpapers is off or has no photos; its photos take their place, and with `cards.style` glass the frosted glass behind the grid is drawn from the photo on screen. |
 | **cards** | | | |
 | `cards.style` | `flat`, `glass` | `flat` | `glass`: the weather and Home Assistant cards sit on frosted glass (a blurred copy of the scene behind them, no live blur). |
 <!-- schema:end -->
@@ -270,7 +271,9 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 ### Scenes and the glass clock
 
 `effects.scenes` `couch` shows five landscapes that ship with the launcher (Night, Golden hour, Waterline, Fog, Dawn), each for
-`effects.sceneSecs` seconds, cross-faded. They take the place of `effects.wallpaper` and of [Wallpapers](wallpapers.md).
+`effects.sceneSecs` seconds, cross-faded. They take the place of `effects.wallpaper` and of [Wallpapers](wallpapers.md), unless the
+theme sets `effects.scenesYield`: then the scenes show only while Wallpapers is off or has no photos, and with `cards.style` glass the
+frosted glass behind the app grid is drawn from the Wallpapers photo on screen (blurred on the TV, faded over when the photo changes).
 `clock.style` `glass` draws the time as a large glass clock in Antonio: its fill is a blurred, brightened copy of the scene, with a thin
 rim and a sheen. In four scenes the scenery is cut out of the photo and drawn over the clock, so the peaks stand in front of the digits;
 in Waterline the clock sits on the water with a reflection under it. Each scene places the clock and the date above it, so the other
