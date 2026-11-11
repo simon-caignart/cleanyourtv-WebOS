@@ -125,8 +125,11 @@ run(async () => {
       x.j.photos.join(',') === 'u/aa,s/immich/bb,l/unsplash' &&
       x.j.from === 'wallpapers' &&
       x.j.stamp === undefined &&
-      x.j.every === 25,
-    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 25 s each'
+      x.j.every === 16 &&
+      x.j.style === 'kenburns' &&
+      x.j.show === 'photos' &&
+      x.j.slides.length === x.j.photos.length,
+    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 16 s each (Ken Burns), every photo once in the slides'
   );
   // the other things Home can have behind it, in Home's order (scenes, then Wallpapers, then the theme's wallpaper)
   themeNow = { id: 'still', wallpaper: { id: 'still', file: 'lake.jpg', dim: 0.4 } };
@@ -365,15 +368,16 @@ run(async () => {
       ok(n.status === 0, s + ' is valid shell');
     }
   }
-  // ---- the manager: every "Screen saver" row (CleanYourTV as Home, Features) opens the switch's confirm screen ----
+  // ---- the manager: every "Screen saver" row (CleanYourTV as Home, Features) opens its screen: the switch, then the settings ----
   {
     const menu = fs.readFileSync(path.join(root, 'manager', 'src', 'js', 'menu.js'), 'utf8');
     const rows = menu.split("label: 'Screen saver'").slice(1);
     ok(
       rows.length === 2 &&
         rows.every(r => /^[\s\S]{0,400}?fn: openSaver/.test(r)) &&
-        /function openSaver\(\) \{[\s\S]{0,400}?push\('confirm-saver'\)/.test(menu),
-      'both "Screen saver" rows of the manager open the confirm screen of the switch (rows: ' + rows.length + ')'
+        /function openSaver\(\) \{[\s\S]{0,600}?push\('saver'\)/.test(menu) &&
+        /view === 'saver'[\s\S]{0,800}?push\('confirm-saver'\)/.test(menu),
+      'both "Screen saver" rows of the manager open its screen, whose first row is the switch (rows: ' + rows.length + ')'
     );
   }
 

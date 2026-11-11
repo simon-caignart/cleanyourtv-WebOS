@@ -880,10 +880,13 @@
  },
  "screen saver status": {
   "body": {
-   "every": 25,
+   "every": 16,
+   "films": 0,
    "photos": 0,
    "replaced": false,
-   "running": false
+   "running": false,
+   "show": "",
+   "style": "kenburns"
   },
   "cors": "null",
   "status": 200,
@@ -893,10 +896,13 @@
   "body": {
    "clock": "24",
    "credits": {},
-   "every": 25,
+   "every": 16,
    "from": "",
    "lang": "",
-   "photos": []
+   "photos": [],
+   "show": "photos",
+   "slides": [],
+   "style": "kenburns"
   },
   "cors": "null",
   "status": 200,

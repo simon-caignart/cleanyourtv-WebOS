@@ -253,6 +253,10 @@ function draw() {
     $('sub').textContent = tr('Volume bar');
     return;
   }
+  if (view === 'saver') {
+    $('sub').textContent = tr('Screen saver');
+    return;
+  }
   if (view === 'confirm-home' || view === 'confirm-uninstall') {
     $('sub').textContent = tr(view === 'confirm-uninstall' ? 'Remove CleanYourTV?' : 'Switch Home?');
     return;

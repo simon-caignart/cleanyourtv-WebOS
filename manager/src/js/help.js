@@ -36,6 +36,8 @@ var INFO = {
   'Remove old Immich data':
     'Deletes the Immich photos and the saved address and key that an earlier version kept. Use it when you do not want the Immich add-on.',
   'Total': 'Every photo Wallpapers can show, and the space they use on the TV (at most 150 MB).',
+  'Photos on Home':
+    'Landscape only (the default): Home shows the photos that are clearly wider than tall, since a portrait photo would show only its middle there. The screen saver shows every photo, portraits two side by side. All: Home shows every photo. A library without a landscape photo shows them all on Home.',
   'Picture size':
     '4K (the default) keeps photos at 3840 pixels, the size the TV draws Home at, so they look sharp; Full HD at 1920 fits about four times as many photos in 150 MB. It applies to new uploads and to the next Immich sync.',
   'Remove all uploads': 'Deletes every uploaded photo from the TV. Photos from other sources stay.',

@@ -12,7 +12,8 @@ LG's screen saver back.
 
 ## What it shows
 
-- **What Home has behind it**, worked out in Home's own order, changed every 25 seconds (a new photo starts when the page opens):
+- **What Home has behind it**, worked out in Home's own order, changed every 16 seconds with Ken Burns and every 25 with Classic (see
+  [Photo styles](#photo-styles); a new photo starts when the page opens):
     1. the theme's **scenes**: the five landscapes of the couch scenes (or an add-on's scenes in their place, such as Seasons, with
        their credit line), or a theme's own scenes;
     2. else, with [Wallpapers](wallpapers.md) on, the **wallpaper library**: uploads from the phone, the photos of a source add-on
@@ -29,9 +30,23 @@ LG's screen saver back.
 
 The first key, click or touch closes it and the app that was on screen comes back. Nothing is saved or uploaded.
 
+## Photo styles
+
+As on the Apple TV, the photos have a style, chosen in the manager: **Features** > **Screen saver** > **Photo style**.
+
+- **Ken Burns** (the default): each photo slowly zooms in or out (between 1 and 1.12 times) and drifts toward or from a point, over the 16 seconds it stays and its fade, and the next one fades in over it.
+- **Classic**: the photos stay still and cross-fade, every 25 seconds.
+
+In both styles a photo in portrait (less than 1.2 times as wide as tall, see [Wallpapers](wallpapers.md#landscape-and-portrait)) is not cut to its middle band.
+Two portrait photos share the screen, side by side with a thin line between them, and drift a little less; a portrait photo left over at the end of the round is shown whole over a blurred, darker copy of itself.
+The order is shuffled each time the screen saver opens; a portrait photo is paired with the next portrait one in that order.
+
+To spare the TV's graphics, each photo is drawn once into a picture of 1920 x 1080 that the screen scales, only that picture moves and fades, and there are never more than two of them; the next photo is loaded and decoded while one shows.
+
 ## Films (the Aerials add-on)
 
 With the **Aerials** add-on installed (manager > Add-ons > Get more), the screen saver plays Apple's Aerial films instead of the pictures above: slow drone films of cities, landscapes and the sea, a few minutes each, as on the Apple TV.
+**Features** > **Screen saver** > **Show** chooses, as the Apple TV's screen saver type does: **Aerials** (the default with the add-on), **Photos**, or **Aerials and photos**: a film, then three photos, then the next film, in turn (the film fades out over the first photo, and the next film fades in over the last one).
 Each film fades in over the one before, about ten seconds before that one ends, and the place's name shows in the bottom left corner for a few seconds at its start; the clock and the date stay where they are.
 The order is shuffled each time the screen saver opens.
 
@@ -105,7 +120,8 @@ right after opening.
 
 ## Turning it off and on
 
-It is **off by default**. In the manager app: **Features → Screen saver** or **CleanYourTV as Home → Screen saver**, On or Off.
+It is **off by default**. In the manager app: **Features → Screen saver** or **CleanYourTV as Home → Screen saver**, then **CleanYourTV's screen saver**, On or Off.
+The same screen has **Show** (with the Aerials add-on) and **Photo style**, which take effect the next time the screen saver opens, without a restart.
 Switching restarts the TV, as that switch does for Home; after the restart the screen saver is ours or LG's. The row under Features
 also says which one runs now: ours or LG's own.
 

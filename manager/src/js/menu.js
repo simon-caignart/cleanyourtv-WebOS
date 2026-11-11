@@ -963,6 +963,38 @@ function build() {
     rows.push({ label: 'Share log', sub: 'QR code for your phone', fn: openShare });
     return;
   }
+  if (view === 'saver') {
+    var s = saverCfg || { style: 'kenburns', show: '', films: 0 },
+      shows = { aerials: 'Aerials', photos: 'Photos', both: 'Aerials and photos' },
+      show = s.show || (s.films ? 'aerials' : 'photos');
+    rows.push({
+      label: 'CleanYourTV\u2019s screen saver',
+      sub: (st.saver && st.saver.enabled ? 'On' : 'Off') + ' \u00B7 switching restarts the TV',
+      fn: function () {
+        push('confirm-saver');
+      },
+    });
+    rows.push({ sep: true });
+    /* with an add-on that has films (Aerials): films, photos, or a film and then a few photos, in turn */
+    if (s.films)
+      rows.push({
+        label: 'Show',
+        sub: shows[show],
+        fn: function () {
+          saverSet({ show: show === 'aerials' ? 'photos' : show === 'photos' ? 'both' : 'aerials' });
+        },
+      });
+    rows.push({
+      label: 'Photo style',
+      sub: s.style === 'classic' ? 'Classic \u00B7 cross-fade' : 'Ken Burns \u00B7 slow pan and zoom',
+      fn: function () {
+        saverSet({ style: s.style === 'classic' ? 'kenburns' : 'classic' });
+      },
+    });
+    rows.push({ sep: true });
+    rows.push({ label: 'Back', fn: pop });
+    return;
+  }
   if (view === 'confirm-home' || view === 'confirm-uninstall' || view === 'confirm-saver') {
     var un = view === 'confirm-uninstall',
       saver = view === 'confirm-saver',
@@ -1829,6 +1861,13 @@ function build() {
         wallCall('/api/wallpapers/set', { size: w.size === 'hd' ? '4k' : 'hd' });
       },
     });
+    rows.push({
+      label: 'Photos on Home',
+      sub: w.home === 'all' ? 'All' : 'Landscape only \u00B7 portrait photos go to the screen saver',
+      fn: function () {
+        wallCall('/api/wallpapers/set', { home: w.home === 'all' ? 'landscape' : 'all' });
+      },
+    });
     rows.push({ sep: true });
     rows.push({
       label: 'Remove all uploads',
@@ -2101,7 +2140,31 @@ function openSaver() {
     banner(tr('Not available on this TV yet: it needs a TV whose Home and screen saver LG ships as apps.'), '');
     return;
   }
-  push('confirm-saver');
+  /* the switch and the screen saver's settings (what it shows, the photo style) */
+  api('/api/screensaver').then(
+    function (r) {
+      saverCfg = r;
+      push('saver');
+    },
+    function () {
+      saverCfg = null;
+      push('confirm-saver');
+    }
+  );
+}
+function saverSet(b) {
+  api('/api/screensaver/set', b).then(
+    function (r) {
+      saverCfg = Object.assign({}, saverCfg, r);
+      if (view === 'saver') {
+        build();
+        draw();
+      }
+    },
+    function () {
+      banner('The service did not answer', 'err');
+    }
+  );
 }
 function isOfficial(e) {
   return e.official !== false;

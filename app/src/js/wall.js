@@ -1,4 +1,5 @@
-/* ---------- Wallpapers: the service's photos (uploads and the photo sources of add-ons, GET /api/wallpapers/list) behind Home instead of the theme's
+/* ---------- Wallpapers: the service's photos (uploads and the photo sources of add-ons, GET /api/wallpapers/list: its "home" list, the
+   landscape photos unless Photos on Home is All) behind Home instead of the theme's
    background. A random photo every cfg.wall.secs seconds while Home is on screen; when Home opens again, a new one only if that many
    seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is. ---------- */
 /* seconds between photos; settings saved before 1.6.10 hold minutes in "every" */
@@ -147,7 +148,7 @@ var WALL = (function () {
     stamp = st;
     api('/api/wallpapers/list').then(
       function (x) {
-        list = x.photos || [];
+        list = x.home || x.photos || [];
         if (!list.length) return off();
         if (!cur || list.indexOf(cur) < 0) next();
         arm();

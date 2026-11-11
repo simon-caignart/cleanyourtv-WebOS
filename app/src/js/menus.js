@@ -962,6 +962,24 @@ function wallMenu() {
         },
       },
       {
+        /* portrait photos show only their middle on Home, so by default Home leaves them to the screen saver */
+        label: t('Photos on Home'),
+        sub: cfg.wallpapers && cfg.wallpapers.home === 'all' ? t('All') : t('Landscape only'),
+        stay: true,
+        fn: function () {
+          var all = !(cfg.wallpapers && cfg.wallpapers.home === 'all');
+          api('/api/wallpapers/set', { home: all ? 'all' : 'landscape' }).then(
+            function () {
+              load();
+            },
+            function () {
+              toast(t('Could not save the settings. Try again in a moment.'), true);
+            }
+          );
+          cfg.wallpapers = Object.assign({}, cfg.wallpapers, { home: all ? 'all' : '' });
+        },
+      },
+      {
         label: t('New photo'),
         sub: name(e),
         stay: true,

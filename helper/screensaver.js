@@ -1,8 +1,11 @@
 // The screen saver: our page in place of LG's screen saver app (scripts/20-cleanyourtv-screensaver, docs/screensaver.md). This module
 // serves that page, closes it again, and opens it over an idle launcher when tvpowerd did not:
-//   GET  /api/screensaver          {replaced, running, photos, every}
-//   GET  /api/screensaver/photos?cc=<country>   {photos, credits, from, every}   what Home has behind it (background() below):
-//        photos are library ids ('u/<id>', 's/<add-on>/<id>', 'l/<add-on>') or paths on this service; from: scenes, wallpapers, theme
+//   GET  /api/screensaver          {replaced, running, photos, every, style, show, films}
+//   GET  /api/screensaver/photos?cc=<country>   {photos, credits, from, every, slides, style, show}   what Home has behind it
+//        (background() below): photos are library ids ('u/<id>', 's/<add-on>/<id>', 'l/<add-on>') or paths on this service; from:
+//        scenes, wallpapers, theme; slides: the photos in a shuffled order, a portrait photo paired with the next one (slides());
+//        style: kenburns or classic; show: what to show, aerials, photos or both (resolved: photos when no add-on has films)
+//   POST /api/screensaver/set {style, show}   the screen saver's settings (config.json screensaver: written only when not the default)
 //   GET  /api/screensaver/scene/<night|golden|water|fog|dawn>   a couch scene of the launcher (app/scene-<id>.jpg)
 //   GET  /api/screensaver/live/<add-on>   {url, credit}: the photo a live source (Unsplash) gave Home last, so the saver shows the same
 //   GET  /api/screensaver/videos   {videos: [{id, url, title}], from}: the films of the first add-on that provides "videos" and has
@@ -15,14 +18,15 @@
 // the screen saver by itself, which stops the program sam started but not necessarily the page in webapp-mgr).
 const fs = require('fs');
 const P = require('./paths'),
-  web = require('./web');
+  web = require('./web'),
+  { isLandscape } = require('./wallpapers');
 
 const SA = 'com.webos.app.screensaver',
   WEBMGR = 'luna://com.palm.webappmanager/',
   AM = 'luna://com.webos.applicationManager/',
   CHECK_MS = 10000,
   GRACE_MS = 60000,
-  EVERY_S = 25; // the seconds each photo stays on the page
+  EVERY_S = { classic: 25, kenburns: 16 }; // the seconds each photo stays on the page, by style
 
 // is LG's screen saver replaced now (the page's folder mounted over its app)?
 function replaced() {
@@ -48,6 +52,37 @@ const IDLE_MS = 120000;
 // the couch scenes that ship with the launcher (app/scene-<id>.jpg, the list in app/src/js/scenes.js): the page is another app and
 // cannot load the launcher's files by their relative names, so this module hands them out (only these names)
 const COUCH = ['night', 'golden', 'water', 'fog', 'dawn'];
+// The order of the photos: a landscape photo is a slide of its own; a portrait photo waits for the next portrait one and the two
+// share a slide, side by side, where the second one came; a portrait photo left over at the end is a slide alone (shown over a blurred
+// copy of itself). A size that is not known counts as landscape (a live source, a scene, the theme's wallpaper).
+//   [{a}, {a, b, portrait: true}, {a, portrait: true}]
+function slides(ids, sizes) {
+  const z = sizes || {},
+    out = [];
+  let held = null;
+  for (const id of ids) {
+    if (isLandscape(z[id])) out.push({ a: id });
+    else if (held === null) held = id;
+    else {
+      out.push({ a: held, b: id, portrait: true });
+      held = null;
+    }
+  }
+  if (held !== null) out.push({ a: held, portrait: true });
+  return out;
+}
+function shuffle(a, rnd) {
+  const r = rnd || Math.random;
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1)),
+      t = a[i];
+    a[i] = a[j];
+    a[j] = t;
+  }
+  return a;
+}
+const STYLES = ['kenburns', 'classic'],
+  SHOWS = ['aerials', 'photos', 'both'];
 function mayOpen(now, homeSince, activeAt) {
   return !!activeAt && now - Math.max(homeSince, activeAt) >= IDLE_MS;
 }
@@ -79,6 +114,38 @@ function create(ctx) {
   // itself) and the Clock setting
   const lang = () => String((config.get() || {}).lang || '');
   const clock = () => (['12', '24'].indexOf((config.get() || {}).clock) >= 0 ? config.get().clock : 'auto');
+  // the settings: style (kenburns, the default, or classic) and show (aerials, photos or both; '' the default: aerials when an add-on
+  // has films, else photos)
+  const settings = () => {
+    const c = (config.get() || {}).screensaver || {};
+    return { style: STYLES.indexOf(c.style) >= 0 ? c.style : 'kenburns', show: SHOWS.indexOf(c.show) >= 0 ? c.show : '' };
+  };
+  function set(b) {
+    config.update('screensaver', c => {
+      const s = Object.assign({}, c.screensaver || {});
+      if (STYLES.indexOf(b.style) >= 0) {
+        if (b.style === 'kenburns') delete s.style;
+        else s.style = b.style;
+      }
+      if (b.show === '' || SHOWS.indexOf(b.show) >= 0) {
+        if (!b.show) delete s.show;
+        else s.show = b.show;
+      }
+      if (Object.keys(s).length) c.screensaver = s;
+      else delete c.screensaver;
+    });
+  }
+  // what the page shows: photos when no add-on has films, else the setting (Aerials by default)
+  const showNow = films => (!films ? 'photos' : settings().show || 'aerials');
+  // the sizes of the library's photos, for the pairing of portrait ones
+  const sizesOf = ids => {
+    const w = wp();
+    try {
+      return w && w.sizes ? w.sizes(ids.filter(id => /^[us]\//.test(id))) : {};
+    } catch (_) {
+      return {};
+    }
+  };
   // the library as Home shows it: uploads (u/<id>) and the photos of source add-ons (s/<add-on>/<id>), which the page loads from
   // /api/wallpapers/photo/, and live sources (l/<add-on>, Unsplash), whose current photo the page asks /api/wallpapers/live/<add-on>
   // for, as Home's wall.js does. An id of another kind is left out: the page would not know how to show it.
@@ -267,13 +334,25 @@ function create(ctx) {
     if (t.unref) t.unref();
   }
 
-  async function handle(req, res, u) {
+  async function handle(req, res, u, body) {
     const json = (o, c) => web.json(res, o, c);
     if (u === '/api/screensaver/photos') {
       // ?cc=<country>: the page passes the TV's country, as the launcher does for the scenes of an add-on (Seasons picks by it)
       const m = /[?&]cc=([A-Za-z]{2,3})(?:&|$)/.exec(req.url || '');
       const b = await background(m ? m[1].toUpperCase() : '');
-      return json({ photos: b.photos, credits: b.credits, from: b.from, every: EVERY_S, lang: lang(), clock: clock() });
+      const st = settings(),
+        films = (await videos()).videos.length;
+      return json({
+        photos: b.photos,
+        credits: b.credits,
+        from: b.from,
+        every: EVERY_S[st.style],
+        lang: lang(),
+        clock: clock(),
+        slides: slides(shuffle(b.photos.slice()), sizesOf(b.photos)),
+        style: st.style,
+        show: showNow(films),
+      });
     }
     if (u === '/api/screensaver/videos') return json(await videos());
     // a live source's photo: the one Home has now (wallpapers.js liveCurrent), not the next one the source would hand out
@@ -301,8 +380,22 @@ function create(ctx) {
       await close();
       return json({ returnValue: true });
     }
+    if (u === '/api/screensaver/set' && req.method === 'POST') {
+      set((await body(req)) || {});
+      const st = settings();
+      return json({ style: st.style, show: st.show, films: (await videos()).videos.length });
+    }
     if (u === '/api/screensaver') {
-      return json({ replaced: replaced(), running: await running(), photos: photos().length, every: EVERY_S });
+      const st = settings();
+      return json({
+        replaced: replaced(),
+        running: await running(),
+        photos: photos().length,
+        every: EVERY_S[st.style],
+        style: st.style,
+        show: st.show,
+        films: (await videos()).videos.length,
+      });
     }
     web.notFound(res);
   }
@@ -322,4 +415,4 @@ function create(ctx) {
   };
 }
 
-module.exports = { create, replaced, supported, mayOpen, cleanVideos };
+module.exports = { create, replaced, supported, mayOpen, cleanVideos, slides, shuffle };
