@@ -229,6 +229,20 @@ const SCHEMA = [
     'focus',
     '`focus`: a dark shadow under the focused tile; `soft`: every tile casts a faint shadow, and a deeper one under the focused tile fades in as it grows.',
   ],
+  [
+    'tile.press',
+    'num',
+    [0.8, 1.3],
+    0.96,
+    'Scale of a tile while OK is held down, of its resting size; above 1 it sinks from its focused size without shrinking below rest.',
+  ],
+  [
+    'tile.launch',
+    'enum',
+    ['dim', 'zoom'],
+    'dim',
+    '`dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens.',
+  ],
   ['tile.shadowStrength', 'num', [0, 1], 1, 'Strength of the `soft` shadows (`tile.shadow`).'],
   ['tile.border', 'num', [0, 0.6], 0, 'Opacity of a thin outline on every tile.'],
   ['tile.ringWidth', 'int', [0, 10], 4, 'Width of the focus ring, in px; 0 for none.'],
@@ -627,6 +641,12 @@ function resolve(t, accent) {
   if (v['tile.shadow'] !== 'focus') {
     attrs.tshadow = v['tile.shadow'];
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
+  }
+  if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
+  if (v['tile.launch'] !== 'dim') {
+    attrs.launch = v['tile.launch'];
+    vars['--launch-sd'] = String(Math.round(v['dock.focusScale'] * 130) / 100);
+    vars['--launch-sg'] = String(Math.round(v['grid.focusScale'] * 130) / 100);
   }
   // only a theme that names the focused app under its tile carries this, so the replies for the other themes stay as they were
   if (v['tile.label'] !== 'none') {

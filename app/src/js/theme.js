@@ -32,6 +32,7 @@ var TH0 = {
     'data-motion',
     'data-hl',
     'data-tshadow',
+    'data-launch',
   ];
 function applyTheme(t) {
   var st = document.documentElement.style,

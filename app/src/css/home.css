@@ -417,8 +417,19 @@ body {
   object-fit: fill;
 }
 .tile.press {
-  transform: scale(0.96) !important;
+  transform: scale(var(--press-s, 0.96)) !important;
   transition-duration: calc(0.06s * var(--spd));
+}
+/* tile.launch zoom: the tile grows past its focused size and fades out while the app opens (input.js puts it back when Home hides) */
+[data-launch="zoom"] .tile.launching {
+  transform: scale(var(--launch-sg)) !important;
+  opacity: 0;
+  transition:
+    transform calc(0.4s * var(--spd)) cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity calc(0.4s * var(--spd)) cubic-bezier(0.4, 0, 1, 1) !important;
+}
+[data-launch="zoom"] #dock .tile.launching {
+  transform: scale(var(--launch-sd)) !important;
 }
 .tile.moving {
   z-index: 10;
@@ -572,6 +583,11 @@ body {
   transition-duration: calc(var(--t-grow) * var(--spd));
   transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* OK held: the tile sinks without a bounce; on release it grows back with the focus timing */
+[data-motion="smooth"] .tile.f.press {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: ease-out;
+}
 [data-motion="smooth"].snap .tile,
 [data-motion="smooth"].snap .pill {
   transition-duration: calc(0.08s * var(--spd));
@@ -600,6 +616,10 @@ body {
 [data-tshadow="soft"] .tile.f .tsh {
   opacity: 1;
   transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+}
+/* pressed: the tile comes closer to the surface, its shadow gets shorter */
+[data-tshadow="soft"] .tile.f.press .tsh {
+  opacity: 0.55;
 }
 [data-tshadow="soft"] .tile,
 [data-tshadow="soft"] .tile.f {
