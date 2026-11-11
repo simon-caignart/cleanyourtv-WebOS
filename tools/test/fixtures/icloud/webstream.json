@@ -1,0 +1,79 @@
+{
+  "streamName": "Test album",
+  "userFirstName": "Test",
+  "userLastName": "Owner",
+  "streamCtag": "FT;0;0;0",
+  "itemsReturned": "0",
+  "locations": {},
+  "photos": [
+    {
+      "batchGuid": "BA7C0000-0000-4000-8000-000000000001",
+      "photoGuid": "0A000000-0000-4000-8000-000000000001",
+      "dateCreated": "2026-03-03T10:00:00Z",
+      "batchDateCreated": "2026-03-03T10:05:00Z",
+      "caption": "",
+      "contributorFirstName": "Test",
+      "contributorLastName": "Owner",
+      "contributorFullName": "Test Owner",
+      "width": "1536",
+      "height": "2048",
+      "derivatives": {
+        "342": { "fileSize": "21000", "checksum": "01aa000000000000000000000000000000000001a1", "width": "257", "height": "342" },
+        "2049": { "fileSize": "480000", "checksum": "01aa000000000000000000000000000000000001b1", "width": "1536", "height": "2048" }
+      }
+    },
+    {
+      "batchGuid": "BA7C0000-0000-4000-8000-000000000001",
+      "photoGuid": "0A000000-0000-4000-8000-000000000002",
+      "dateCreated": "2026-03-02T10:00:00Z",
+      "batchDateCreated": "2026-03-03T10:05:00Z",
+      "caption": "",
+      "width": "2048",
+      "height": "1536",
+      "derivatives": {
+        "342": { "fileSize": "20000", "checksum": "01aa000000000000000000000000000000000002a1", "width": "456", "height": "342" },
+        "1536": { "fileSize": "450000", "checksum": "01aa000000000000000000000000000000000002b1", "width": "2048", "height": "1536" }
+      }
+    },
+    {
+      "batchGuid": "BA7C0000-0000-4000-8000-000000000002",
+      "photoGuid": "0A000000-0000-4000-8000-000000000003",
+      "dateCreated": "2026-03-04T10:00:00Z",
+      "batchDateCreated": "2026-03-04T10:05:00Z",
+      "caption": "",
+      "mediaAssetType": "video",
+      "width": "1920",
+      "height": "1080",
+      "derivatives": {
+        "PosterFrame": { "fileSize": "300000", "checksum": "01aa000000000000000000000000000000000003a1", "width": "1920", "height": "1080" },
+        "720p": { "fileSize": "9000000", "checksum": "01aa000000000000000000000000000000000003b1", "width": "1280", "height": "720" }
+      }
+    },
+    {
+      "batchGuid": "BA7C0000-0000-4000-8000-000000000002",
+      "photoGuid": "0A000000-0000-4000-8000-000000000004",
+      "dateCreated": "2026-03-01T10:00:00Z",
+      "batchDateCreated": "2026-03-04T10:05:00Z",
+      "caption": "",
+      "width": "4032",
+      "height": "3024",
+      "derivatives": {
+        "342": { "fileSize": "22000", "checksum": "01aa000000000000000000000000000000000004a1", "width": "456", "height": "342" },
+        "2049": { "fileSize": "700000", "checksum": "01aa000000000000000000000000000000000004b1", "width": "2732", "height": "2049" },
+        "3024": { "fileSize": "2400000", "checksum": "01aa000000000000000000000000000000000004c1", "width": "4032", "height": "3024" }
+      }
+    },
+    {
+      "batchGuid": "BA7C0000-0000-4000-8000-000000000003",
+      "photoGuid": "0A000000-0000-4000-8000-000000000005",
+      "dateCreated": "2026-02-28T10:00:00Z",
+      "batchDateCreated": "2026-03-04T10:05:00Z",
+      "caption": "",
+      "width": "456",
+      "height": "342",
+      "derivatives": {
+        "342": { "fileSize": "22000", "checksum": "01aa000000000000000000000000000000000005a1", "width": "456", "height": "342" }
+      }
+    }
+  ]
+}

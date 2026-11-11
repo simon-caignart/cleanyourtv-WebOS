@@ -26,6 +26,8 @@ function note(kind, what) {
       ' ' +
       String(what)
         .replace(/\/live\/[^\/\s]*\/[^\/\s]*\//g, '/live/*/*/')
+        // the token of an iCloud shared album (the icloud add-on) opens the album
+        .replace(/\/[^\/\s]+\/sharedstreams\//g, '/*/sharedstreams/')
         .slice(0, 120)
   );
   if (ops.length > KEEP) ops.shift();

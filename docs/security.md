@@ -23,6 +23,7 @@ local network on request, and an optional notification endpoint is off by defaul
 | 8800 | Add-on repositories page | The same, for adding a repository of add-ons from your phone (ten minutes); see [Add-on repositories](development/addon-repos.md) |
 | 8802 | MCP on the network | Only when you switch it on in the manager app (Features > AI agents (MCP)); needs a token; see [MCP on the network](#mcp-on-the-network) |
 | 8803 | Agent tools page | The same, for the agent add-on: which apps and add-ons may give the voice assistant their tools; see [Agent tools](agent.md) |
+| 8804 | iCloud Shared Album page | The same, for the iCloud Shared Album add-on (the albums' public links; the TV shows only the last four characters of each token); see [Wallpapers](wallpapers.md#icloud-shared-album-add-on) |
 | 8798 | Jellyfin page | The same, for the Jellyfin add-on (server address, user name and password; the TV keeps only the access token); see [Cards](launcher.md#cards) |
 | 8799 | Phone remote (a catalog add-on) | Only while the add-on is on **and** a phone is paired or its pairing screen is open; every phone needs a token from a one-time code; see [Phone remote](phone-remote.md) |
 

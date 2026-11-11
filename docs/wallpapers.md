@@ -1,7 +1,7 @@
 # Wallpapers
 
 Your own photos behind the home screen. Out of the box they are files: photos you upload from a phone. Other sources are
-[add-ons](development/addons.md) you install in the manager: [Immich](https://immich.app) albums, [Unsplash](https://unsplash.com), and more. Everything ends up in
+[add-ons](development/addons.md) you install in the manager: [Immich](https://immich.app) albums, iCloud Shared Albums, [Unsplash](https://unsplash.com), and more. Everything ends up in
 one rotation on the TV. The same photos stand in for LG's screen saver when CleanYourTV's [Screen saver](screensaver.md) is on.
 
 ## Switching it on
@@ -64,6 +64,30 @@ and 100 MB.
 where they were until you install the Immich add-on, which takes them over once (nothing is downloaded again). Until then they are not
 used. To drop them instead, use **Remove old Immich data** on the Wallpapers screen.
 
+## iCloud Shared Album (add-on)
+
+Install **iCloud Shared Album** in the manager's **Add-ons**.
+It adds a row on the Wallpapers screen that opens its page on the phone: paste the public link of one or more shared albums (one per line), then **Test and save**.
+The page shows each album with its name, how many photos it has and how many are on the TV, **Sync now**, and the synced photos (tap one to hide it from the TV).
+
+The album must be shared as a public website: in Photos on an iPhone, iPad or Mac, open the shared album, then its people settings, and turn on **Public Website**.
+The link is `https://www.icloud.com/sharedalbum/#` followed by the album's token, about fifteen letters and digits.
+Anyone with that link can see the album, so treat it like a password.
+The part after `#` (the album's token) is kept in the service's settings file (`config.json`, readable by root only); the TV's pages only ever see its last four characters, and it is not logged.
+Up to 10 albums.
+
+A sync reads each album the way the album's page on icloud.com does (Apple's shared-streams web service, which Apple does not document), skips videos, and downloads each photo once, newest first, as a JPEG.
+Apple keeps a shared album's photos in a few sizes: at 4K the TV takes the largest (Apple usually keeps shared photos at 2048 pixels on the long side), at Full HD the smallest that still covers 1920 pixels; thumbnails are never used.
+A photo is downloaded again only when Apple reports a different checksum or the Picture size changed; it is tracked by its photo ID.
+Photos that left an album are deleted from the TV; nothing else is touched.
+The TV talks only to Apple's `p<NN>-sharedstreams.icloud.com` servers (an album that lives on another one is followed there, a few times at most) and downloads only over https from hosts under `icloud-content.com` or `icloud.com`; an answer or a redirect that points anywhere else is refused.
+
+The sync runs every six hours, and when you add an album or press **Sync now** on the phone page.
+Shortly after the TV starts it only runs when the last sync is more than a day old.
+When Apple cannot be reached, or an album is no longer public, the photos already on the TV stay and the error is shown (on the album's row for one album).
+Showing a photo never needs Apple.
+The photos are kept in the add-on's own folder (`addon-data/icloud/`), at most 300 photos and 100 MB.
+
 ## Unsplash (add-on)
 
 Install **Unsplash** in the manager's **Add-ons**. It adds a row on the Wallpapers screen that opens its page on the phone. A free
@@ -97,7 +121,7 @@ size.
 | | |
 |---|---|
 | Uploads | At most 100 photos, 12 MB each; JPEG, PNG and WebP (checked by their content, not their name). |
-| Space | 150 MB for the uploads. A full library refuses uploads with a message. Each photo source keeps its own photos and limits (Immich: 300 photos, 100 MB). |
+| Space | 150 MB for the uploads. A full library refuses uploads with a message. Each photo source keeps its own photos and limits (Immich and iCloud Shared Album: 300 photos, 100 MB each). |
 
 The photos are stored in `/media/developer/cleanyourtv/wallpapers/`: `upload/` (each under a random name) and `index.json`, which records every upload (`immich/` is what an earlier version synced
 from Immich, kept until the Immich add-on takes it over). Only files listed there are ever

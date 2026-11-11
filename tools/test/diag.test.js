@@ -49,6 +49,12 @@ run(async () => {
     diag.ops().some(o => /\/live\/\*\/\*\/123/.test(o)) && !diag.ops().some(o => /secret/.test(o)),
     'logged operations hide the credentials of a stream address'
   );
+  diag.note('request', 'POST https://p23-sharedstreams.icloud.com/B0zTestTok3n99/sharedstreams/webstream');
+  ok(
+    diag.ops().some(o => /p23-sharedstreams\.icloud\.com\/\*\/sharedstreams\/webstream/.test(o)) &&
+      !diag.ops().some(o => /TestTok3n/.test(o)),
+    'and the token of an iCloud shared album'
+  );
   fs.writeFileSync(
     process.env.CYTV_RUNFILE,
     JSON.stringify({ pid: 999999, started: 1790000000, ops: ['1790000001 exec luna-send -n 1', '1790000002 request GET http://x/y'] })
