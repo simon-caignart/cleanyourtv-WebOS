@@ -1,7 +1,8 @@
 // Themes (theme.js): the repository's themes/ folder is valid, values are checked and clamped, extends works, a theme is downloaded
 // from GitHub (a local stand-in here) when chosen and kept, a bad download is refused, and the service ships none.
 const fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  vm = require('vm');
 const { root, tmp, ok, call, serve, req, memoryConfig, run } = require('./lib');
 const nc = req('netcompat');
 
@@ -121,6 +122,43 @@ run(async () => {
     !('cstyle' in plain.attrs) && !('cards' in plain.attrs) && !('scenes' in plain) && !('cstyle' in odd.attrs) && !('scenes' in odd),
     'without them (or with an unknown value) the text clock and no scenes, and no new keys in the reply'
   );
+  // tile.label: the focused app's name under its tile; only a theme that turns it on carries the keys
+  const named = themeMod.resolve(
+    themeMod.normalize(
+      { tile: { label: 'focus', labelSize: 30, labelDock: true }, type: { scale: 1.1 }, grid: { focusScale: 1.22 } },
+      'named'
+    )
+  );
+  ok(
+    named.label &&
+      named.label.dock === true &&
+      named.label.size === 33 &&
+      named.label.gridScale === 1.22 &&
+      named.label.lift === 10 &&
+      named.vars['--tlabel-fs'] === '33px',
+    'tile.label reaches the launcher with its size (times type.scale), the dock choice and the focus scales'
+  );
+  ok(
+    !('label' in plain) &&
+      !('--tlabel-fs' in plain.vars) &&
+      !('label' in themeMod.resolve(themeMod.normalize({ tile: { label: 'always' } }, 'odd2'))),
+    'without tile.label (or with an unknown value) no name and no new keys in the reply'
+  );
+  {
+    const lctx = {};
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'app', 'src', 'js', 'theme.js'), 'utf8'), lctx);
+    const L = { gridScale: 1.22, size: 29 },
+      b = lctx.labelBox(90, 0, 250, 150, 1.22, 0);
+    ok(
+      b.w === 305 && b.x === 63 && b.y === 182,
+      'the name is centred under the tile, as wide as the focused tile, 15 px below its scaled bottom'
+    );
+    ok(lctx.labelBox(0, 0, 250, 150, 1.22, -10).y === b.y - 10, 'a lifted dock tile lifts its name too');
+    ok(
+      lctx.labelRoom(L, 150) === Math.ceil(16.5 + 15 + 29 * 1.2) && lctx.labelRoom(null, 150) === 0,
+      'the room a name takes under a row: the grown tile, the gap and one line; none without names'
+    );
+  }
   // dock.tileFrost and dock.tileFrostColor: a tint over the resting tiles, its colour resolved to an rgb triple
   const frost = themeMod.resolve(themeMod.normalize({ dock: { tileFrost: 0.4, tileFrostColor: '#ffffff' } }, 'frost'));
   ok(

@@ -591,6 +591,32 @@ body {
     transform calc(0.3s * var(--spd)) cubic-bezier(0.2, 0.85, 0.3, 1),
     opacity calc(0.15s * var(--spd)) linear;
 }
+/* tile.label: the focused app's name under its tile (theme.js tileLabel); two take turns so one fades in while the other fades out */
+.tlabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  font-size: var(--tlabel-fs, 29px);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+  transition: opacity calc(0.12s * var(--spd)) linear;
+}
+.tlabel.on {
+  opacity: 1;
+}
+.snap .tlabel {
+  transition: none;
+}
 #grid .tile.sys {
   flex-direction: column;
 }

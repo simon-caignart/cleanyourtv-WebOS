@@ -218,6 +218,15 @@ const SCHEMA = [
   ['tile.ringWidth', 'int', [0, 10], 4, 'Width of the focus ring, in px; 0 for none.'],
   ['tile.ringOffset', 'int', [0, 14], 4, 'Space between a tile and its focus ring, in px.'],
   ['tile.iconScale', 'num', [0.6, 2], 1, 'Scale of the icon inside the tile.'],
+  [
+    'tile.label',
+    'enum',
+    ['none', 'focus'],
+    'none',
+    "`focus`: the focused app's name, centred under its tile in the app grid; it fades in on the new tile and out on the old one. Leave room for it with `grid.gapY` (about 70 or more).",
+  ],
+  ['tile.labelSize', 'int', [18, 48], 29, 'Size of that name, in px (`tile.label`).'],
+  ['tile.labelDock', 'bool', null, false, 'Also show the name under the focused tile of the dock (`tile.label`).'],
   ['picker.iconScale', 'num', [0.5, 2.5], 1, 'Scale of the app icons in the Input picker over the running app; 1 is the usual size.'],
   ['effects.glow', 'num', [0, 1], 1, 'Strength of the ambient glow at the top.'],
   ['effects.focusIcon', 'bool', null, false, 'Show the focused app icon as a large, dim background image.'],
@@ -586,6 +595,12 @@ function resolve(t, accent) {
     wallpaper: w ? { id: t.id, file: w, dim: v['effects.wallpaperDim'] } : null,
   };
   if (v['effects.focusIcon']) out.focusIcon = true;
+  // only a theme that names the focused app under its tile carries this, so the replies for the other themes stay as they were
+  if (v['tile.label'] !== 'none') {
+    const size = Math.round(v['tile.labelSize'] * v['type.scale']);
+    vars['--tlabel-fs'] = px(size);
+    out.label = { dock: v['tile.labelDock'], size, dockScale: v['dock.focusScale'], gridScale: v['grid.focusScale'], lift: v['dock.lift'] };
+  }
   // only a theme that changes the page strip carries this key, so the replies for the other themes stay as they were
   if (SCHEMA.some(r => String(r[0]).indexOf('strip.') === 0 && v[/** @type {string} */ (r[0])] !== r[3]))
     out.strip = {

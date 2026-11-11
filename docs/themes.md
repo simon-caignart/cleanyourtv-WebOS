@@ -238,6 +238,9 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `tile.ringWidth` | 0 to 10 | `4` | Width of the focus ring, in px; 0 for none. |
 | `tile.ringOffset` | 0 to 14 | `4` | Space between a tile and its focus ring, in px. |
 | `tile.iconScale` | 0.6 to 2 | `1` | Scale of the icon inside the tile. |
+| `tile.label` | `none`, `focus` | `none` | `focus`: the focused app's name, centred under its tile in the app grid; it fades in on the new tile and out on the old one. Leave room for it with `grid.gapY` (about 70 or more). |
+| `tile.labelSize` | 18 to 48 | `29` | Size of that name, in px (`tile.label`). |
+| `tile.labelDock` | `true` or `false` | `false` | Also show the name under the focused tile of the dock (`tile.label`). |
 | **picker** | | | |
 | `picker.iconScale` | 0.5 to 2.5 | `1` | Scale of the app icons in the Input picker over the running app; 1 is the usual size. |
 | **effects** | | | |
