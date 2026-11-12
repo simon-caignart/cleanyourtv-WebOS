@@ -6,6 +6,8 @@
 // films() keeps what the screen saver needs: an id, the place, and the address of each of those three files. Only addresses of files
 // on Apple's host are kept, and they are turned into plain http: sylvan.apple.com's certificate chains to Apple's own root, which
 // neither Node nor the TV's browser trusts, and the host answers the same files over http. merge() puts the lists together.
+// The places' names in other languages are in the same tar (names(): a binary plist {language: {localizedNameKey: name}}, the
+// language as fr, fr_CA, zh_TW); place() picks the one for the screen saver's language.
 'use strict';
 
 const HOST = /^https?:\/\/sylvan\.apple\.com\/[\w\/.-]{1,280}\.(?:mov|mp4)$/;
@@ -39,6 +41,9 @@ function tarFile(buf, name) {
   return null;
 }
 
+const BP = require('./bplist');
+const LANG = /^[a-z]{2,3}(?:_[A-Za-z0-9]{2,4})?$/;
+
 const plain = u => {
   const s = String(u || '');
   return HOST.test(s) ? s.replace(/^https:/, 'http:') : '';
@@ -53,9 +58,43 @@ const line = s => {
   return /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/.test(t) ? '' : t;
 };
 
-// entries.json (text or parsed) -> [{id, title, h264, hevc, hfr}]: the films with at least one file, each id once, without the
-// macOS-only ones; title is '' where the manifest has no place
-function films(entries) {
+// the loctable (a Buffer) -> {language: {key: name}}, only the languages and the strings; {} when it cannot be read
+function names(buf) {
+  let t;
+  try {
+    t = BP.parse(buf);
+  } catch (_) {
+    return {};
+  }
+  const out = {};
+  for (const l of Object.keys(t && typeof t === 'object' ? t : {}))
+    if (LANG.test(l) && t[l] && typeof t[l] === 'object' && !Array.isArray(t[l])) out[l] = t[l];
+  return out;
+}
+
+// a film's names, {language: name}: from the table by its key, or the ones it was kept with (films.json); only those that differ from
+// the title
+function namesOf(a, table, title) {
+  const out = {},
+    key = String(a.localizedNameKey || '');
+  for (const l of Object.keys(table))
+    if (key && typeof table[l][key] === 'string') {
+      const n = line(table[l][key]);
+      if (n && n !== title) out[l] = n;
+    }
+  const kept = a.names && typeof a.names === 'object' ? a.names : {};
+  for (const l of Object.keys(kept).slice(0, 100))
+    if (LANG.test(l) && !out[l]) {
+      const n = line(kept[l]);
+      if (n && n !== title) out[l] = n;
+    }
+  return out;
+}
+
+// entries.json (text or parsed) -> [{id, title, names, h264, hevc, hfr}]: the films with at least one file, each id once, without the
+// macOS-only ones; title: the place in English ('' where there is none), from the names (table, see names()) or the manifest's label
+function films(entries, table) {
+  const tb = table && typeof table === 'object' ? table : {};
   let j = entries;
   if (typeof j === 'string' || Buffer.isBuffer(j)) {
     try {
@@ -72,9 +111,12 @@ function films(entries) {
   for (const a of (j && Array.isArray(j.assets) ? j.assets : []).slice(0, 1000)) {
     if (!a || typeof a !== 'object' || !ID.test(String(a.id || '')) || seen[a.id]) continue;
     if (a.variant || (Array.isArray(a.categories) && a.categories.some(c => skip[String(c)]))) continue;
+    const key = String(a.localizedNameKey || '');
+    const title = line(tb.en && typeof tb.en[key] === 'string' ? tb.en[key] : '') || line(a.accessibilityLabel);
     const f = {
       id: String(a.id),
-      title: line(a.accessibilityLabel),
+      title,
+      names: namesOf(a, tb, title),
       h264: plain(a['url-1080-H264']),
       hevc: plain(a['url-4K-SDR']),
       hfr: plain(a['url-4K-SDR-240FPS']),
@@ -95,9 +137,33 @@ function merge(lists) {
     for (const f of l || []) {
       const m = by[f.id];
       if (!m) out.push((by[f.id] = Object.assign({}, f)));
-      else for (const k of ['title', 'h264', 'hevc', 'hfr']) if (!m[k] && f[k]) m[k] = f[k];
+      else {
+        for (const k of ['title', 'h264', 'hevc', 'hfr']) if (!m[k] && f[k]) m[k] = f[k];
+        if (!Object.keys(m.names || {}).length && f.names) m.names = f.names;
+      }
     }
   return out;
 }
 
-module.exports = { tarFile, films, merge, HFR_TYPE };
+// the place in a language (fr-FR, fr_CA, pt, zh-Hant-TW): the name for that language and region, else for the language, else for the
+// language in any region, else the title (English)
+function place(f, lang) {
+  const n = (f && f.names) || {};
+  const p = String(lang || '')
+    .replace(/-/g, '_')
+    .split('_');
+  const base = p[0].toLowerCase() === 'nb' || p[0].toLowerCase() === 'nn' ? 'no' : p[0].toLowerCase();
+  if (/^[a-z]{2,3}$/.test(base)) {
+    const region = p
+      .slice(1)
+      .filter(x => /^(?:[A-Za-z]{2}|\d{3})$/.test(x))
+      .pop();
+    if (region && n[base + '_' + region.toUpperCase()]) return n[base + '_' + region.toUpperCase()];
+    if (n[base]) return n[base];
+    const any = Object.keys(n).filter(l => l.indexOf(base + '_') === 0)[0];
+    if (any) return n[any];
+  }
+  return (f && f.title) || '';
+}
+
+module.exports = { tarFile, films, merge, names, place, HFR_TYPE };

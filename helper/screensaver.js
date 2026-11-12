@@ -235,13 +235,15 @@ function create(ctx) {
   // page reports as it draws them and asks for again when it reaches the end; scenes and the theme's wallpaper shuffled
   const mixed = b => b.from === 'wallpapers' && !!(wp() && wp().plan);
   const order = b => (mixed(b) ? wp().plan(PLAN) : shuffle(b.photos.slice()));
-  // the films of the first running, switched-on add-on that provides "videos" and has some
+  // the films of the first running, switched-on add-on that provides "videos" and has some; it is told the screen saver's language,
+  // for the places' names
   async function videos() {
     const a = ctx.feature && ctx.feature('addons');
     const list = a && a.providers ? a.providers('videos').filter(p => p.mod.videos && typeof p.mod.videos.list === 'function') : [];
+    const opts = list.length ? { lang: await lang() } : {};
     for (const p of list) {
       try {
-        const v = cleanVideos(await p.mod.videos.list());
+        const v = cleanVideos(await p.mod.videos.list(opts));
         if (v.length) return { videos: v, from: p.id };
       } catch (e) {
         console.error('screensaver: add-on ' + p.id + ': ' + ((e && e.message) || e));
