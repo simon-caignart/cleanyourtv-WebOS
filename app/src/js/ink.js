@@ -46,8 +46,13 @@ var INK = (function () {
       cv.height = 18;
     }
     var x = cv.getContext('2d'),
-      c = cells();
-    x.drawImage(img, 0, 0, 32, 18);
+      c = cells(),
+      iw = img.naturalWidth || img.width,
+      ih = img.naturalHeight || img.height,
+      sw = Math.min(iw, (ih * 16) / 9),
+      sh = Math.min(ih, (iw * 9) / 16);
+    /* the middle 16:9 of the picture, as the screen shows a photo (background-size cover) */
+    x.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, 32, 18);
     var d = x.getImageData(c.x, c.y, c.w, c.h).data,
       sum = 0,
       rgb = [0, 0, 0],

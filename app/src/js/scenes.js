@@ -158,19 +158,20 @@ var SCENES = (function () {
     return s ? 'url("' + srcOf(s) + '")' : '';
   }
   /* the glass behind the grid: a picture and the tint, drawn once per picture once it is decoded; until then the previous one stays. A
-     scene brings its own blurred copy; a Wallpapers photo (blur) is blurred here, drawn tiny and scaled back up in steps. */
+     scene brings its own blurred copy; a Wallpapers photo (blur) is blurred here (blurred()). */
   var frostFront = 0,
     frostT = 0,
-    tiny = null,
+    chains = {} /* blurred(): the canvases of each level */,
     pg = null /* dock.glass: the canvas under the dock panel */,
     pgImg = null,
     pgKey = '';
   function drawFrost(src, blur) {
     var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
       milk = (lastTh && lastTh.glassMilk) || 0,
-      strong = !!(lastTh && lastTh.glassBlur === 'strong'),
+      gridBlur = (lastTh && lastTh.gridBlur) || '',
+      dockBlur = (lastTh && lastTh.dockBlur) || '',
       frostA = (lastTh && lastTh.glassFrost) || 0,
-      key = src && [src, dim, milk, strong ? 1 : 0, frostA, blur ? 1 : 0].join('|');
+      key = src && [src, dim, milk, gridBlur, dockBlur, frostA, blur ? 1 : 0].join('|');
     if (key === frostSrc) return;
     frostSrc = key;
     var cvs = frostEl().children;
@@ -187,9 +188,9 @@ var SCENES = (function () {
       var back = cvs[frostFront ^ 1],
         front = cvs[frostFront],
         x = back.getContext('2d');
-      var soft = blur ? blurred(i, strong) : i;
+      var soft = blur ? blurred(i, gridBlur) : i;
       x.drawImage(soft, 0, 0, back.width, back.height);
-      platter(soft);
+      platter(blur ? (dockBlur === gridBlur ? soft : blurred(i, dockBlur)) : i);
       var gr = x.createLinearGradient(0, 0, 0, back.height);
       gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');
       gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
@@ -295,27 +296,74 @@ var SCENES = (function () {
     x.arcTo(0, 0, w, 0, r);
     x.closePath();
   }
-  /* a photo blurred without filters: drawn at 96 x 54 (48 x 27 when strong), then scaled up with smoothing; the canvas scales the rest.
-     The photo is cut to 16:9 from its middle, as the Wallpapers layer shows it (background-size cover), so the glass lines up with it */
-  function blurred(img, strong) {
-    if (!tiny)
-      tiny = [48, 96, 192, 384].map(function (w) {
-        var c = document.createElement('canvas');
-        c.width = w;
-        c.height = (w * 9) / 16;
-        return c;
-      });
+  /* a photo blurred without filters, cut to 16:9 from its middle as the Wallpapers layer shows it (background-size cover) so the glass
+     lines up with it. level '' (normal): drawn at 96 x 54 and scaled up twice with smoothing. 'strong' and 'heavy': halved step by step
+     down to 48 or 24 px wide, then doubled step by step back to 384, each step softened by averaging it with copies of itself shifted by
+     a pixel: close to a Gaussian blur, without the creases of a plain upscale that show as blocks on a 4K screen. Each level keeps its
+     own canvases (the platter redraws from its copy later). */
+  function blurred(img, level) {
     var iw = img.naturalWidth || img.width,
       ih = img.naturalHeight || img.height,
       sw = Math.min(iw, (ih * 16) / 9),
-      sh = Math.min(ih, (iw * 9) / 16);
-    for (var k = strong ? 0 : 1, first = k; k < tiny.length; k++) {
-      var x = tiny[k].getContext('2d');
-      x.imageSmoothingEnabled = true;
-      if (k === first) x.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, tiny[k].width, tiny[k].height);
-      else x.drawImage(tiny[k - 1], 0, 0, tiny[k].width, tiny[k].height);
+      sh = Math.min(ih, (iw * 9) / 16),
+      sizes = level === 'heavy' ? [384, 192, 96, 48, 24] : level === 'strong' ? [384, 192, 96, 48] : [96, 192, 384],
+      c = chains[level || 'normal'];
+    if (!c) {
+      c = chains[level || 'normal'] = sizes.map(function (w) {
+        return [canvas(w, (w * 9) / 16), level ? canvas(w, (w * 9) / 16) : null];
+      });
     }
-    return tiny[tiny.length - 1];
+    var cx = function (cv) {
+      var x = cv.getContext('2d');
+      x.imageSmoothingEnabled = true;
+      if ('imageSmoothingQuality' in x) x.imageSmoothingQuality = 'high';
+      return x;
+    };
+    var crop = function (cv) {
+      cx(cv).drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, cv.width, cv.height);
+    };
+    if (!level) {
+      crop(c[0][0]);
+      for (var k = 1; k < c.length; k++) cx(c[k][0]).drawImage(c[k - 1][0], 0, 0, c[k][0].width, c[k][0].height);
+      return c[c.length - 1][0];
+    }
+    /* c[k]: [the step down, the step up] at sizes[k] */
+    crop(c[0][0]);
+    for (k = 1; k < c.length; k++) cx(c[k][0]).drawImage(c[k - 1][0], 0, 0, c[k][0].width, c[k][0].height);
+    var cur = c[c.length - 1][0];
+    for (k = c.length - 2; k >= 0; k--) {
+      var up = c[k][1],
+        x = cx(up);
+      x.clearRect(0, 0, up.width, up.height);
+      x.drawImage(cur, 0, 0, up.width, up.height);
+      soften(up, c[k][0]);
+      cur = up;
+    }
+    return cur;
+  }
+  function canvas(w, h) {
+    var cv = document.createElement('canvas');
+    cv.width = w;
+    cv.height = h;
+    return cv;
+  }
+  /* cv averaged with itself shifted one pixel left, right, up and down (scratch: a canvas of the same size to copy it into) */
+  function soften(cv, scratch) {
+    var s = scratch.getContext('2d'),
+      x = cv.getContext('2d'),
+      at = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ];
+    s.clearRect(0, 0, scratch.width, scratch.height);
+    s.drawImage(cv, 0, 0);
+    for (var k = 0; k < at.length; k++) {
+      x.globalAlpha = 1 / (k + 2);
+      x.drawImage(scratch, at[k][0], at[k][1]);
+    }
+    x.globalAlpha = 1;
   }
   /* the digits, and the fill placed so the blurred scene lines up with the screen behind them */
   function drawClock(el, s, text) {

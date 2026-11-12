@@ -265,6 +265,11 @@ body[data-bar="glass"] #bar .pill:not(.f) {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, var(--dock-rim, calc(var(--dock-panel) * 1.4)));
   color: #fff;
 }
+/* surface.glassShade: with white ink a dark veil under the tint, so the white reads on a bright picture (dark ink: below) */
+body[data-gshade][data-bar="glass"] #bar .pill:not(.f),
+[data-gshade][data-cstyle="pill"] #clock {
+  background-color: rgba(0, 0, 0, var(--gshade));
+}
 /* surface.ink auto over a bright picture: dark ink, a little more fill and a faint dark edge so the capsule still shows */
 body.ink-dark[data-bar="glass"] #bar .pill:not(.f),
 .ink-dark[data-cstyle="pill"] #clock {
@@ -274,6 +279,10 @@ body.ink-dark[data-bar="glass"] #bar .pill:not(.f),
     0 0 0 1px rgba(0, 0, 0, 0.08);
   color: rgba(28, 28, 30, 0.88);
   text-shadow: none;
+}
+body.ink-dark[data-gshade][data-bar="glass"] #bar .pill:not(.f),
+.ink-dark[data-gshade][data-cstyle="pill"] #clock {
+  background-color: rgba(255, 255, 255, calc(var(--dock-panel) + 0.16 + var(--gshade)));
 }
 /* surface.tint: a layer of the picture's mean colour over the glass fill (ink.js sets the colour once per picture) */
 body.tinted[data-bar="glass"] #bar .pill:not(.f),
