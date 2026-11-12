@@ -223,6 +223,13 @@ const SCHEMA = [
     'The panel is glass while the grid is closed: the picture behind it shows blurred under its fill and rim (with `cards.style` glass, from the same blurred copy as the glass behind the grid).',
   ],
   [
+    'dock.glassFrost',
+    'num',
+    [0, 1],
+    0,
+    'How frosted the glass panel of `dock.glass` is: a veil that darkens a bright picture under it and lifts a dark one, so the panel reads as a band of glass on any picture. 0: the blurred picture as it is.',
+  ],
+  [
     'dock.chevron',
     'bool',
     null,
@@ -305,6 +312,13 @@ const SCHEMA = [
     [0, 0.9],
     0.34,
     'How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm.',
+  ],
+  [
+    'grid.glassMilk',
+    'num',
+    [0, 0.6],
+    0,
+    'A white veil over the frosted glass behind the grid, after `grid.glassDim`: the glass turns light and milky, as on tvOS. 0: none.',
   ],
   ['grid.overlayH', 'int', [200, 900], 510, 'Visible height of the overlay grid before it scrolls, in px.'],
   [
@@ -391,6 +405,13 @@ const SCHEMA = [
     [0, 0.8],
     0,
     'A soft shade from y 600 to the bottom of the screen behind the dock, black at this opacity at the bottom, while the grid is closed: the picture stays bright and the dock stays readable.',
+  ],
+  [
+    'effects.glassBlur',
+    'enum',
+    ['normal', 'strong'],
+    'normal',
+    'How far a Wallpapers photo is blurred in the glass behind the grid and in the glass panel of `dock.glass`. `strong`: about twice as far, the shapes melt into colour.',
   ],
   ['effects.lateDim', 'bool', null, true, 'Darken the scenes a little from 10 pm to 6 am.'],
   [
@@ -798,11 +819,14 @@ function resolve(t, accent) {
   }
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
+  if (v['grid.glassMilk'] > 0) out.glassMilk = v['grid.glassMilk'];
+  if (v['effects.glassBlur'] !== 'normal') out.glassBlur = v['effects.glassBlur'];
   // how far a Wallpapers photo is darkened, for a theme without a wallpaper of its own (with one it travels in out.wallpaper)
   if (!w && v['effects.wallpaperDim'] !== 0.4) out.wallDim = v['effects.wallpaperDim'];
   if (v['dock.glass']) {
     out.dockGlass = true;
     attrs.dglass = 'on';
+    if (v['dock.glassFrost'] > 0) out.glassFrost = v['dock.glassFrost'];
   }
   if (v['tile.press'] !== 0.96) vars['--press-s'] = String(v['tile.press']);
   if (v['surface.tint'] > 0) {
