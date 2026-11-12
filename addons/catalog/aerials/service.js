@@ -3,8 +3,10 @@
 // the manifests (films.js), about 2 MB each, read once a week and kept as the short list in dataDir/films.json, so a TV without network
 // still knows the films (and the screen saver falls back to photos when they do not play). The newest manifest gives the list; the
 // older one the 1080p and 30 fps 4K files of the films it also has (the newest has only 240 fps files). Either alone is enough.
-//   GET  /api/addons/aerials/status     {films, hfr: films with only the 240 fps file, quality, updated, tried, error}
+//   GET  /api/addons/aerials/status     {films, hfr: films with only the 240 fps file, hfrOn, quality, updated, tried, error}
 //   POST /api/addons/aerials/quality    {quality: "1080" | "4k"}: 1080p H.264 (the default) or 4K HEVC SDR
+//   POST /api/addons/aerials/hfr        {on: true | false}: also the films that exist only at 240 fps (off by default: a TV can say it
+//                                       decodes them and show black)
 'use strict';
 const fs = require('fs'),
   path = require('path');
@@ -25,6 +27,7 @@ const WEEK = 7 * 24 * 3600 * 1000,
 function create(ctx) {
   const FILE = path.join(ctx.dataDir, 'films.json');
   const quality = () => ((ctx.settings.get() || {}).quality === '4k' ? '4k' : '1080');
+  const hfrOn = () => (ctx.settings.get() || {}).hfr === true;
   const state = { busy: false, tried: 0, error: '' };
   // films.json: {v: FORMAT, at, films}; a list kept in an older format is read again at the start (at: 0), its films used meanwhile
   let kept = { at: 0, films: [] };
@@ -99,21 +102,23 @@ function create(ctx) {
   }
 
   // what the screen saver asks (helper/screensaver.js): every film, in the manifest's order, at the chosen quality (the other file when
-  // a film has only that one), with the place in the screen saver's language (opts.lang); a film with only the 240 fps file says so
-  // with its type, and the page plays it only where the TV can
+  // a film has only that one), with the place in the screen saver's language (opts.lang); the films with only the 240 fps file with
+  // the hfr setting, each saying so with its type, and the page plays one only where the TV says it can
   function list(opts) {
     if (!kept.films.length && !state.busy && Date.now() - state.tried > 600000) update();
     const q = quality(),
       lang = opts && opts.lang;
-    return kept.films.map(f => {
-      const url = (q === '4k' ? f.hevc || f.h264 : f.h264 || f.hevc) || f.hfr,
-        title = F.place(f, lang);
-      return url === f.hfr ? { id: f.id, title, url, type: F.HFR_TYPE } : { id: f.id, title, url };
-    });
+    return kept.films
+      .filter(f => f.h264 || f.hevc || hfrOn())
+      .map(f => {
+        const url = (q === '4k' ? f.hevc || f.h264 : f.h264 || f.hevc) || f.hfr,
+          title = F.place(f, lang);
+        return url === f.hfr ? { id: f.id, title, url, type: F.HFR_TYPE } : { id: f.id, title, url };
+      });
   }
   function status() {
     const hfr = kept.films.filter(f => !f.h264 && !f.hevc).length;
-    return { films: kept.films.length, hfr, quality: quality(), updated: kept.at, tried: state.tried, error: state.error };
+    return { films: kept.films.length, hfr, hfrOn: hfrOn(), quality: quality(), updated: kept.at, tried: state.tried, error: state.error };
   }
 
   async function handle(req, res, p, body) {
@@ -126,6 +131,12 @@ function create(ctx) {
       const b = (await body(req)) || {};
       if (b.quality !== '1080' && b.quality !== '4k') return json({ error: 'quality is "1080" or "4k"' }, 400);
       ctx.settings.set({ quality: b.quality });
+      return json(status());
+    }
+    if (p === '/hfr' && req.method === 'POST') {
+      const b = (await body(req)) || {};
+      if (typeof b.on !== 'boolean') return json({ error: 'on is true or false' }, 400);
+      ctx.settings.set({ hfr: b.on });
       return json(status());
     }
     return json({ error: 'not found' }, 404);

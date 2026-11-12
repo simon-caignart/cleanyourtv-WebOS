@@ -279,7 +279,18 @@ run(async () => {
   ok(a.videos.list().length === 0, 'no films before the manifest was read');
   await a.update();
   let v = a.videos.list();
-  ok(asked === 2 && v.map(f => f.id).join(' ') === 'N1 A1 N2 A2 A4', "both manifests are read from Apple's host: " + JSON.stringify(v));
+  ok(
+    asked === 2 && v.map(f => f.id).join(' ') === 'A1 A2 A4' && !v.some(f => f.type),
+    "both manifests are read from Apple's host; the films with only the 240 fps file are left out by default: " + JSON.stringify(v)
+  );
+  let r = await call(a, '/hfr', 'POST', { on: 'yes' });
+  ok(r.code === 400 && a.status().hfrOn === false, 'the 240 fps setting takes true or false');
+  r = await call(a, '/hfr', 'POST', { on: true });
+  v = a.videos.list();
+  ok(
+    r.j.hfrOn === true && v.map(f => f.id).join(' ') === 'N1 A1 N2 A2 A4',
+    'switched on, they are in the list, in the order of the newest list: ' + v.map(f => f.id).join(' ')
+  );
   ok(
     v[1].url === 'http://sylvan.apple.com/Videos/A1_2K_AVC.mov' && v[3].url === 'http://sylvan.apple.com/Aerials/2x/Videos/A2_4K_HEVC.mov',
     '1080p H.264 by default, the 4K file where a film has no other'
@@ -288,7 +299,7 @@ run(async () => {
     v[0].url === n[0].hfr && v[0].type === F.HFR_TYPE && v.filter(f => f.type).length === 2,
     'a film with only the 240 fps file plays that one, and says what it needs: ' + JSON.stringify(v[0])
   );
-  let r = await call(a, '/status');
+  r = await call(a, '/status');
   ok(
     r.j.films === 5 && r.j.hfr === 2 && r.j.error === '',
     'the status counts the films with only the 240 fps file: ' + JSON.stringify(r.j)
