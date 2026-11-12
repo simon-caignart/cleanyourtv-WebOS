@@ -945,5 +945,12 @@
  "Aerials": "Aerials",
  "Photos": "Photos",
  "Aerials and photos": "Aerials et photos",
- "Screen saver": "Économiseur d’écran"
+ "Screen saver": "Économiseur d’écran",
+ "Mix": "Mélange",
+ "By number of photos": "Selon le nombre de photos",
+ "Equal per source": "À parts égales par source",
+ "Share of %s": "Part de %s",
+ "Less": "Moins",
+ "Much more": "Beaucoup plus",
+ "Normal": "Normale"
 }

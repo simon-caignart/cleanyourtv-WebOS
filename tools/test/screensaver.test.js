@@ -107,6 +107,8 @@ run(async () => {
         return {
           list: () => libNow,
           stamp: () => '2:ab',
+          plan: n => ['s/immich/bb', 'u/aa', 'l/unsplash', 's/immich/bb', 'u/aa'].slice(0, n),
+          shown: ids => drew.push(ids),
           liveCurrent: async id =>
             id === 'unsplash' ? { url: 'https://images.example.com/now.jpg', credit: 'Photo by D' } : { error: 'not a live source' },
         };
@@ -121,8 +123,15 @@ run(async () => {
       return null;
     },
   };
+  const drew = [];
   const f = saver.create(ctx);
   let x = await call(f, '/api/screensaver/photos');
+  ok(
+    x.j.mixed === true && x.j.slides.map(sl => sl.a).join(',') === 's/immich/bb,u/aa,l/unsplash,s/immich/bb,u/aa',
+    "the slides follow Wallpapers' order (its plan of the next photos), which can show a small source again sooner"
+  );
+  await call(f, '/api/screensaver/shown', 'POST', { ids: ['u/aa'] });
+  ok(drew.length === 1 && drew[0][0] === 'u/aa', 'POST /api/screensaver/shown tells Wallpapers which photos were drawn');
   ok(
     x.code === 200 &&
       x.j.photos.join(',') === 'u/aa,s/immich/bb,l/unsplash' &&
@@ -131,8 +140,8 @@ run(async () => {
       x.j.every === 16 &&
       x.j.style === 'kenburns' &&
       x.j.show === 'photos' &&
-      x.j.slides.length === x.j.photos.length,
-    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 16 s each (Ken Burns), every photo once in the slides'
+      x.j.slides.length === 5,
+    'GET /api/screensaver/photos with Wallpapers on: the library as Home has it (uploads, source photos, live sources), 16 s each (Ken Burns)'
   );
   // the other things Home can have behind it, in Home's order (scenes, then Wallpapers, then the theme's wallpaper)
   themeNow = { id: 'still', wallpaper: { id: 'still', file: 'lake.jpg', dim: 0.4 } };

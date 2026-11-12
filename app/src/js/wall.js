@@ -1,6 +1,7 @@
 /* ---------- Wallpapers: the service's photos (uploads and the photo sources of add-ons, GET /api/wallpapers/list: its "home" list, the
    landscape photos unless Photos on Home is All) behind Home instead of the theme's
-   background. A random photo every cfg.wall.secs seconds while Home is on screen; when Home opens again, a new one only if that many
+   background. The next photo of Wallpapers' order (POST /api/wallpapers/next: each photo once before any repeats, the sources in turn,
+   shared with the screen saver; helper/wallmix.js) every cfg.wall.secs seconds while Home is on screen; when Home opens again, a new one only if that many
    seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is. ---------- */
 /* seconds between photos; settings saved before 1.6.10 hold minutes in "every" */
 function wallSecs() {
@@ -96,13 +97,31 @@ var WALL = (function () {
     };
     im.src = url;
   }
-  function next(tries) {
-    if (!list.length) return;
+  /* a random one when the service does not answer */
+  function anyPhoto() {
     var pick = list[Math.floor(Math.random() * list.length)];
     for (var n = 0; pick === cur && !isLive(pick) && list.length > 1 && n < 8; n++) pick = list[Math.floor(Math.random() * list.length)];
-    show(pick, function () {
+    return pick;
+  }
+  function next(tries) {
+    if (!list.length) return;
+    var again = function () {
       if ((tries || 0) < 5 && list.length > 1) next((tries || 0) + 1);
-    });
+    };
+    api('/api/wallpapers/next', {}).then(
+      function (r) {
+        var id = r && typeof r.id === 'string' ? r.id : '';
+        if (id && list.indexOf(id) < 0) {
+          /* the library changed since the list was read: read it again */
+          stamp = '';
+          return sync();
+        }
+        if (id && !(id === cur && !isLive(id))) show(id, again);
+      },
+      function () {
+        show(anyPhoto(), again);
+      }
+    );
   }
   function hasLive() {
     return list.some(isLive);

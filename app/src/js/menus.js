@@ -1175,6 +1175,25 @@ function wallMenu() {
         },
       },
       {
+        /* how the sources share the rotation: equal turns (the default) or by their number of photos; the share of each source is
+           in the CleanYourTV app */
+        label: t('Mix'),
+        sub: cfg.wallpapers && cfg.wallpapers.mix === 'count' ? t('By number of photos') : t('Equal per source'),
+        stay: true,
+        fn: function () {
+          var count = !(cfg.wallpapers && cfg.wallpapers.mix === 'count');
+          api('/api/wallpapers/set', { mix: count ? 'count' : 'equal' }).then(
+            function () {
+              load();
+            },
+            function () {
+              toast(t('Could not save the settings. Try again in a moment.'), true);
+            }
+          );
+          cfg.wallpapers = Object.assign({}, cfg.wallpapers, { mix: count ? 'count' : '' });
+        },
+      },
+      {
         label: t('New photo'),
         sub: name(e),
         stay: true,

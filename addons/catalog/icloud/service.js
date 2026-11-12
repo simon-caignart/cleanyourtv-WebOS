@@ -178,6 +178,12 @@ function create(ctx) {
     const hid = cfg().hidden;
     return Object.keys(idx().photos).filter(id => hid.indexOf(id) < 0);
   };
+  // when each photo was taken (ms), for Wallpapers' order: a burst of shots is spread out
+  const taken = () => {
+    const out = {};
+    for (const id of shown()) if (idx().photos[id].at > 0) out[id] = idx().photos[id].at;
+    return out;
+  };
   const usedBytes = () => Object.keys(idx().photos).reduce((n, k) => n + (idx().photos[k].bytes || 0), 0);
   function dropPhoto(id) {
     const p = idx().photos[id];
@@ -680,7 +686,7 @@ function create(ctx) {
   return {
     start,
     stop,
-    wallpapers: { label: 'iCloud Shared Album', list: shown, file, status, settings },
+    wallpapers: { label: 'iCloud Shared Album', list: shown, file, status, settings, taken },
     // for the tests
     sync,
     details,

@@ -11,8 +11,10 @@ function layerEl() {
   return el;
 }
 
-function make(cfg, photos) {
-  let now = 1000000;
+// the service's order (POST /api/wallpapers/next) is the photos in turn; down: it does not answer
+function make(cfg, photos, down) {
+  let now = 1000000,
+    turn = 0;
   const shown = [],
     intervals = [];
   const holder = { insertBefore() {} };
@@ -26,7 +28,10 @@ function make(cfg, photos) {
     String,
     Number,
     $: id => (id === 'gA' ? { parentNode: holder } : id === 'homepage' ? { appendChild() {} } : els[id] || null),
-    api: () => ({ then: f => f({ photos }) }),
+    api: u => ({
+      then: (f, no) =>
+        u !== '/api/wallpapers/next' ? f({ photos }) : down ? no && no(new Error('down')) : f({ id: photos[turn++ % photos.length] }),
+    }),
     setInterval: fn => intervals.push(fn) && intervals.length,
     clearInterval() {},
     Image: function () {
@@ -97,6 +102,19 @@ run(async () => {
   w.tick(-3600000);
   w.WALL.shown();
   ok(w.shown.length === 2, 'a clock set back does not hold the photo for good');
+
+  // the order is the service's (shared with the screen saver), not a random pick of the page's own
+  w = make({ wall: { on: true, secs: 0 } }, photos);
+  w.WALL.sync();
+  for (let i = 0; i < 5; i++) w.WALL.shown();
+  ok(
+    w.shown.map(u => u.split('/').pop()).join('') === 'abcabc',
+    "Home shows the photos in Wallpapers' order, from POST /api/wallpapers/next"
+  );
+  w = make({ wall: { on: true, secs: 0 } }, photos, true);
+  w.WALL.sync();
+  w.WALL.shown();
+  ok(w.shown.length === 2, 'when the service does not answer, Home picks a photo itself');
 
   // off: nothing is shown
   w = make({ wall: { on: false, secs: 900 } }, photos);

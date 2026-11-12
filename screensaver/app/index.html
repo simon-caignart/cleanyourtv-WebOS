@@ -256,7 +256,34 @@
         shownKey = '',
         photosOn = false,
         live = false,
+        mixed = false,
+        refilling = false,
         ahead = null;
+      /* the next slide; Wallpapers' own order (mixed) is a plan of the next photos, asked for again once it is used up (the last plan
+         goes round meanwhile) */
+      function nextSlide() {
+        if (mixed && spos >= slides.length && !refilling) {
+          refilling = true;
+          get(API + '/api/screensaver/photos?cc=' + encodeURIComponent(country())).then(function (r) {
+            refilling = false;
+            if (r.mixed && r.slides && r.slides.length) {
+              slides = r.slides;
+              spos = 0;
+            }
+          });
+        }
+        return slides[spos++ % slides.length];
+      }
+      /* the library photos of a slide on screen, so the service's order goes on from them (Home too) */
+      function report(slide) {
+        if (!mixed || !slide) return;
+        try {
+          var x = new XMLHttpRequest();
+          x.open('POST', API + '/api/screensaver/shown', true);
+          x.setRequestHeader('Content-Type', 'application/json');
+          x.send(JSON.stringify({ ids: slide.b ? [slide.a, slide.b] : [slide.a] }));
+        } catch (e) {}
+      }
       function picture(url) {
         return new Promise(function (ok, no) {
           var im = new Image();
@@ -392,6 +419,7 @@
         }, 1600);
         shownKey = p.key;
         credit(p.credit);
+        report(p.slide);
       }
       /* the next slide on screen (decoded ahead while the last one showed); a slide that fails is passed over, up to the whole list
          while nothing shows yet. shown(drawn) is called once it is on screen, or nothing could be shown */
@@ -400,14 +428,14 @@
           if (shown) shown(false);
           return;
         }
-        var p = ahead || prep(slides[spos++ % slides.length]);
+        var p = ahead || prep(nextSlide());
         ahead = null;
         p.then(function (x) {
           if (!photosOn) return;
           if (x) put(x);
           else if (!shownKey && (tries || 0) < slides.length) return nextPhoto(shown, (tries || 0) + 1);
           if (shown) shown(!!x);
-          if (slides.length > 1 || live) ahead = prep(slides[spos++ % slides.length]);
+          if (slides.length > 1 || live) ahead = prep(nextSlide());
         });
       }
       function startPhotos() {
@@ -452,6 +480,7 @@
           });
         spos = 0;
         ahead = null;
+        mixed = !!r.mixed;
         live = slides.some(function (s) {
           return s.a.slice(0, 2) === 'l/';
         });

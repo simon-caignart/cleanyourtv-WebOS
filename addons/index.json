@@ -75,7 +75,7 @@
     {
       "id": "icloud",
       "name": "iCloud Shared Album",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "description": "Photos from your iCloud Shared Albums (shared with a public link) as the Home wallpaper, synced to the TV.",
       "about": "Paste the public link of one or more iCloud Shared Albums on your phone: a photos.icloud.com/shared/album link, or an older icloud.com/sharedalbum one (Public Website on). The TV downloads each photo once, at Full HD or the album's largest size, every six hours, and keeps showing them when Apple cannot be reached. Videos are skipped. At most 300 photos and 100 MB.",
       "preview": "",
@@ -85,16 +85,16 @@
       ],
       "luna": [],
       "files": {
-        "addon.json": "b3001ab653027ca9252479203ebccf8158260d63f1faf2323ccc192a3348f64f",
+        "addon.json": "744399ec3099f21eb5dd1616bad2b0c7ef5e43ef09728f0c98ac20f53e7c614d",
         "cloudkit.js": "3fb803a9c79d3d918356f090d948d3e3c394cc9c92da2abf908029cd1aa4caa7",
         "phone.js": "e29118058dceb341c54d5f12a989fb26754c776606c26cf632cc1054e1503d86",
-        "service.js": "4385274412764188d1525aaa0ed3fcc870f7301f99631479b5ca06c208251b8f"
+        "service.js": "47dfadb12dd71dab88394a0b666788f02234e01ee020e1e079b53e2ac9c9ab38"
       }
     },
     {
       "id": "immich",
       "name": "Immich",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Photos from your Immich albums as the Home wallpaper, synced to the TV.",
       "about": "",
       "preview": "",
@@ -104,9 +104,9 @@
       ],
       "luna": [],
       "files": {
-        "addon.json": "b16b363150bbe9dc1ba3b6fc7a98073f8ed11c11996507691d33ce75a67b00c9",
+        "addon.json": "677b8c95f19f68c8321436d9a007fc3e388d277a48c099d5b34e0055f5e9a599",
         "phone.js": "7f64427c617e10baac60e6c711b7a86ad74929f39409f2b603f7526fb85f3a3d",
-        "service.js": "ccb1bb3d0094f93cb1d4f52ca847f5ff59cd790470183e0616cf373933b8b349"
+        "service.js": "ccacfb3e68e1865aadf61b25ab2e1d8f7f68111748748145c4720c58bc3ff6d1"
       }
     },
     {
@@ -191,7 +191,7 @@
       "files": {
         "addon.json": "31320aa0f93fdaf8b4991166e780e5f31e2160b547d2260ba9682a435b5bdae1",
         "devicename.js": "a0ef58074f9c4ef9fd66e7c7a51259b184167304f95e0d36d4bb544db6750d14",
-        "page/index.html": "f09a1363418a6674f1f46fef872cc30fde6611b472b7ed7862ed259d16af3e31",
+        "page/index.html": "b42dcd8637c71977aa1946aea347604af6df7c3512b3bc8fe20071d4188e28cc",
         "page.js": "1bd6c98af5a81be3833d7cb14390a01ba336fdffa84025c3b65d133fb6cc88fa",
         "pwa/icon-180.png": "57040c5ec7e1dfc01918b2295df594dbc034b85df865140e27829873f02c4aff",
         "pwa/icon-512.png": "08849f214ae06fda96123a5e13ec69f9f30a6b7d13e776e20f21c669af3581e4",
@@ -285,7 +285,7 @@
       ],
       "files": {
         "addon.json": "257bb5ee9be018484e8708dd0f69c7b6991ad3af4ec541c94925168b6defa4ee",
-        "page/index.html": "a0d41112e7f5625fd72a8f562f4e6319af09ec52e3f667a24227314190dba069",
+        "page/index.html": "f485039dab6991d054b50b9798f0f3e9809d0aba4d3ea6a3a81d30d31ba6d67e",
         "service.js": "9ec8b88db4b510e9de7181f0a8b88e3aca73889e9d2c92bd94c6812753becf5a",
         "src/index.html": "a97da7e3f223e4830404f92b5184cc647777cf4934acd13a960cecddd980e560",
         "tuner.js": "8c22501e09f98da5269c2fd0451f5d769931282d058094324dd8e5e340dfbd40"

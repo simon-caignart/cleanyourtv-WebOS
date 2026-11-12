@@ -3,9 +3,11 @@
 // More photos come from add-ons that provide "wallpapers" (Immich, Unsplash, ...; docs/development/addons.md): see "photo sources" below.
 // D/wallpapers/index.json says what each upload is; only files listed there are ever deleted. (D/wallpapers/immich/ is what an earlier
 // version synced from Immich, kept until the Immich add-on takes it over or you remove it.)
-// The settings are the wallpapers section of config.json: {size: '4k'|'hd' (4K is the default: Home is drawn at the panel's 3840 x 2160)}.
+// The settings are the wallpapers section of config.json: {size: '4k'|'hd' (4K is the default: Home is drawn at the panel's 3840 x 2160),
+// home: 'all' (Photos on Home), mix: {mode: 'count' (By number of photos; Equal per source when absent), weights: {u|<add-on>: 0.5|2|4}}}.
+// The order of the photos (wallmix.js) is one for Home and the screen saver, kept in D/wallpapers/mix.json.
 // API (loopback, our apps): GET /api/wallpapers/status, GET /api/wallpapers/list, GET /api/wallpapers/photo/u/<id>,
-// POST /api/wallpapers/set {size}, POST /api/wallpapers/pair, POST /api/wallpapers/remove-uploads,
+// POST /api/wallpapers/next (Home's next photo), POST /api/wallpapers/set {size, home, mix, weight: {source, value}}, POST /api/wallpapers/pair, POST /api/wallpapers/remove-uploads,
 // POST /api/wallpapers/disconnect (removes the old Immich data of an earlier version). The phone page (POST pair) is a short-lived server on the LAN, port 8791, that needs the code shown
 // on the TV; its API is under /api/ on that port.
 const fs = require('fs'),
@@ -15,12 +17,14 @@ const fs = require('fs'),
 const P = require('./paths'),
   web = require('./web'),
   i18n = require('./i18n'),
-  nc = require('./netcompat');
+  nc = require('./netcompat'),
+  mix = require('./wallmix');
 
 const DIR = P.D + '/wallpapers',
   UP = DIR + '/upload',
   IM = DIR + '/immich',
-  INDEX = DIR + '/index.json';
+  INDEX = DIR + '/index.json',
+  MIXFILE = DIR + '/mix.json';
 const LIMITS = { uploads: 100, bytes: 150 * 1024 * 1024, file: 12 * 1024 * 1024 };
 const PAIR_PORT = 8791, // after the Share-log page's range (8768-8790)
   PAIR_MS = 15 * 60 * 1000;
@@ -245,6 +249,7 @@ function create(ctx) {
   //   push()           (live, optional) -> {url, credit} or null: a photo for Home to show now, once (Home asks every few seconds)
   //   status()         -> {summary, error}: one line for the manager (photos, last sync, what went wrong)
   //   settings(o)      -> {url, code, qr, seconds}: starts a short-lived page on the LAN for its settings (o.stop: close it)
+  //   taken()          (optional) -> {id: ms}: when each photo was taken, so a burst of shots is spread over the rotation
   // The photos are listed as s/<add-on>/<id> and a live source as l/<add-on>. A source that throws offers nothing and is logged once.
   const SRC_PHOTO = /^[\w.-]{1,64}$/,
     SRC_MAX = 500,
@@ -376,8 +381,79 @@ function create(ctx) {
         summary: line(st.summary, 120),
         error: line(st.error, 160),
         settings: typeof w.settings === 'function',
+        weight: mix.weightOf(mixCfg().weights, s.id),
       };
     });
+
+  // ---- the order: one shuffle bag per source, the sources in turn by weight (wallmix.js) ----
+  const mixCfg = () => {
+    const m = cfg().mix || {};
+    return { mode: m.mode === 'count' ? 'count' : 'equal', weights: m.weights && typeof m.weights === 'object' ? m.weights : {} };
+  };
+  let mixState = null,
+    mixTimer = null;
+  const taken = () => {
+    const out = {};
+    for (const s of sources()) {
+      if (typeof s.mod.wallpapers.taken !== 'function') continue;
+      const t = guard(s, () => s.mod.wallpapers.taken(), {}) || {};
+      for (const id of Object.keys(t)) if (+t[id] > 0) out['s/' + s.id + '/' + id] = +t[id];
+    }
+    return out;
+  };
+  // the state brought in line with the library, and the options a pick needs; home: only what Home shows (Photos on Home)
+  function mixNow(home) {
+    if (!mixState) {
+      try {
+        mixState = JSON.parse(fs.readFileSync(MIXFILE, 'utf8'));
+      } catch (_) {
+        mixState = {};
+      }
+    }
+    const ids = list(),
+      t = taken(),
+      m = mixCfg();
+    mixState = mix.reconcile(mixState, ids, t, Math.random);
+    let ok = () => true;
+    if (home) {
+      const set = {};
+      for (const id of homePhotos(ids, sizes(ids), homeMode())) set[id] = 1;
+      ok = id => set[id] === 1;
+    }
+    return { mode: m.mode, weights: m.weights, taken: t, ok };
+  }
+  // written 20 s after a change, not on every photo of the screen saver (flash wear); flush() writes it now
+  function saveMix(now) {
+    clearTimeout(mixTimer);
+    mixTimer = null;
+    const write = () => {
+      mixTimer = null;
+      try {
+        nc.mkdirp(DIR);
+        fs.writeFileSync(MIXFILE + '.tmp', JSON.stringify(mixState));
+        fs.renameSync(MIXFILE + '.tmp', MIXFILE);
+      } catch (_) {}
+    };
+    if (now) return mixState && write();
+    mixTimer = setTimeout(write, 20000);
+    if (mixTimer.unref) mixTimer.unref();
+  }
+  // Home's next photo
+  function next() {
+    const o = mixNow(true),
+      id = mix.take(mixState, o);
+    saveMix();
+    return { id: id || '' };
+  }
+  // the screen saver's next n photos (all of them, portraits too), and the ones it drew
+  const plan = n => mix.peek(mixState, n, mixNow(false));
+  function shown(ids) {
+    const o = mixNow(false),
+      have = {};
+    for (const id of list()) have[id] = 1;
+    mix.mark(mixState, (Array.isArray(ids) ? ids : []).filter(id => typeof id === 'string' && have[id] === 1).slice(0, 8), o);
+    saveMix();
+  }
 
   // ---- what the TV shows ----
   function list() {
@@ -454,6 +530,8 @@ function create(ctx) {
       uploads: idx().upload.length,
       total: list().length,
       bytes: usedBytes(),
+      mix: mixCfg().mode,
+      weight: mix.weightOf(mixCfg().weights, 'u'),
       limits: LIMITS,
       pair: pair ? { url: pair.url, code: pair.code, until: pair.until } : null,
     };
@@ -568,6 +646,7 @@ function create(ctx) {
     const ml = /^\/api\/wallpapers\/live\/([a-z][a-z0-9-]{1,31})$/.exec(u);
     if (ml) return json(await liveForHome(ml[1]));
     if (u === '/api/wallpapers/push') return json(pushNow());
+    if (u === '/api/wallpapers/next' && req.method === 'POST') return json(next());
     if (u === '/api/wallpapers/status') return json(status());
     if (u === '/api/wallpapers/list') {
       const l = list(),
@@ -586,6 +665,23 @@ function create(ctx) {
         setCfg(w => {
           if (b.home === 'all') w.home = 'all';
           else delete w.home;
+        });
+      if (b.mix === 'count' || b.mix === 'equal')
+        setCfg(w => {
+          const m = Object.assign({}, w.mix);
+          if (b.mix === 'count') m.mode = 'count';
+          else delete m.mode;
+          w.mix = m;
+        });
+      const wt = b.weight || {};
+      if ((wt.source === 'u' || /^[a-z][a-z0-9-]{1,31}$/.test(String(wt.source))) && mix.WEIGHTS.indexOf(wt.value) >= 0)
+        setCfg(w => {
+          const m = Object.assign({}, w.mix),
+            ws = Object.assign({}, m.weights);
+          if (wt.value === 1) delete ws[wt.source];
+          else ws[wt.source] = wt.value;
+          m.weights = ws;
+          w.mix = m;
         });
       return json(status());
     }
@@ -617,8 +713,13 @@ function create(ctx) {
     list,
     sizes,
     homeMode,
+    mixMode: () => mixCfg().mode,
     phone,
     liveCurrent,
+    next,
+    plan,
+    shown,
+    flush: () => saveMix(true),
   };
 }
 
