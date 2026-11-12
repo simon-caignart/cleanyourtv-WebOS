@@ -63,11 +63,12 @@ The order is shuffled each time the screen saver opens.
   The older one, `resources-16.tar` (the one tvOS and the open-source Aerial screen saver for macOS use), gives the 1080p and 4K files of the 114 films both lists have, because the newest list has only one file per film: 4K HEVC at 240 frames a second.
   Either list alone is enough, and a list that cannot be read keeps what the TV knew from it.
   The films of the Mac and the moving macOS desktops (light and dark) are left out.
-- A film that exists only at 240 frames a second (4K HEVC Main 10, high tier, level 6.1) plays only where the TV says it can decode that (the page asks with `MediaSource.isTypeSupported`); elsewhere it is left out, and the screen saver plays the other films.
-  Most TVs cannot, so expect the 114 films of the older list.
+- The 42 films that exist only at 240 frames a second (4K HEVC Main 10, high tier, level 6.1) are left out by default, so the screen saver plays the 114 films of the older list.
+  An LG C4 (webOS 25) says it decodes them and then shows a black picture.
+  `curl -X POST localhost:8765/api/addons/aerials/hfr -d '{"on":true}'` on the TV adds them (`false` leaves them out again); even then, a film plays only where the TV says it can decode it (the page asks with `MediaSource.isTypeSupported`).
 - The films come over plain http: Apple's server answers the same files over https only with a certificate from Apple's own root, which neither the service nor the TV's browser trusts.
 - **1080p H.264** (about 12 Mbit/s) is the default, the format every TV plays.
-  **4K HEVC** (SDR) is chosen with `curl -X POST localhost:8765/api/addons/aerials/quality -d '{"quality":"4k"}'` on the TV (`"1080"` goes back); `GET /api/addons/aerials/status` says how many films there are, how many of them exist only at 240 frames a second (`hfr`), the quality, when the lists were last read, and which list could not be read.
+  **4K HEVC** (SDR) is chosen with `curl -X POST localhost:8765/api/addons/aerials/quality -d '{"quality":"4k"}'` on the TV (`"1080"` goes back); `GET /api/addons/aerials/status` says how many films there are, how many of them exist only at 240 frames a second (`hfr`) and whether they are added (`hfrOn`), the quality, when the lists were last read, and which list could not be read.
 - A film that does not play is passed over, and so is one that stops for half a minute (the network); after three films in a row that do not play, the screen saver shows the pictures again until it opens the next time.
 - Switched off or removed, the screen saver shows the pictures again.
 

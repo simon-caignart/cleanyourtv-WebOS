@@ -1,7 +1,7 @@
 {
   "id": "aerials",
   "name": "Aerials",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Apple's Aerial films, slow drone films of places, in CleanYourTV's screen saver, with the place's name.",
   "about": "With CleanYourTV's screen saver on (manager > Features > Screen saver), it plays Apple's Aerial films instead of photos: slow drone films of cities, landscapes and the sea, a few minutes each, one after the other through black, with the place's name in the TV's language for a few seconds at the start and the clock in the corner. The films are streamed from Apple's servers as they play (1080p H.264, or 4K HEVC); only Apple's lists of films, about 2 MB each, are read once a week. When a film does not play, the screen saver shows photos again.",
   "kind": "service",
