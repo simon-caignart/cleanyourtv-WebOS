@@ -628,6 +628,16 @@
           );
         }, 650);
       }
+      /* a film that names the decoder it needs (Aerials' 240 fps films) plays only where the TV says it decodes that */
+      function playable(f) {
+        if (!f.type) return true;
+        try {
+          if (window.MediaSource && MediaSource.isTypeSupported) return MediaSource.isTypeSupported(f.type);
+          return V.canPlayType(f.type) === 'probably';
+        } catch (e) {
+          return false;
+        }
+      }
       function startFilms(list) {
         filmsOn = true;
         films = shuffle(list.slice());
@@ -658,7 +668,7 @@
           var show = r.show || 'photos';
           if (show === 'photos') return startPhotos();
           get(API + '/api/screensaver/videos').then(function (v) {
-            var list = (v && v.videos) || [];
+            var list = ((v && v.videos) || []).filter(playable);
             if (!list.length) return startPhotos();
             mode = show === 'both' && slides.length ? 'both' : 'films';
             startFilms(list);
