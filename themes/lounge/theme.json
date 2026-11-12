@@ -99,6 +99,7 @@
     "scroll": "row",
     "glassDim": 0,
     "glassMilk": 0.2,
+    "glassMute": 0.65,
     "glassBlur": "heavy",
     "hideTop": true
   },

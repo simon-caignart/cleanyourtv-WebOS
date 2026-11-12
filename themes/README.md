@@ -81,7 +81,7 @@ Folder: [`moon/`](moon/)
 
 ### Lounge
 
-A streaming-box home screen: six wide icons on a frosted glass platter at the bottom over the Couch landscapes, or over your own photos when Wallpapers is on. The focused app grows smoothly with a soft light and shadow and its name under it in the grid; the time sits in a small glass pill. Down turns the row into the first row of the grid, which peeks at the bottom of the screen, over light, milky frosted glass. Typeface: Inter 4.1, the variable font with its weight and optical size axes, cut down to the Latin characters of the launcher's languages (Latin Extended and Vietnamese included) and otherwise unmodified, set like SF Pro on tvOS: the Display design from 20 px, Medium for names, the time and menu rows, Semibold for titles (SIL Open Font License 1.1, `OFL.txt`).
+A streaming-box home screen: six wide icons on a frosted glass platter at the bottom over the Couch landscapes, or over your own photos when Wallpapers is on. The focused app grows smoothly with a soft light and shadow and its name under it in the grid; the time sits in a small glass pill. Down turns the row into the first row of the grid, which peeks at the bottom of the screen, over light, milky, muted frosted glass. Typeface: Inter 4.1, the variable font with its weight and optical size axes, cut down to the Latin characters of the launcher's languages (Latin Extended and Vietnamese included) and otherwise unmodified, set like SF Pro on tvOS: the Display design from 20 px, Medium for names, the time and menu rows, Semibold for titles (SIL Open Font License 1.1, `OFL.txt`).
 
 [![Lounge](lounge/preview.jpg)](lounge/preview.jpg)
 
