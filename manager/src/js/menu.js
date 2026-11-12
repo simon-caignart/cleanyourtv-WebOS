@@ -1868,6 +1868,34 @@ function build() {
         wallCall('/api/wallpapers/set', { home: w.home === 'all' ? 'landscape' : 'all' });
       },
     });
+    /* how the sources share the rotation (helper/wallmix.js): equal turns, or by their number of photos; a share per source */
+    rows.push({
+      label: 'Mix',
+      sub: w.mix === 'count' ? 'By number of photos' : 'Equal per source',
+      fn: function () {
+        wallCall('/api/wallpapers/set', { mix: w.mix === 'count' ? 'equal' : 'count' });
+      },
+    });
+    var SHARES = [0.5, 1, 2, 4],
+      share = function (id, label, wt) {
+        var k = SHARES.indexOf(wt);
+        if (k < 0) k = 1;
+        rows.push({
+          label: tr('Share of %s').replace('%s', tr(label)),
+          raw: true,
+          info: { t: tr('Share of %s').replace('%s', tr(label)), d: tr(INFO['Share of %s']) },
+          sub: k === 0 ? 'Less' : k === 2 ? 'More' : k === 3 ? 'Much more' : 'Normal',
+          fn: function () {
+            wallCall('/api/wallpapers/set', { weight: { source: id, value: SHARES[(k + 1) % SHARES.length] } });
+          },
+        });
+      };
+    if ((w.sources || []).length) {
+      share('u', 'Local uploads', w.weight);
+      w.sources.forEach(function (s) {
+        share(s.id, s.label, s.weight);
+      });
+    }
     rows.push({ sep: true });
     rows.push({
       label: 'Remove all uploads',

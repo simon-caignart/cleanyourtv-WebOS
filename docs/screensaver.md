@@ -40,7 +40,9 @@ As on the Apple TV, the photos have a style, chosen in the manager: **Features**
 
 In both styles a photo in portrait (less than 1.2 times as wide as tall, see [Wallpapers](wallpapers.md#landscape-and-portrait)) is not cut to its middle band.
 Two portrait photos share the screen, side by side with a thin line between them, and drift a little less; a portrait photo left over at the end of the round is shown whole over a blurred, darker copy of itself.
-The order is shuffled each time the screen saver opens; a portrait photo is paired with the next portrait one in that order.
+Wallpapers' photos come in the [order Home shares with the screen saver](wallpapers.md#the-order-of-the-photos): the sources take turns, and every photo of a source is shown once before any again, also from one evening to the next.
+Scenes and a theme's wallpaper are shuffled each time the screen saver opens.
+A portrait photo is paired with the next portrait one in that order.
 
 To spare the TV's graphics, each photo is drawn once into a picture of 1920 x 1080 that the screen scales, only that picture moves and fades, and there are never more than two of them; the next photo is loaded and decoded while one shows.
 

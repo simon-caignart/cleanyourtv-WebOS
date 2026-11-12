@@ -113,6 +113,7 @@ object is `wallpapers` on the module `create()` returns:
 | `list()` | Ids of the photos it has now (letters, digits, `-`, `_`, `.`; at most 500). Each is a file it can hand out. |
 | `file(id)` | The absolute path of that photo: a JPEG, PNG or WebP. Core serves it at `/api/wallpapers/photo/s/<add-on>/<id>`. |
 | `live: true`, `next()` | A live source keeps nothing on the TV. Home asks `next()` each time it shows that entry and gets `{url, credit}`: a plain `https://` address of the picture (it goes into a CSS `url()`, so quotes, brackets and spaces are refused) and a line Home shows in the bottom right corner, such as the photographer. The source decides how often it asks its server. |
+| `taken()` | Optional: `{id: ms}`, when each photo was taken. Wallpapers' order spreads a burst of shots taken within a few seconds of each other over the round. |
 | `status()` | `{summary, error}`: one line for the manager (photos, last sync, what went wrong). |
 | `settings(o)` | Starts a short-lived page on the LAN for the source's settings and returns `{url, code, qr, seconds}`; `o.stop` closes it. The manager shows the code. A source with its own settings keeps secrets (an API key) in its own settings, never in a reply. |
 

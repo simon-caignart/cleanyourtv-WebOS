@@ -3,7 +3,9 @@
 //   GET  /api/screensaver          {replaced, running, photos, every, style, show, films}
 //   GET  /api/screensaver/photos?cc=<country>   {photos, credits, from, every, slides, style, show}   what Home has behind it
 //        (background() below): photos are library ids ('u/<id>', 's/<add-on>/<id>', 'l/<add-on>') or paths on this service; from:
-//        scenes, wallpapers, theme; slides: the photos in a shuffled order, a portrait photo paired with the next one (slides());
+//        scenes, wallpapers, theme; slides: the photos in order, a portrait photo paired with the next one (slides()); mixed: the
+//        order is Wallpapers' own (shared with Home): the next photos only, reported with POST /api/screensaver/shown {ids} as they
+//        are drawn, asked for again at the end; else a shuffled order of all;
 //        style: kenburns or classic; show: what to show, aerials, photos or both (resolved: photos when no add-on has films)
 //   POST /api/screensaver/set {style, show}   the screen saver's settings (config.json screensaver: written only when not the default)
 //   GET  /api/screensaver/scene/<night|golden|water|fog|dawn>   a couch scene of the launcher (app/scene-<id>.jpg)
@@ -83,6 +85,7 @@ function shuffle(a, rnd) {
   }
   return a;
 }
+const PLAN = 60;
 const STYLES = ['kenburns', 'classic'],
   SHOWS = ['aerials', 'photos', 'both'];
 function mayOpen(now, homeSince, activeAt) {
@@ -221,6 +224,10 @@ function create(ctx) {
       return { photos: ['/api/theme/wallpaper/' + t.wallpaper.id + '/' + t.wallpaper.file], credits: {}, from: 'theme' };
     return { photos: [], credits: {}, from: '' };
   }
+  // the photos in the order they come: the library in Wallpapers' order (wallmix.js), shared with Home: the next PLAN photos, which the
+  // page reports as it draws them and asks for again when it reaches the end; scenes and the theme's wallpaper shuffled
+  const mixed = b => b.from === 'wallpapers' && !!(wp() && wp().plan);
+  const order = b => (mixed(b) ? wp().plan(PLAN) : shuffle(b.photos.slice()));
   // the films of the first running, switched-on add-on that provides "videos" and has some
   async function videos() {
     const a = ctx.feature && ctx.feature('addons');
@@ -375,19 +382,29 @@ function create(ctx) {
       const b = await background(m ? m[1].toUpperCase() : '');
       const st = settings(),
         films = (await videos()).videos.length;
-      return json({
+      const out = {
         photos: b.photos,
         credits: b.credits,
         from: b.from,
         every: EVERY_S[st.style],
         lang: await lang(),
         clock: clock(),
-        slides: slides(shuffle(b.photos.slice()), sizesOf(b.photos)),
+        slides: slides(order(b), sizesOf(b.photos)),
         style: st.style,
         show: showNow(films),
-      });
+      };
+      // only with Wallpapers' order, so the reply is the same without it
+      if (mixed(b)) out.mixed = true;
+      return json(out);
     }
     if (u === '/api/screensaver/videos') return json(await videos());
+    // the library photos of the slides the page drew, so Home and the next plan go on from there
+    if (u === '/api/screensaver/shown' && req.method === 'POST') {
+      const w = wp(),
+        b = await body(req);
+      if (w && w.shown) w.shown(b.ids);
+      return json({});
+    }
     // a live source's photo: the one Home has now (wallpapers.js liveCurrent), not the next one the source would hand out
     const lm = /^\/api\/screensaver\/live\/([a-z][a-z0-9-]{1,31})$/.exec(u);
     if (lm) {

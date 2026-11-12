@@ -1733,5 +1733,12 @@
  "%s is paired. Press its PS button to connect it.": "%s ist gekoppelt. Zum Verbinden die PS-Taste drücken.",
  "Looking for devices…": "Suche nach Geräten…",
  "Nothing found.": "Nichts gefunden.",
- "Search again": "Erneut suchen"
+ "Search again": "Erneut suchen",
+ "Mix": "Mischung",
+ "By number of photos": "Nach Anzahl der Fotos",
+ "Equal per source": "Gleich je Quelle",
+ "Share of %s": "Anteil von %s",
+ "Less": "Weniger",
+ "Much more": "Viel mehr",
+ "Normal": "Normal"
 }

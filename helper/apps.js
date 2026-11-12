@@ -446,7 +446,13 @@ function create(ctx) {
     const theme = ctx.feature('theme'),
       wp = ctx.feature('wallpapers');
     // and Photos on Home, only when it shows all the photos (the default is the landscape ones)
-    if (wp) c.wallpapers = Object.assign({ stamp: wp.stamp() }, wp.homeMode && wp.homeMode() === 'all' ? { home: 'all' } : {});
+    // and Mix, only when it is by number of photos (the default is equal per source)
+    if (wp)
+      c.wallpapers = Object.assign(
+        { stamp: wp.stamp() },
+        wp.homeMode && wp.homeMode() === 'all' ? { home: 'all' } : {},
+        wp.mixMode && wp.mixMode() === 'count' ? { mix: 'count' } : {}
+      );
     return theme ? Object.assign(c, { theme: theme.resolved() }) : c;
   }
 

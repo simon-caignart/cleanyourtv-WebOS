@@ -65,6 +65,12 @@ function create(ctx) {
     const hid = cfg().hidden;
     return Object.keys(idx().photos).filter(id => hid.indexOf(id) < 0);
   };
+  // when each photo was taken (ms), for Wallpapers' order: a burst of shots is spread out
+  const taken = () => {
+    const out = {};
+    for (const id of shown()) if (idx().photos[id].at > 0) out[id] = idx().photos[id].at;
+    return out;
+  };
   const usedBytes = () => Object.keys(idx().photos).reduce((n, k) => n + (idx().photos[k].bytes || 0), 0);
 
   // ---- Immich (https://immich.app/docs/api): the key goes in the x-api-key header ----
@@ -212,7 +218,10 @@ function create(ctx) {
         failed = 0;
       for (const w of keep) {
         const have = cur[w.id];
-        if (have && have.sum === w.sum && have.size === size && fs.existsSync(path.join(PH, have.file))) continue;
+        if (have && have.sum === w.sum && have.size === size && fs.existsSync(path.join(PH, have.file))) {
+          have.at = w.at;
+          continue;
+        }
         if (usedBytes() > LIMITS.bytes - 2 * 1024 * 1024) {
           full = true;
           break;
@@ -220,7 +229,7 @@ function create(ctx) {
         try {
           const d = await download(w.id, w.mime, size);
           if (have && have.file !== d.file) unlink(path.join(PH, have.file));
-          cur[w.id] = { file: d.file, bytes: d.bytes, sum: w.sum, size };
+          cur[w.id] = { file: d.file, bytes: d.bytes, sum: w.sum, size, at: w.at };
           st.done++;
           if (st.done % 10 === 0) saveIdx();
         } catch (e) {
@@ -442,7 +451,7 @@ function create(ctx) {
 
   return {
     start,
-    wallpapers: { label: 'Immich', list: shown, file, status, settings, adopt },
+    wallpapers: { label: 'Immich', list: shown, file, status, settings, adopt, taken },
     // for the tests
     sync,
     details,

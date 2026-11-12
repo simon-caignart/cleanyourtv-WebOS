@@ -1,7 +1,7 @@
 {
   "id": "immich",
   "name": "Immich",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "kind": "service",
   "description": "Photos from your Immich albums as the Home wallpaper, synced to the TV.",
   "entry": { "service": "service.js" },

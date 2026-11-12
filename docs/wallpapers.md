@@ -16,10 +16,11 @@ In the launcher, **Customise** > **Wallpapers**:
 |---|---|
 | Use Wallpapers | On: a photo from the library replaces the theme's background, in every theme. Off: the theme as it is. |
 | Photos on Home | **Landscape only** (the default): Home shows the photos that are clearly wider than tall, as a portrait photo would show only its middle band there; the screen saver shows them all. **All**: every photo. See [Landscape and portrait](#landscape-and-portrait). |
+| Mix | How the photo sources share the rotation: **Equal per source** (the default) or **By number of photos**. See [The order of the photos](#the-order-of-the-photos). |
 | New photo | When the photo changes: each time Home opens, or every 10 or 30 seconds, every minute, or every 3, 5, 15 or 60 minutes. With an interval, the photo changes on that interval while Home is on screen, and opening Home changes it only if that long has passed since the last change. The photos cross-fade. |
 | Add photos... | Opens the manager app on its Wallpapers screen. |
 
-The photo is chosen at random and darkened like a theme's wallpaper, by the theme's `effects.wallpaperDim` (40 % unless the theme sets it), also when the theme has no wallpaper of its own. With
+The photo comes in the [order](#the-order-of-the-photos) Home shares with the screen saver and is darkened like a theme's wallpaper, by the theme's `effects.wallpaperDim` (40 % unless the theme sets it), also when the theme has no wallpaper of its own. With
 no photos in the library, Home looks as before. The theme **Still** switches the cross-fade off along with the other animations.
 
 ## Adding photos
@@ -41,6 +42,8 @@ and closes when you leave the QR screen. It is not encrypted: photos travel over
 | Manage from your phone | The QR code for the phone page. |
 | Local uploads, one row per photo source, Total | How many photos there are per source, a line about each source (for Immich when it was last synced and its last error), and the space the uploads use. A source row opens that source's own page on the phone. |
 | Photos on Home | Landscape only (the default) or All, as in Customise > Wallpapers. |
+| Mix | Equal per source (the default) or By number of photos, as in Customise > Wallpapers. |
+| Share of (a source) | Only with a photo source installed: one row for the uploads and one per source, **Less** (half), **Normal**, **More** (twice) or **Much more** (four times as many turns). |
 | Picture size | 4K (3840 pixels, the default) or Full HD (1920). Applies to new uploads and to what photo sources download next. On a 4K TV, Home is laid out at 1920 x 1080 but drawn at 3840 x 2160, so a 4K photo is shown pixel for pixel; Full HD fits about four times as many photos in 150 MB. |
 | Remove all uploads | Deletes every uploaded photo, after a confirmation. |
 | Immich is an add-on now, Remove old Immich data | Only on a TV that used Immich before it became an add-on: the old settings and photos wait until you install the Immich add-on, which takes them over once. **Remove old Immich data** deletes them instead, after a confirmation. |
@@ -143,6 +146,26 @@ Each shows as a row on the manager's **Wallpapers** screen with one line about i
 photos are mixed with your uploads. A *live* source shows a new photo now and then without keeping it on the TV, and Home shows a small
 credit line in the bottom right corner for such a photo (the photographer). Core only supplies the rotation, the dimming and the picture
 size.
+
+## The order of the photos
+
+Home and the [screen saver](screensaver.md) share one order, kept by the service, so the screen saver does not show again what Home just showed, and the order goes on where it was after a restart.
+It works in two steps, as slideshow apps that mix several playlists do.
+
+1. **The sources take turns.**
+   The uploads, each photo source add-on (Immich, iCloud Shared Album, Jellyfin) and each live source (Unsplash) are one source each.
+   With **Mix** at **Equal per source** (the default), each source gets the same number of turns, so 20 uploads next to a 300-photo iCloud album show every other time instead of 1 time in 16.
+   The smaller source then goes round faster: its photos come back sooner than the album's.
+   With **By number of photos**, every photo has the same chance, so the largest source shows most.
+   The **Share** of a source in the manager multiplies its turns (Less is half, More twice, Much more four times).
+   The turns are dealt in a fixed rhythm, not at random, so a source never has a lucky streak.
+2. **Each source shuffles its own photos.**
+   Every photo of a source is shown once before any of them is shown again; a new round does not start with the last photos shown.
+   A photo that is new in a source comes next.
+   Photos taken within a few seconds of each other (a burst, several shots of the same scene) are spread over the round instead of coming one after another; the sources that know when a photo was taken (Immich, iCloud Shared Album) say so.
+
+With **Photos on Home** at **Landscape only**, Home passes over the portrait photos; they stay in the round for the screen saver.
+The order is kept in `/media/developer/cleanyourtv/wallpapers/mix.json`, written at most every 20 seconds.
 
 ## Limits and storage
 

@@ -38,6 +38,10 @@ var INFO = {
   'Total': 'Every photo Wallpapers can show, and the space they use on the TV (at most 150 MB).',
   'Photos on Home':
     'Landscape only (the default): Home shows the photos that are clearly wider than tall, since a portrait photo would show only its middle there. The screen saver shows every photo, portraits two side by side. All: Home shows every photo. A library without a landscape photo shows them all on Home.',
+  'Mix':
+    'How the photo sources share Home and the screen saver. Equal per source (the default): the uploads and each source add-on take turns, so 20 uploads are not lost in a 300-photo album. By number of photos: every photo has the same chance, so a large album shows most. Either way every photo of a source is shown once before any of them again.',
+  'Share of %s':
+    'How many turns this source gets: Less (half), Normal, More (twice) or Much more (four times as many as a Normal one). With Mix by number of photos it multiplies the source\u2019s photos.',
   'Picture size':
     '4K (the default) keeps photos at 3840 pixels, the size the TV draws Home at, so they look sharp; Full HD at 1920 fits about four times as many photos in 150 MB. It applies to new uploads and to the next Immich sync.',
   'Remove all uploads': 'Deletes every uploaded photo from the TV. Photos from other sources stay.',
