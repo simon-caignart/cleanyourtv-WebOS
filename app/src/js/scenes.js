@@ -168,10 +168,11 @@ var SCENES = (function () {
   function drawFrost(src, blur) {
     var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
       milk = (lastTh && lastTh.glassMilk) || 0,
+      mute = (lastTh && lastTh.glassMute) || 0,
       gridBlur = (lastTh && lastTh.gridBlur) || '',
       dockBlur = (lastTh && lastTh.dockBlur) || '',
       frostA = (lastTh && lastTh.glassFrost) || 0,
-      key = src && [src, dim, milk, gridBlur, dockBlur, frostA, blur ? 1 : 0].join('|');
+      key = src && [src, dim, milk, mute, gridBlur, dockBlur, frostA, blur ? 1 : 0].join('|');
     if (key === frostSrc) return;
     frostSrc = key;
     var cvs = frostEl().children;
@@ -190,6 +191,16 @@ var SCENES = (function () {
         x = back.getContext('2d');
       var soft = blur ? blurred(i, gridBlur) : i;
       x.drawImage(soft, 0, 0, back.width, back.height);
+      if (mute) {
+        /* grid.glassMute: grey in the saturation blend mode keeps the light and takes that much of the colour away (a browser
+           without the mode leaves the colours) */
+        x.globalCompositeOperation = 'saturation';
+        if (x.globalCompositeOperation === 'saturation') {
+          x.fillStyle = 'rgba(128,128,128,' + mute + ')';
+          x.fillRect(0, 0, back.width, back.height);
+        }
+        x.globalCompositeOperation = 'source-over';
+      }
       platter(blur ? (dockBlur === gridBlur ? soft : blurred(i, dockBlur)) : i);
       var gr = x.createLinearGradient(0, 0, 0, back.height);
       gr.addColorStop(0, 'rgba(16,14,26,' + dim + ')');

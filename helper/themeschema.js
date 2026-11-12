@@ -335,6 +335,13 @@ const SCHEMA = [
     'How far a Wallpapers photo is blurred in the frosted glass behind the grid. `strong`: about twice as far as `normal`; `heavy`: about four times, the shapes melt into soft colour, as on tvOS.',
   ],
   [
+    'grid.glassMute',
+    'num',
+    [0, 1],
+    0,
+    'How far the colours of the frosted glass behind the grid are washed out, keeping their light: 1 is grey. Drawn once per picture. 0: the colours as they are.',
+  ],
+  [
     'grid.glassMilk',
     'num',
     [0, 0.6],
@@ -834,6 +841,7 @@ function resolve(t, accent) {
   if (v['dock.panelRim'] !== null) vars['--dock-rim'] = String(v['dock.panelRim']);
   if (v['grid.glassDim'] !== 0.34) out.glassDim = v['grid.glassDim'];
   if (v['grid.glassMilk'] > 0) out.glassMilk = v['grid.glassMilk'];
+  if (v['grid.glassMute'] > 0) out.glassMute = v['grid.glassMute'];
   if (v['grid.glassBlur'] !== 'normal') out.gridBlur = v['grid.glassBlur'];
   // how far a Wallpapers photo is darkened, for a theme without a wallpaper of its own (with one it travels in out.wallpaper)
   if (!w && v['effects.wallpaperDim'] !== 0.4) out.wallDim = v['effects.wallpaperDim'];

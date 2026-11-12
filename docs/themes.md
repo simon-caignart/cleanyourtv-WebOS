@@ -254,6 +254,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass). |
 | `grid.glassDim` | 0 to 0.9 | `0.34` | How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm. |
 | `grid.glassBlur` | `normal`, `strong`, `heavy` | `normal` | How far a Wallpapers photo is blurred in the frosted glass behind the grid. `strong`: about twice as far as `normal`; `heavy`: about four times, the shapes melt into soft colour, as on tvOS. |
+| `grid.glassMute` | 0 to 1 | `0` | How far the colours of the frosted glass behind the grid are washed out, keeping their light: 1 is grey. Drawn once per picture. 0: the colours as they are. |
 | `grid.glassMilk` | 0 to 0.6 | `0` | A white veil over the frosted glass behind the grid, after `grid.glassDim`: the glass turns light and milky, as on tvOS. 0: none. |
 | `grid.overlayH` | 200 to 900 | `510` | Visible height of the overlay grid before it scrolls, in px. |
 | `grid.hideTop` | `true` or `false` | `false` | The top buttons and the clock fade out while the grid (`overlay` or `push`) is open; they come back with the dock row, the only row they are reached from. |

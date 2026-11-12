@@ -308,7 +308,7 @@ run(async () => {
     themeMod.normalize(
       {
         dock: { glass: true, glassFrost: 1, glassBlur: 'strong' },
-        grid: { glassMilk: 0.38, glassBlur: 'heavy' },
+        grid: { glassMilk: 0.38, glassBlur: 'heavy', glassMute: 0.65 },
         surface: { glassShade: 0.25 },
       },
       'frosted'
@@ -320,14 +320,15 @@ run(async () => {
       frosted.dockBlur === 'strong' &&
       frosted.glassMilk === 0.38 &&
       frosted.gridBlur === 'heavy' &&
+      frosted.glassMute === 0.65 &&
       frosted.attrs.gshade === 'on' &&
       frosted.vars['--gshade'] === '0.25' &&
       !('glassFrost' in frostOnly) &&
       !('dockBlur' in frostOnly) &&
-      ['glassFrost', 'glassMilk', 'gridBlur', 'dockBlur'].every(k => !(k in plain) && !(k in glassDock)) &&
+      ['glassFrost', 'glassMilk', 'glassMute', 'gridBlur', 'dockBlur'].every(k => !(k in plain) && !(k in glassDock)) &&
       !('gshade' in plain.attrs) &&
       !('--gshade' in plain.vars),
-    'the frosted platter and its blur (only with dock.glass), the milky grid glass, its heavy blur and the shade of the top glass reach the launcher; none by default'
+    'the frosted platter and its blur (only with dock.glass), the milky, muted grid glass, its heavy blur and the shade of the top glass reach the launcher; none by default'
   );
   // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
   const peeking = themeMod.resolve(

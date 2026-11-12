@@ -546,6 +546,12 @@ run(async () => {
       /chains\[level \|\| 'normal'\]/.test(scjs),
     'the strong and heavy glass is a smooth blur drawn once per picture'
   );
+  // grid.glassMute: drawn once per picture in the canvas with the saturation blend mode (no CSS filter), only where the browser has it
+  ok(
+    /x\.globalCompositeOperation = 'saturation';\s*if \(x\.globalCompositeOperation === 'saturation'\)/.test(scjs) &&
+      /x\.globalCompositeOperation = 'source-over';/.test(scjs),
+    'the grid glass loses its colour in the canvas, once per picture, and the canvas draws normally again after'
+  );
   ok(
     /body\[data-gshade\]\[data-bar="glass"\] #bar \.pill:not\(\.f\),\s*\[data-gshade\]\[data-cstyle="pill"\] #clock \{\s*background-color: rgba\(0, 0, 0, var\(--gshade\)\);/.test(
       hcss
