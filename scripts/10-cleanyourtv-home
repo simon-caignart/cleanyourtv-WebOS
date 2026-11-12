@@ -109,11 +109,14 @@ else
   [ -e $L/SCREENSAVER-ON ] && sh $L/20-cleanyourtv-screensaver prepare </dev/null
   # the launcher page touches this file (POST /api/frontend-ok) each time it starts; newer than this mark: it started after the mount
   touch /tmp/cleanyourtv-home-mount
+  MOUNT_UP=$(up)
   mount --bind $L/home-overlay $H && { (sleep 3; pkill -9 -f /usr/palm/applications/airplay/LunaExecutable) </dev/null >/dev/null 2>&1 & systemctl restart sam; }
   echo "$(up) home: sam restarted" >> $LOG
   # After the sam restart nothing may be in the foreground (black screen). Once sam is back, start Home again
-  # unless the user already went somewhere else (e.g. an HDMI input). The page Home had before the mount (LG's) is closed first; a
-  # launcher that started after the mount is ours and stays (closing it would load Home a second time at every boot).
+  # unless the user already went somewhere else (e.g. an HDMI input). LG's Home that ran before the mount is closed first: its window
+  # stays on screen while it runs. A launcher that started after the mount is ours and stays (closing it would load Home a second time
+  # at every boot), so then only the processes of Home that started before the mount are closed (home-before.sh); every one of them
+  # is written to the boot log.
   (
     for i in $(seq 1 60); do systemctl is-active sam >/dev/null && break; sleep 2; done
     sh $L/after-sam.sh   # webOS before 7 and the native Home: the services that keep talking to the old sam (issues 23 and 24)
@@ -121,8 +124,12 @@ else
     fg=$(luna_send -n 1 -w 5000 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' | grep '"appId"')
     case "$fg" in
       *'"appId": ""'*|*com.webos.app.home*|"")
+        procs=$(sh $L/home-before.sh "$MOUNT_UP" 2>/dev/null)
+        echo "$procs" | sed "s/^/$(up) home: process (pid, start, old or new): /" >> $LOG
         if [ /tmp/cleanyourtv-home-up -nt /tmp/cleanyourtv-home-mount ]; then
-          echo "$(up) home: the launcher started after the mount; it is kept" >> $LOG
+          old=$(echo "$procs" | awk '$3 == "old" { print $1 }')
+          echo "$(up) home: the launcher started after the mount; it is kept, LG's Home is closed (${old:-nothing of it runs})" >> $LOG
+          [ -n "$old" ] && { kill $old 2>/dev/null; sleep 2; }
         else
           pkill -f "[a]pp-id=com.webos.app.home"; sleep 2
         fi

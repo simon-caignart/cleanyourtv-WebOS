@@ -251,22 +251,58 @@ run(async () => {
       'and not after an update of the launcher (then the slow way stages it first)'
   );
 
-  // the mount way: after the app manager restart, Home's page from before the mount (LG's) is closed and Home launched again; a launcher
-  // that already started after the mount is kept (closing it would load Home a second time at each boot)
+  // the mount way: after the app manager restart, LG's Home from before the mount is closed and Home launched again. LG's Home keeps
+  // its window while it runs (a Flutter program on webOS 24 and newer), so it is always closed; a launcher that started after the mount
+  // is ours and is kept (closing it would load Home a second time at each boot)
   {
     const after = bootSh.slice(bootSh.indexOf('mounting the launcher over'));
-    const kill = after.indexOf('pkill -f "[a]pp-id=com.webos.app.home"'),
-      guard = after.indexOf('[ /tmp/cleanyourtv-home-up -nt /tmp/cleanyourtv-home-mount ]');
+    const guard = after.indexOf('[ /tmp/cleanyourtv-home-up -nt /tmp/cleanyourtv-home-mount ]');
     ok(
       after.indexOf('touch /tmp/cleanyourtv-home-mount') >= 0 &&
-        after.indexOf('touch /tmp/cleanyourtv-home-mount') < after.indexOf('mount --bind') &&
-        guard > 0 &&
-        guard < kill &&
+        after.indexOf('MOUNT_UP=$(up)') > after.indexOf('touch /tmp/cleanyourtv-home-mount') &&
+        after.indexOf('MOUNT_UP=$(up)') < after.indexOf('mount --bind') &&
+        after.indexOf('sh $L/home-before.sh "$MOUNT_UP"') > 0 &&
+        after.indexOf('sh $L/home-before.sh "$MOUNT_UP"') < guard &&
+        /old=\$\(echo "\$procs" \| awk '\$3 == "old" \{ print \$1 \}'\)/.test(after) &&
+        /\[ -n "\$old" \] && \{ kill \$old 2>\/dev\/null; sleep 2; \}/.test(after) &&
         /else\n\s*pkill -f "\[a\]pp-id=com\.webos\.app\.home"; sleep 2\n\s*fi/.test(after),
-      'the boot script closes Home before launching it only when no launcher page started after its mount'
+      "the boot script always closes LG's Home: everything of Home without a launcher page started after its mount, else what started before the mount"
     );
     const paths = fs.readFileSync(path.join(root, 'helper', 'paths.js'), 'utf8');
     ok(/'\/tmp\/cleanyourtv-home-up'/.test(paths), 'the service marks the same file the boot script reads');
+    // home-before.sh on a made-up /proc: LG's Flutter Home started at 15 s, the launcher's renderer at 33 s, the mount at 28.65 s
+    const P2 = path.join(tmp, 'proc-home');
+    fs.mkdirSync(P2);
+    const proc = (pid, cmd, comm, start) => {
+      fs.mkdirSync(path.join(P2, String(pid)));
+      fs.writeFileSync(path.join(P2, String(pid), 'cmdline'), cmd.join('\0') + '\0');
+      fs.writeFileSync(
+        path.join(P2, String(pid), 'stat'),
+        pid + ' (' + comm + ') S 1 1 1 0 -1 4194560 100 0 0 0 5 3 0 0 20 0 4 0 ' + start + ' 1000 200\n'
+      );
+    };
+    proc(
+      101,
+      ['/usr/bin/flutter-client', '--app-id=com.webos.app.home', '/usr/palm/applications/com.webos.app.home/bundle'],
+      'flutter-client',
+      1500
+    );
+    proc(202, ['/usr/bin/WebAppMgr', '--type=renderer', '--app-id=com.webos.app.home'], 'Web (Renderer) x', 3315);
+    proc(303, ['/usr/bin/WebAppMgr', '--type=renderer', '--app-id=com.webos.app.homeconnect'], 'WebAppMgr', 1000);
+    proc(404, ['/usr/sbin/sam'], 'sam', 900);
+    const r = cp.spawnSync('sh', [path.join(root, 'scripts', 'home-before.sh'), '28.65'], {
+      env: Object.assign({}, process.env, { CYTV_PROC: P2 }),
+      encoding: 'utf8',
+    });
+    const lines = r.stdout.trim().split('\n');
+    ok(
+      r.status === 0 &&
+        lines.length === 2 &&
+        /^101 15\.00 old \/usr\/bin\/flutter-client --app-id=com\.webos\.app\.home /.test(lines[0]) &&
+        /^202 33\.15 new \/usr\/bin\/WebAppMgr --type=renderer --app-id=com\.webos\.app\.home/.test(lines[1]),
+      "home-before.sh finds Home's processes, LG's from before the mount as old and the launcher's as new, also with a name holding spaces: " +
+        JSON.stringify(r.stdout)
+    );
   }
 
   // the watchdog (watchdog.sh): starts a service that has stopped again, keeps the logs of the runs that ended, starts less often a
