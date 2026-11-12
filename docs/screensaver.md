@@ -50,6 +50,7 @@ With the **Aerials** add-on installed (manager > Add-ons > Get more), the screen
 **Features** > **Screen saver** > **Show** chooses, as the Apple TV's screen saver type does: **Aerials** (the default with the add-on), **Photos**, or **Aerials and photos**: a film, then three photos, then the next film, in turn (each change goes through black, as between films).
 One film plays at a time: over its last second the screen fades to black, the next film starts behind the black, and the black fades away once that film shows its first pictures.
 The place's name shows in the bottom left corner for a few seconds at the start of each film; the clock and the date stay where they are.
+The name is in the language of the clock and the date (see [What it shows](#what-it-shows)), from Apple's own translations, which come in the same list (about 45 languages, such as "Golden Gate de nuit" in French), and in English where Apple has no name in that language.
 The black is drawn by the page above the film because webOS shows a video on a plane of its own under the page, through a hole in it: fading the video itself does nothing there, and while a video has no picture the hole shows the window underneath (Home).
 So the page is black from its start until the first film plays, during every change, and when a film fails.
 The order is shuffled each time the screen saver opens.

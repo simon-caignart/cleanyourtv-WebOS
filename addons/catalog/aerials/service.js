@@ -37,6 +37,7 @@ function create(ctx) {
       'url-1080-H264': f && f.h264,
       'url-4K-SDR': f && f.hevc,
       'url-4K-SDR-240FPS': f && f.hfr,
+      names: f && f.names,
     };
   }
 
@@ -60,7 +61,8 @@ function create(ctx) {
         const r = await ctx.fetch.read(url, { idleMs: 30000, maxBytes: TAR_MAX });
         const e = F.tarFile(r.body, 'entries.json');
         if (!e) throw new Error('no entries.json');
-        const l = F.films(e);
+        const loc = F.tarFile(r.body, 'Localizable.nocache.loctable');
+        const l = F.films(e, loc ? F.names(loc) : {});
         if (!l.length) throw new Error('no films');
         lists.push(l);
       } catch (e) {
@@ -94,13 +96,16 @@ function create(ctx) {
   }
 
   // what the screen saver asks (helper/screensaver.js): every film, in the manifest's order, at the chosen quality (the other file when
-  // a film has only that one); a film with only the 240 fps file says so with its type, and the page plays it only where the TV can
-  function list() {
+  // a film has only that one), with the place in the screen saver's language (opts.lang); a film with only the 240 fps file says so
+  // with its type, and the page plays it only where the TV can
+  function list(opts) {
     if (!kept.films.length && !state.busy && Date.now() - state.tried > 600000) update();
-    const q = quality();
+    const q = quality(),
+      lang = opts && opts.lang;
     return kept.films.map(f => {
-      const url = (q === '4k' ? f.hevc || f.h264 : f.h264 || f.hevc) || f.hfr;
-      return url === f.hfr ? { id: f.id, title: f.title, url, type: F.HFR_TYPE } : { id: f.id, title: f.title, url };
+      const url = (q === '4k' ? f.hevc || f.h264 : f.h264 || f.hevc) || f.hfr,
+        title = F.place(f, lang);
+      return url === f.hfr ? { id: f.id, title, url, type: F.HFR_TYPE } : { id: f.id, title, url };
     });
   }
   function status() {

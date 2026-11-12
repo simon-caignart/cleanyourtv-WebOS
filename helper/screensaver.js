@@ -228,13 +228,15 @@ function create(ctx) {
       return { photos: ['/api/theme/wallpaper/' + t.wallpaper.id + '/' + t.wallpaper.file], credits: {}, from: 'theme' };
     return { photos: [], credits: {}, from: '' };
   }
-  // the films of the first running, switched-on add-on that provides "videos" and has some
+  // the films of the first running, switched-on add-on that provides "videos" and has some; it is told the screen saver's language,
+  // for the places' names
   async function videos() {
     const a = ctx.feature && ctx.feature('addons');
     const list = a && a.providers ? a.providers('videos').filter(p => p.mod.videos && typeof p.mod.videos.list === 'function') : [];
+    const opts = list.length ? { lang: await lang() } : {};
     for (const p of list) {
       try {
-        const v = cleanVideos(await p.mod.videos.list());
+        const v = cleanVideos(await p.mod.videos.list(opts));
         if (v.length) return { videos: v, from: p.id };
       } catch (e) {
         console.error('screensaver: add-on ' + p.id + ': ' + ((e && e.message) || e));
