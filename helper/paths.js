@@ -44,6 +44,7 @@ module.exports = {
   FULLHOME_APP: '/usr/palm/applications/com.webos.app.fullhome',
   STANDIN: env.CYTV_STANDIN || '/tmp/cleanyourtv-home-standin', // LG's Home program while scripts/home-standin.sh is mounted over it
   HOME_PARAMS: env.CYTV_HOME_PARAMS || '/tmp/cleanyourtv-home-params', // what a key script (and remap.js) asks the launcher to open
+  HOME_UP: env.CYTV_HOME_UP || '/tmp/cleanyourtv-home-up', // touched each time a launcher page starts (scripts/10-cleanyourtv-home)
   SCREENSAVER_APP: '/usr/palm/applications/com.webos.app.screensaver',
   SA_ON: D + '/SCREENSAVER-ON', // present while our screen saver is switched on in the manager (off by default)
   // child processes find the system tools first, as in a login shell on the TV

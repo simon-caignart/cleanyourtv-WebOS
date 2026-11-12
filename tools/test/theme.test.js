@@ -197,6 +197,29 @@ run(async () => {
       scene && bare && untinted,
       "the glass takes a built-in scene's colour or the page colour, and none once the theme drops the tint (the ink still follows)"
     );
+    // Home that starts again on the same picture has the ink and the tint at once, without the swap (the buttons fading out and in)
+    const kept = {},
+      ls = { getItem: k => (k in kept ? kept[k] : null), setItem: (k, v) => (kept[k] = v), removeItem: k => delete kept[k] },
+      boot = () => {
+        const body = fakeBody({ 'data-inkmode': 'auto', 'data-tint': 'on' }),
+          c = { $: () => null, document: { body }, setTimeout: f => f(), clearTimeout: () => {}, localStorage: ls };
+        const swaps = [];
+        const add = body.classList.add;
+        body.classList.add = (...x) => (x.indexOf('ink-swap') >= 0 && swaps.push(1), add(...x));
+        vm.runInNewContext(fs.readFileSync(path.join(root, 'app', 'src', 'js', 'ink.js'), 'utf8'), c);
+        c.INK.set('', 0, [7, 8, 11], true, [80, 126, 135]);
+        return { body, swaps };
+      };
+    const one = boot(),
+      two = boot();
+    ok(
+      one.swaps.length === 1 &&
+        two.swaps.length === 0 &&
+        two.body.cls.has('ink-dark') &&
+        two.body.cls.has('tinted') &&
+        two.body.style.get('--ink-tint') === '80,126,135',
+      'the ink of the picture is kept: Home that starts again on it has it at once, without the swap'
+    );
     // grid.scroll row: (ex, row top, row height with its name, row step, safe top, safe bottom)
     ok(
       lctx.rowScroll(0, 411, 217, 260, 150, 1020) === 0 && lctx.rowScroll(0, 671, 217, 260, 150, 1020) === 0,

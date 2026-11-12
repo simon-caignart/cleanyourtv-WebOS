@@ -23,6 +23,11 @@ In the launcher, **Customise** > **Wallpapers**:
 The photo comes in the [order](#the-order-of-the-photos) Home shares with the screen saver and is darkened like a theme's wallpaper, by the theme's `effects.wallpaperDim` (40 % unless the theme sets it), also when the theme has no wallpaper of its own. With
 no photos in the library, Home looks as before. The theme **Still** switches the cross-fade off along with the other animations.
 
+When Home starts again (the TV boots, Home reloads after an update), it opens on the photo it showed last: the launcher keeps that photo's address and shows it before the service answers, and before the theme's own wallpaper or scenes could show.
+Home waits until the photo is decoded, 2 seconds at most, and then appears with it.
+While the service is still starting, Home shows over the theme's background colour and the photo fades in once it loads.
+The next photo then comes at the interval.
+
 ## Adding photos
 
 In the manager app, **Wallpapers** > **Manage from your phone** shows a QR code and a 6-digit code. Scan it with a phone on the
