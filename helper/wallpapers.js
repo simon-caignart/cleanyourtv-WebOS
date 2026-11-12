@@ -445,13 +445,19 @@ function create(ctx) {
     saveMix();
     return { id: id || '' };
   }
-  // the screen saver's next n photos (all of them, portraits too), and the ones it drew
-  function plan(n) {
+  // the screen saver's next n photos (portraits too, of the sources it uses), and the ones it drew
+  // keep(id): the photos the screen saver uses (its sources); the others take no turns in its plan
+  const forSaver = keep => {
     const o = mixNow(false); // loads or builds the state first
+    if (typeof keep === 'function') o.ok = keep;
+    return o;
+  };
+  function plan(n, keep) {
+    const o = forSaver(keep);
     return mix.peek(mixState, n, o);
   }
-  function shown(ids) {
-    const o = mixNow(false),
+  function shown(ids, keep) {
+    const o = forSaver(keep),
       have = {};
     for (const id of list()) have[id] = 1;
     mix.mark(mixState, (Array.isArray(ids) ? ids : []).filter(id => typeof id === 'string' && have[id] === 1).slice(0, 8), o);

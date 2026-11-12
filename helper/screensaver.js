@@ -7,7 +7,8 @@
 //        order is Wallpapers' own (shared with Home): the next photos only, reported with POST /api/screensaver/shown {ids} as they
 //        are drawn, asked for again at the end; else a shuffled order of all;
 //        style: kenburns or classic; show: what to show, aerials, photos or both (resolved: photos when no add-on has films)
-//   POST /api/screensaver/set {style, show}   the screen saver's settings (config.json screensaver: written only when not the default)
+//   POST /api/screensaver/set {style, show, skip}   the screen saver's settings (config.json screensaver: written only when not the
+//        default); skip: the photo sources it leaves out ('u' the uploads, or an add-on's id; Home still shows them)
 //   GET  /api/screensaver/scene/<night|golden|water|fog|dawn>   a couch scene of the launcher (app/scene-<id>.jpg)
 //   GET  /api/screensaver/live/<add-on>   {url, credit}: the photo a live source (Unsplash) gave Home last, so the saver shows the same
 //   GET  /api/screensaver/videos   {videos: [{id, url, title}], from}: the films of the first add-on that provides "videos" and has
@@ -86,6 +87,7 @@ function shuffle(a, rnd) {
   return a;
 }
 const PLAN = 60;
+const isSource = x => x === 'u' || (typeof x === 'string' && /^[a-z][a-z0-9-]{1,31}$/.test(x));
 const STYLES = ['kenburns', 'classic'],
   SHOWS = ['aerials', 'photos', 'both'];
 function mayOpen(now, homeSince, activeAt) {
@@ -147,7 +149,11 @@ function create(ctx) {
   // has films, else photos)
   const settings = () => {
     const c = (config.get() || {}).screensaver || {};
-    return { style: STYLES.indexOf(c.style) >= 0 ? c.style : 'kenburns', show: SHOWS.indexOf(c.show) >= 0 ? c.show : '' };
+    return {
+      style: STYLES.indexOf(c.style) >= 0 ? c.style : 'kenburns',
+      show: SHOWS.indexOf(c.show) >= 0 ? c.show : '',
+      skip: Array.isArray(c.skip) ? c.skip.filter(isSource) : [],
+    };
   };
   function set(b) {
     config.update('screensaver', c => {
@@ -159,6 +165,11 @@ function create(ctx) {
       if (b.show === '' || SHOWS.indexOf(b.show) >= 0) {
         if (!b.show) delete s.show;
         else s.show = b.show;
+      }
+      if (Array.isArray(b.skip)) {
+        const k = b.skip.filter((x, i, all) => isSource(x) && all.indexOf(x) === i).slice(0, 32);
+        if (k.length) s.skip = k;
+        else delete s.skip;
       }
       if (Object.keys(s).length) c.screensaver = s;
       else delete c.screensaver;
@@ -178,13 +189,35 @@ function create(ctx) {
   // the library as Home shows it: uploads (u/<id>) and the photos of source add-ons (s/<add-on>/<id>), which the page loads from
   // /api/wallpapers/photo/, and live sources (l/<add-on>, Unsplash), whose current photo the page asks /api/wallpapers/live/<add-on>
   // for, as Home's wall.js does. An id of another kind is left out: the page would not know how to show it.
+  // The sources left out (Screen saver > Photos from) are not used; when that leaves nothing, every source is (never a black saver
+  // because of a choice).
   const photos = () => {
     const w = wp();
+    let all = [];
     try {
-      return w ? w.list().filter(id => /^[usl]\//.test(id)) : [];
-    } catch (_) {
-      return [];
-    }
+      all = w ? w.list().filter(id => /^[usl]\//.test(id)) : [];
+    } catch (_) {}
+    const keep = all.filter(uses());
+    return keep.length ? keep : all;
+  };
+  // the source of a library id ('u', or the add-on's id) and whether the saver uses it
+  const sourceOf = id => (id.charAt(0) === 'u' ? 'u' : id.split('/')[1] || '');
+  const uses = () => {
+    const skip = settings().skip;
+    return id => skip.indexOf(sourceOf(id)) < 0;
+  };
+  // the photo sources, for the manager's Photos from rows: only when an add-on provides photos, so the reply is the same without one
+  const sourceRows = () => {
+    const w = wp();
+    let st = null;
+    try {
+      st = w && w.status ? w.status() : null;
+    } catch (_) {}
+    if (!st || !st.sources || !st.sources.length) return null;
+    const skip = settings().skip;
+    return [{ id: 'u', label: 'Local uploads', photos: st.uploads || 0 }]
+      .concat(st.sources.map(s => ({ id: s.id, label: s.label, photos: s.photos })))
+      .map(s => Object.assign(s, { on: skip.indexOf(s.id) < 0 }));
   };
   // What Home has behind it now, in Home's own order (app/src/js/scenes.js, wall.js, theme.js), so the saver shows the same:
   //   1. the theme's scenes: an add-on's scenes where one provides them (Seasons), else the five landscapes of the launcher (couch),
@@ -239,7 +272,9 @@ function create(ctx) {
     let p = [];
     if (mixed(b))
       try {
-        p = wp().plan(PLAN);
+        const lib = {};
+        for (const id of b.photos) lib[id] = 1;
+        p = wp().plan(PLAN, id => lib[id] === 1);
       } catch (e) {
         console.error('screensaver: the order of the photos failed: ' + ((e && e.message) || e));
       }
@@ -421,7 +456,11 @@ function create(ctx) {
     if (u === '/api/screensaver/shown' && req.method === 'POST') {
       const w = wp(),
         b = await body(req);
-      if (w && w.shown) w.shown(b.ids);
+      if (w && w.shown) {
+        const lib = {};
+        for (const id of photos()) lib[id] = 1;
+        w.shown(b.ids, id => lib[id] === 1);
+      }
       return json({});
     }
     // a live source's photo: the one Home has now (wallpapers.js liveCurrent), not the next one the source would hand out
@@ -451,12 +490,15 @@ function create(ctx) {
     }
     if (u === '/api/screensaver/set' && req.method === 'POST') {
       set((await body(req)) || {});
-      const st = settings();
-      return json({ style: st.style, show: st.show, films: (await videos()).videos.length });
+      const st = settings(),
+        out = { style: st.style, show: st.show, films: (await videos()).videos.length },
+        src = sourceRows();
+      if (src) out.sources = src;
+      return json(out);
     }
     if (u === '/api/screensaver') {
       const st = settings();
-      return json({
+      const out = {
         replaced: replaced(),
         running: await running(),
         photos: photos().length,
@@ -464,7 +506,10 @@ function create(ctx) {
         style: st.style,
         show: st.show,
         films: (await videos()).videos.length,
-      });
+      };
+      const src = sourceRows();
+      if (src) out.sources = src;
+      return json(out);
     }
     web.notFound(res);
   }

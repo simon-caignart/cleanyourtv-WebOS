@@ -201,6 +201,9 @@ run(async () => {
   films = [];
   r = await call(ss, '/api/screensaver/photos');
   ok(r.j.show === 'photos', 'without films again, photos whatever the setting');
+  await call(ss, '/api/screensaver/set', 'POST', { skip: ['u', 'u', '../x', 'icloud', 7] });
+  ok(cfg2.get().screensaver.skip.join() === 'u,icloud', 'Photos from: the sources left out are saved, a bad name refused');
+  await call(ss, '/api/screensaver/set', 'POST', { skip: [] });
   await call(ss, '/api/screensaver/set', 'POST', { style: 'kenburns', show: '', junk: 1 });
   await call(ss, '/api/screensaver/set', 'POST', { style: 'zoom', show: 'tv' });
   ok(cfg2.get().screensaver === undefined, 'the defaults are not saved, and other values are refused');

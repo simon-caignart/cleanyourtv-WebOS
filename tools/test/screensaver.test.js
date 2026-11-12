@@ -107,11 +107,18 @@ run(async () => {
         return {
           list: () => libNow,
           stamp: () => '2:ab',
-          plan: n => {
+          plan: (n, keep) => {
             if (planFails) throw new TypeError("Cannot read properties of null (reading 'bags')");
-            return ['s/immich/bb', 'u/aa', 'l/unsplash', 's/immich/bb', 'u/aa'].slice(0, n);
+            return ['s/immich/bb', 'u/aa', 'l/unsplash', 's/immich/bb', 'u/aa'].filter(keep || (() => true)).slice(0, n);
           },
-          shown: ids => drew.push(ids),
+          status: () => ({
+            uploads: 1,
+            sources: [
+              { id: 'immich', label: 'Immich', photos: 1 },
+              { id: 'unsplash', label: 'Unsplash', photos: 0 },
+            ],
+          }),
+          shown: (ids, keep) => drew.push(ids.filter(keep || (() => true))),
           liveCurrent: async id =>
             id === 'unsplash' ? { url: 'https://images.example.com/now.jpg', credit: 'Photo by D' } : { error: 'not a live source' },
         };
@@ -142,8 +149,27 @@ run(async () => {
     'a plan that fails does not fail the reply: the library is shuffled instead'
   );
   planFails = false;
+
+  // Photos from: the saver leaves out the uploads (Simon: Aerials and his iCloud album, the uploads stay for Home)
+  cfgNow = { wall: { on: true }, screensaver: { skip: ['u', 'bogus/x'] } };
   x = await call(f, '/api/screensaver/photos');
-  ok(drew.length === 1 && drew[0][0] === 'u/aa', 'POST /api/screensaver/shown tells Wallpapers which photos were drawn');
+  ok(
+    x.j.photos.join(',') === 's/immich/bb,l/unsplash' && x.j.slides.every(sl => sl.a !== 'u/aa' && sl.b !== 'u/aa'),
+    'a source left out (the uploads) is in neither the photos nor the plan of the screen saver'
+  );
+  await call(f, '/api/screensaver/shown', 'POST', { ids: ['u/aa', 's/immich/bb'] });
+  ok(drew[drew.length - 1].join() === 's/immich/bb', 'what it reports is limited to its own sources');
+  x = await call(f, '/api/screensaver');
+  ok(
+    x.j.sources.map(r => r.id + ':' + r.on).join() === 'u:false,immich:true,unsplash:true',
+    'GET /api/screensaver lists the sources with whether the screen saver uses each'
+  );
+  cfgNow = { wall: { on: true }, screensaver: { skip: ['u', 'immich', 'unsplash'] } };
+  x = await call(f, '/api/screensaver/photos');
+  ok(x.j.photos.length === 3, 'every source left out: the screen saver uses them all rather than nothing');
+  cfgNow = { wall: { on: true } };
+  x = await call(f, '/api/screensaver/photos');
+  ok(drew[0][0] === 'u/aa', 'POST /api/screensaver/shown tells Wallpapers which photos were drawn');
   ok(
     x.code === 200 &&
       x.j.photos.join(',') === 'u/aa,s/immich/bb,l/unsplash' &&

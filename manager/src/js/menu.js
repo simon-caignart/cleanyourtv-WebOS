@@ -991,6 +991,28 @@ function build() {
         saverSet({ style: s.style === 'classic' ? 'kenburns' : 'classic' });
       },
     });
+    /* which photo sources the screen saver uses (all by default); Home keeps showing every source */
+    if (s.sources && s.sources.length) {
+      rows.push({ sep: true });
+      s.sources.forEach(function (src) {
+        rows.push({
+          label: tr('Photos from %s').replace('%s', tr(src.label)),
+          raw: true,
+          info: { t: tr('Photos from %s').replace('%s', tr(src.label)), d: tr(INFO['Photos from %s']) },
+          sub: src.on ? 'On' : 'Off',
+          fn: function () {
+            var skip = s.sources
+              .filter(function (x) {
+                return x.id === src.id ? src.on : !x.on;
+              })
+              .map(function (x) {
+                return x.id;
+              });
+            saverSet({ skip: skip });
+          },
+        });
+      });
+    }
     rows.push({ sep: true });
     rows.push({ label: 'Back', fn: pop });
     return;

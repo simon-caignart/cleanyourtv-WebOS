@@ -38,6 +38,8 @@ var INFO = {
   'Total': 'Every photo Wallpapers can show, and the space they use on the TV (at most 150 MB).',
   'Photos on Home':
     'Landscape only (the default): Home shows the photos that are clearly wider than tall, since a portrait photo would show only its middle there. The screen saver shows every photo, portraits two side by side. All: Home shows every photo. A library without a landscape photo shows them all on Home.',
+  'Photos from %s':
+    'Whether the screen saver shows the photos of this source (all of them by default). Home still shows every source. With every source off, the screen saver uses them all.',
   'Mix':
     'How the photo sources share Home and the screen saver. Equal per source (the default): the uploads and each source add-on take turns, so 20 uploads are not lost in a 300-photo album. By number of photos: every photo has the same chance, so a large album shows most. Either way every photo of a source is shown once before any of them again.',
   'Share of %s':

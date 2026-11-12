@@ -40,7 +40,7 @@ As on the Apple TV, the photos have a style, chosen in the manager: **Features**
 
 In both styles a photo in portrait (less than 1.2 times as wide as tall, see [Wallpapers](wallpapers.md#landscape-and-portrait)) is not cut to its middle band.
 Two portrait photos share the screen, side by side with a thin line between them, and drift a little less; a portrait photo left over at the end of the round is shown whole over a blurred, darker copy of itself.
-Wallpapers' photos come in the [order Home shares with the screen saver](wallpapers.md#the-order-of-the-photos): the sources take turns, and every photo of a source is shown once before any again, also from one evening to the next.
+Wallpapers' photos (those of the sources it uses, see **Photos from** below) come in the [order Home shares with the screen saver](wallpapers.md#the-order-of-the-photos); the sources it leaves out take no turns there: the sources take turns, and every photo of a source is shown once before any again, also from one evening to the next.
 Scenes and a theme's wallpaper are shuffled each time the screen saver opens.
 A portrait photo is paired with the next portrait one in that order.
 
@@ -134,6 +134,11 @@ right after opening.
 
 It is **off by default**. In the manager app: **Features → Screen saver** or **CleanYourTV as Home → Screen saver**, then **CleanYourTV's screen saver**, On or Off.
 The same screen has **Show** (with the Aerials add-on) and **Photo style**, which take effect the next time the screen saver opens, without a restart.
+With a photo source add-on installed (iCloud Shared Album, Immich, Unsplash), it also has one **Photos from** row per source, uploads included: On (the default) or Off.
+A source that is off is left out of the screen saver only; Home still shows it.
+For example, Aerials with an iCloud album and not the uploaded stills: **Show** at **Aerials and photos**, **Photos from Local uploads** Off.
+With every source off the screen saver uses them all.
+In `config.json` this is `screensaver.skip`, the sources left out (`u` for the uploads, else the add-on's id), set with `POST /api/screensaver/set {"skip": ["u"]}`.
 Switching restarts the TV, as that switch does for Home; after the restart the screen saver is ours or LG's. The row under Features
 also says which one runs now: ours or LG's own.
 
