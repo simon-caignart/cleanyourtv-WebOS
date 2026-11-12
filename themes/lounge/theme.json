@@ -15,7 +15,8 @@
     "menuAlpha": 0.92,
     "rowRadius": 16,
     "ink": "auto",
-    "tint": 0.35
+    "tint": 0.35,
+    "glassShade": 0.25
   },
   "type": {
     "fontFile": "inter.woff2",
@@ -78,7 +79,8 @@
     "panelRim": 0.35,
     "chevron": true,
     "glass": true,
-    "glassFrost": 1
+    "glassFrost": 1,
+    "glassBlur": "strong"
   },
   "grid": {
     "mode": "push",
@@ -96,7 +98,8 @@
     "peek": 24,
     "scroll": "row",
     "glassDim": 0,
-    "glassMilk": 0.3,
+    "glassMilk": 0.38,
+    "glassBlur": "heavy",
     "hideTop": true
   },
   "tile": {
@@ -123,7 +126,6 @@
     "scenesYield": true,
     "wallpaperDim": 0,
     "lateDim": false,
-    "glassBlur": "strong",
     "bottomShade": 0.45
   },
   "cards": {
