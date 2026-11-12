@@ -138,6 +138,17 @@ run(async () => {
     name: 'Test',
     mod: { wallpapers: { label: 'Test', list: () => photosOf(30), file: () => '', taken: () => ({ p0: 1700000000000 }) } },
   };
+  // a cold boot: the screen saver asks for its plan before anything else has read or built the order (it threw and the page stayed
+  // black)
+  const cold = W.create({ config: memoryConfig({}), feature: n => (n === 'addons' ? { providers: () => [fake] } : null) });
+  let cold1 = null;
+  try {
+    cold1 = cold.plan(5);
+  } catch (e) {
+    cold1 = e;
+  }
+  ok(Array.isArray(cold1) && cold1.length === 5, 'the plan right after a start builds the order first: no error');
+  ok(M.take(null, {}) === null && M.peek(undefined, 3, {}).length === 0, 'no state at all: nothing to show, no error');
   const config = memoryConfig({});
   const wp = W.create({ config, feature: n => (n === 'addons' ? { providers: () => [fake] } : null) });
   wp.addUpload(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 7)]));

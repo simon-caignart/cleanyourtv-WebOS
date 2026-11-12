@@ -685,9 +685,26 @@
         startPhotos();
       }
 
-      /* the photos (and what to show: Aerials, photos or both), then the films where an add-on has them */
-      function load(first) {
+      /* the photos (and what to show); a reply without them (the service failed or is still starting after a boot) is asked again
+         every 5 seconds, and the films play meanwhile when an add-on has them, so the page is never left black */
+      function load(first, tries) {
         return get(API + '/api/screensaver/photos?cc=' + encodeURIComponent(country())).then(function (r) {
+          if (!r || !r.show) {
+            if (!first) return;
+            var again = function () {
+              if ((tries || 0) < 60)
+                setTimeout(function () {
+                  load(true, (tries || 0) + 1);
+                }, 5000);
+            };
+            if (mode === 'films') return;
+            return get(API + '/api/screensaver/videos').then(function (v) {
+              var list = ((v && v.videos) || []).filter(playable);
+              if (!list.length) return again();
+              mode = 'films';
+              startFilms(list);
+            });
+          }
           useClock(r);
           usePhotos(r);
           if (!first) {

@@ -234,7 +234,17 @@ function create(ctx) {
   // the photos in the order they come: the library in Wallpapers' order (wallmix.js), shared with Home: the next PLAN photos, which the
   // page reports as it draws them and asks for again when it reaches the end; scenes and the theme's wallpaper shuffled
   const mixed = b => b.from === 'wallpapers' && !!(wp() && wp().plan);
-  const order = b => (mixed(b) ? wp().plan(PLAN) : shuffle(b.photos.slice()));
+  // the order never fails the reply: without a plan the library is shuffled, as before the shared order
+  const order = b => {
+    let p = [];
+    if (mixed(b))
+      try {
+        p = wp().plan(PLAN);
+      } catch (e) {
+        console.error('screensaver: the order of the photos failed: ' + ((e && e.message) || e));
+      }
+    return p.length ? p : shuffle(b.photos.slice());
+  };
   // the films of the first running, switched-on add-on that provides "videos" and has some; it is told the screen saver's language,
   // for the places' names
   async function videos() {

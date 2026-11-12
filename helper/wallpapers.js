@@ -446,7 +446,10 @@ function create(ctx) {
     return { id: id || '' };
   }
   // the screen saver's next n photos (all of them, portraits too), and the ones it drew
-  const plan = n => mix.peek(mixState, n, mixNow(false));
+  function plan(n) {
+    const o = mixNow(false); // loads or builds the state first
+    return mix.peek(mixState, n, o);
+  }
   function shown(ids) {
     const o = mixNow(false),
       have = {};

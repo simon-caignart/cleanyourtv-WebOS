@@ -119,6 +119,7 @@ function turn(state, o, can, given) {
 const okOf = o => o.ok || (() => true);
 // the next photo, taken out of the state (o: {ok, mode, weights, taken, rnd}); null: nothing to show
 function take(state, o) {
+  if (!state || !state.bags) return null;
   const ok = okOf(o),
     best = turn(state, o, offer(state, ok));
   if (!best) return null;
@@ -141,6 +142,7 @@ function take(state, o) {
 
 // the next n photos without changing the state (the screen saver's plan)
 function peek(state, n, o) {
+  if (!state || !state.bags) return [];
   const copy = JSON.parse(JSON.stringify(state)),
     out = [];
   for (let k = 0; k < n; k++) {
@@ -154,6 +156,7 @@ function peek(state, n, o) {
 // photos that were shown (the slides the screen saver drew): out of their bag's round, the order of the rest kept, and their source's
 // turn taken, so Home goes on with the shares where the screen saver left them
 function mark(state, ids, o) {
+  if (!state || !state.bags) return;
   const ok = okOf(o);
   for (const id of ids) {
     const s = srcOf(id),

@@ -107,7 +107,10 @@ run(async () => {
         return {
           list: () => libNow,
           stamp: () => '2:ab',
-          plan: n => ['s/immich/bb', 'u/aa', 'l/unsplash', 's/immich/bb', 'u/aa'].slice(0, n),
+          plan: n => {
+            if (planFails) throw new TypeError("Cannot read properties of null (reading 'bags')");
+            return ['s/immich/bb', 'u/aa', 'l/unsplash', 's/immich/bb', 'u/aa'].slice(0, n);
+          },
           shown: ids => drew.push(ids),
           liveCurrent: async id =>
             id === 'unsplash' ? { url: 'https://images.example.com/now.jpg', credit: 'Photo by D' } : { error: 'not a live source' },
@@ -124,6 +127,7 @@ run(async () => {
     },
   };
   const drew = [];
+  let planFails = false;
   const f = saver.create(ctx);
   let x = await call(f, '/api/screensaver/photos');
   ok(
@@ -131,6 +135,14 @@ run(async () => {
     "the slides follow Wallpapers' order (its plan of the next photos), which can show a small source again sooner"
   );
   await call(f, '/api/screensaver/shown', 'POST', { ids: ['u/aa'] });
+  planFails = true;
+  x = await call(f, '/api/screensaver/photos');
+  ok(
+    x.code === 200 && x.j.slides.length === 3 && x.j.show === 'photos',
+    'a plan that fails does not fail the reply: the library is shuffled instead'
+  );
+  planFails = false;
+  x = await call(f, '/api/screensaver/photos');
   ok(drew.length === 1 && drew[0][0] === 'u/aa', 'POST /api/screensaver/shown tells Wallpapers which photos were drawn');
   ok(
     x.code === 200 &&
