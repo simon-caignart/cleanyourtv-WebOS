@@ -40,7 +40,7 @@ folder of the GitHub repository (the `main` branch):
 | Couch | After [couch-tv](https://github.com/Seagey/couch-tv): five landscapes take turns every 20 seconds behind a large glass clock, the scenery in front of the digits; the date above the clock, round buttons top right, the apps on glass at the bottom; cards on frosted glass. Uses `clock.style`, `effects.scenes` and `cards.style`. |
 | Lock Screen | A phone-style lock screen: a greeting and a big clock top left, and a small, translucent dock low in the corner over a calm blue landscape, so the picture fills the screen. Down moves the dock up and shows all apps below it. Turn Wallpapers on for your own photos. It has slots for cards (Customise > Cards): the greeting is one, and there is a place under the clock. |
 | Moon | A moonlit autumn landscape with a four-app glass dock, warm focus, app-colour rails and places for cards around the clock. |
-| Lounge | A streaming-box home screen: six wide icons on a glass platter over the Couch landscapes (or your Wallpapers photos), smooth focus with a soft light and shadow, the app's name under it in the grid, a glass pill clock, and a first grid row that peeks at the bottom. Uses `effects.motion`, `tile.label`, `grid.peek`, `grid.scroll`, `effects.scenesYield`, `surface.tint`, `grid.hideTop`, `effects.bottomShade`, `dock.chevron`, `dock.glass` with `dock.glassFrost`, a milky grid glass (`grid.glassMilk`, `effects.glassBlur`) and the Inter 4 variable font set like SF Pro (`type.variable`, `type.opsz`, the `type.weight` keys). |
+| Lounge | A streaming-box home screen: six wide icons on a glass platter over the Couch landscapes (or your Wallpapers photos), smooth focus with a soft light and shadow, the app's name under it in the grid, a glass pill clock, and a first grid row that peeks at the bottom. Uses `effects.motion`, `tile.label`, `grid.peek`, `grid.scroll`, `effects.scenesYield`, `surface.tint`, `grid.hideTop`, `effects.bottomShade`, `dock.chevron`, `dock.glass` with `dock.glassFrost` and `dock.glassBlur`, a milky grid glass (`grid.glassMilk`, `grid.glassBlur` heavy), `surface.glassShade` and the Inter 4 variable font set like SF Pro (`type.variable`, `type.opsz`, the `type.weight` keys). |
 
 ![Classic, Compact, Large print and Midnight](screenshots/themes-1.jpg)
 
@@ -160,6 +160,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `surface.rowRadius` | 0 to 50 | `30` | Corner radius of menu rows. |
 | `surface.ink` | `light`, `auto` | `light` | Text and icons of the `glass` top buttons and the `pill` clock. `light`: white; `auto`: dark over a bright picture and white over a dark one, measured once per picture (Wallpapers photo, scene, wallpaper) behind them. |
 | `surface.tint` | 0 to 0.8 | `0` | How much of the colour of the picture behind them tints the glass of the `glass` top buttons and the `pill` clock: the opacity of a layer of the picture's mean colour there, measured once per picture like `surface.ink`. |
+| `surface.glassShade` | 0 to 0.4 | `0` | More contrast for the `glass` top buttons and the `pill` clock on a bright picture: with white ink their glass gets a dark veil of this opacity (under the tint of `surface.tint`); with dark ink (`surface.ink` auto) this much more white. 0: the plain glass. |
 | **type** | | | |
 | `type.font` | `default`, `serif`, `mono` | `default` | The typeface: the TV's own, a serif or a monospace. |
 | `type.fontFile` | a file name | none | A typeface of the theme: a file in the theme's folder, `.woff2`, `.woff`, `.ttf` or `.otf`, at most 400 KB, used for all text. Characters it lacks come from `type.font`. Its licence must allow redistribution; put the licence file in the folder too. |
@@ -225,6 +226,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `dock.panelPad` | 0 to 60 | `24` | Space between the panel and the tiles, in px. |
 | `dock.panelRim` | 0 to 0.8 or empty | empty | Opacity of the panel's 1 px outline. Empty: 1.4 times `dock.panel`. |
 | `dock.glass` | `true` or `false` | `false` | The panel is glass while the grid is closed: the picture behind it shows blurred under its fill and rim (with `cards.style` glass, from the same blurred copy as the glass behind the grid). |
+| `dock.glassBlur` | `normal`, `strong` | `normal` | How far a Wallpapers photo is blurred in the glass panel of `dock.glass`. `strong`: about twice as far. |
 | `dock.glassFrost` | 0 to 1 | `0` | How frosted the glass panel of `dock.glass` is: a veil that darkens a bright picture under it and lifts a dark one, so the panel reads as a band of glass on any picture. 0: the blurred picture as it is. |
 | `dock.chevron` | `true` or `false` | `false` | A small chevron centred 35 px above the dock while the grid is closed, the way to the rest of the apps. |
 | `dock.tileAlpha` | 0 to 1 | `1` | Opacity of the dock tile background; below 1 lets the wallpaper show through the tiles. |
@@ -251,6 +253,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `grid.focusScale` | 1 to 1.4 | `1.12` | Scale of the focused tile. |
 | `grid.overlayDim` | 0 to 1 | `0.95` | Opacity of the dark layer behind the grid in `overlay` and `push` modes (without the frosted glass of `cards.style` glass). |
 | `grid.glassDim` | 0 to 0.9 | `0.34` | How dark the frosted glass behind the grid is at the top (`effects.scenes` with `cards.style` glass); it darkens a little more towards the bottom. Higher keeps bright scenes calm. |
+| `grid.glassBlur` | `normal`, `strong`, `heavy` | `normal` | How far a Wallpapers photo is blurred in the frosted glass behind the grid. `strong`: about twice as far as `normal`; `heavy`: about four times, the shapes melt into soft colour, as on tvOS. |
 | `grid.glassMilk` | 0 to 0.6 | `0` | A white veil over the frosted glass behind the grid, after `grid.glassDim`: the glass turns light and milky, as on tvOS. 0: none. |
 | `grid.overlayH` | 200 to 900 | `510` | Visible height of the overlay grid before it scrolls, in px. |
 | `grid.hideTop` | `true` or `false` | `false` | The top buttons and the clock fade out while the grid (`overlay` or `push`) is open; they come back with the dock row, the only row they are reached from. |
@@ -281,7 +284,6 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `effects.wallpaper` | a file name | none | A file name in `themes/wallpapers/`: `.jpg`, `.png` or `.webp`, at most 1.5 MB; drawn at 1920 x 1080. |
 | `effects.wallpaperDim` | 0 to 0.9 | `0.4` | How far the wallpaper, and Wallpapers photos, are darkened with the background colour. |
 | `effects.bottomShade` | 0 to 0.8 | `0` | A soft shade from y 600 to the bottom of the screen behind the dock, black at this opacity at the bottom, while the grid is closed: the picture stays bright and the dock stays readable. |
-| `effects.glassBlur` | `normal`, `strong` | `normal` | How far a Wallpapers photo is blurred in the glass behind the grid and in the glass panel of `dock.glass`. `strong`: about twice as far, the shapes melt into colour. |
 | `effects.lateDim` | `true` or `false` | `true` | Darken the scenes a little from 10 pm to 6 am. |
 | `effects.scenes` | `off`, `couch`, `custom` | `off` | `couch`: five landscapes shipped with the launcher take turns behind Home (Night, Golden hour, Waterline, Fog, Dawn); with `clock.style` glass the scenery stands in front of the clock. Takes the place of the wallpaper and of Wallpapers. `custom`: the theme brings its own scenes as a `"scenes"` array in `theme.json`. |
 | `effects.sceneSecs` | 10 to 600 | `20` | Seconds each scene stays (`effects.scenes`). |

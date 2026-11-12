@@ -305,16 +305,29 @@ run(async () => {
     'dock.glass reaches the launcher, and by default the panel is a plain fill, with no new keys in the reply'
   );
   const frosted = themeMod.resolve(
-    themeMod.normalize({ dock: { glass: true, glassFrost: 1 }, grid: { glassMilk: 0.3 }, effects: { glassBlur: 'strong' } }, 'frosted')
+    themeMod.normalize(
+      {
+        dock: { glass: true, glassFrost: 1, glassBlur: 'strong' },
+        grid: { glassMilk: 0.38, glassBlur: 'heavy' },
+        surface: { glassShade: 0.25 },
+      },
+      'frosted'
+    )
   );
-  const frostOnly = themeMod.resolve(themeMod.normalize({ dock: { glassFrost: 0.5 } }, 'frostonly'));
+  const frostOnly = themeMod.resolve(themeMod.normalize({ dock: { glassFrost: 0.5, glassBlur: 'strong' } }, 'frostonly'));
   ok(
     frosted.glassFrost === 1 &&
-      frosted.glassMilk === 0.3 &&
-      frosted.glassBlur === 'strong' &&
+      frosted.dockBlur === 'strong' &&
+      frosted.glassMilk === 0.38 &&
+      frosted.gridBlur === 'heavy' &&
+      frosted.attrs.gshade === 'on' &&
+      frosted.vars['--gshade'] === '0.25' &&
       !('glassFrost' in frostOnly) &&
-      ['glassFrost', 'glassMilk', 'glassBlur'].every(k => !(k in plain) && !(k in glassDock)),
-    'the frosted platter, the milky grid glass and the strong blur reach the launcher (the frost only with dock.glass); none by default'
+      !('dockBlur' in frostOnly) &&
+      ['glassFrost', 'glassMilk', 'gridBlur', 'dockBlur'].every(k => !(k in plain) && !(k in glassDock)) &&
+      !('gshade' in plain.attrs) &&
+      !('--gshade' in plain.vars),
+    'the frosted platter and its blur (only with dock.glass), the milky grid glass, its heavy blur and the shade of the top glass reach the launcher; none by default'
   );
   // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
   const peeking = themeMod.resolve(

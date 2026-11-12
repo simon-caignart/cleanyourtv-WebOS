@@ -533,9 +533,25 @@ run(async () => {
       /var cw = Math\.ceil\(w \/ 2\)/.test(scjs) &&
       /x\.clip\(\);/.test(scjs) &&
       /sc\.insertBefore\(pg, sc\.firstChild\)/.test(scjs) &&
-      /platter\(soft\);/.test(scjs) &&
+      /platter\(blur \? \(dockBlur === gridBlur \? soft : blurred\(i, dockBlur\)\) : i\);/.test(scjs) &&
       /\.grid-open \.pglass \{\s*opacity: 0;/.test(hcss) &&
       !/\.pglass \{[^}]*(overflow|clip-path|mask)/.test(hcss),
     'the glass of the dock panel is a small canvas drawn once per picture, moved with the dock and hidden in the grid'
+  );
+  // grid.glassBlur strong and heavy: halved down and doubled back up, each step softened with shifted copies (no blocks on a 4K screen),
+  // and each level keeps its own canvases
+  ok(
+    /sizes = level === 'heavy' \? \[384, 192, 96, 48, 24\]/.test(scjs) &&
+      /soften\(up, c\[k\]\[0\]\);/.test(scjs) &&
+      /chains\[level \|\| 'normal'\]/.test(scjs),
+    'the strong and heavy glass is a smooth blur drawn once per picture'
+  );
+  ok(
+    /body\[data-gshade\]\[data-bar="glass"\] #bar \.pill:not\(\.f\),\s*\[data-gshade\]\[data-cstyle="pill"\] #clock \{\s*background-color: rgba\(0, 0, 0, var\(--gshade\)\);/.test(
+      hcss
+    ) &&
+      hcss.indexOf('[data-gshade][data-cstyle="pill"] #clock {') < hcss.indexOf('.ink-dark[data-cstyle="pill"] #clock {') &&
+      /'data-gshade'/.test(tjs),
+    'surface.glassShade darkens the top glass under white ink, and dark ink keeps its lighter glass'
   );
 });
