@@ -89,9 +89,12 @@ function mayOpen(now, homeSince, activeAt) {
   return !!activeAt && now - Math.max(homeSince, activeAt) >= IDLE_MS;
 }
 // a film an add-on hands over, checked: an id, a plain http(s) address the page can put in a <video> (no quotes, spaces or brackets),
-// and the place as one short line; at most 300
+// the place as one short line, and the decoder a film needs where it is not one every TV has (type: a MIME type with codecs, and at
+// most four numbers such as framerate=240; the page asks the TV with MediaSource.isTypeSupported and passes over a film it cannot
+// decode); at most 300
 const VIDEO_ID = /^[\w.-]{1,64}$/,
   VIDEO_URL = /^https?:\/\/[\w.-]+(?::\d{1,5})?\/[\w\/.%~+-]{1,300}$/,
+  VIDEO_TYPE = /^video\/(?:mp4|webm); codecs="[\w.]{1,60}"(?:; [a-z]{1,16}=\d{1,6}){0,4}$/,
   VIDEO_MAX = 300;
 function cleanVideos(l) {
   const seen = {};
@@ -100,13 +103,17 @@ function cleanVideos(l) {
       v => v && typeof v === 'object' && VIDEO_ID.test(String(v.id)) && VIDEO_URL.test(String(v.url)) && !seen[v.id] && (seen[v.id] = 1)
     )
     .slice(0, VIDEO_MAX)
-    .map(v => ({
-      id: String(v.id),
-      url: String(v.url),
-      title: String(v.title || '')
-        .replace(/[\u0000-\u001f\u007f]/g, ' ')
-        .slice(0, 80),
-    }));
+    .map(v => {
+      const o = {
+        id: String(v.id),
+        url: String(v.url),
+        title: String(v.title || '')
+          .replace(/[\u0000-\u001f\u007f]/g, ' ')
+          .slice(0, 80),
+      };
+      if (VIDEO_TYPE.test(String(v.type || ''))) o.type = String(v.type);
+      return o;
+    });
 }
 
 function create(ctx) {
