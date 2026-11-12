@@ -167,7 +167,10 @@ var SCENES = (function () {
     pgKey = '';
   function drawFrost(src, blur) {
     var dim = lastTh && typeof lastTh.glassDim === 'number' ? lastTh.glassDim : 0.34,
-      key = src && src + '|' + dim + '|' + (blur ? 1 : 0);
+      milk = (lastTh && lastTh.glassMilk) || 0,
+      strong = !!(lastTh && lastTh.glassBlur === 'strong'),
+      frostA = (lastTh && lastTh.glassFrost) || 0,
+      key = src && [src, dim, milk, strong ? 1 : 0, frostA, blur ? 1 : 0].join('|');
     if (key === frostSrc) return;
     frostSrc = key;
     var cvs = frostEl().children;
@@ -184,7 +187,7 @@ var SCENES = (function () {
       var back = cvs[frostFront ^ 1],
         front = cvs[frostFront],
         x = back.getContext('2d');
-      var soft = blur ? blurred(i) : i;
+      var soft = blur ? blurred(i, strong) : i;
       x.drawImage(soft, 0, 0, back.width, back.height);
       platter(soft);
       var gr = x.createLinearGradient(0, 0, 0, back.height);
@@ -192,6 +195,10 @@ var SCENES = (function () {
       gr.addColorStop(1, 'rgba(16,14,26,' + Math.min(0.95, dim + 0.12) + ')');
       x.fillStyle = gr;
       x.fillRect(0, 0, back.width, back.height);
+      if (milk) {
+        x.fillStyle = 'rgba(255,255,255,' + milk + ')';
+        x.fillRect(0, 0, back.width, back.height);
+      }
       /* the new one on top fades in; the old one stays whole under it until then */
       back.style.zIndex = '1';
       front.style.zIndex = '0';
@@ -256,6 +263,14 @@ var SCENES = (function () {
     roundRect(x, cw, ch, rad / 2);
     x.clip();
     x.drawImage(pgImg, x0 * k, y0 * k, w * k, h * k, 0, 0, cw, ch);
+    /* dock.glassFrost: darker over a bright picture, lighter over a dark one */
+    var fr = (lastTh && lastTh.glassFrost) || 0;
+    if (fr) {
+      x.fillStyle = 'rgba(0,0,0,' + (0.3 * fr).toFixed(3) + ')';
+      x.fillRect(0, 0, cw, ch);
+      x.fillStyle = 'rgba(255,255,255,' + (0.1 * fr).toFixed(3) + ')';
+      x.fillRect(0, 0, cw, ch);
+    }
     if (shade) {
       /* the stops of #bshade (home.css): from y 600 to the bottom */
       var g = x.createLinearGradient(0, 0, 0, ch),
@@ -280,19 +295,25 @@ var SCENES = (function () {
     x.arcTo(0, 0, w, 0, r);
     x.closePath();
   }
-  /* a photo blurred without filters: drawn at 96 x 54, then scaled up twice with smoothing; the canvas scales the rest */
-  function blurred(img) {
+  /* a photo blurred without filters: drawn at 96 x 54 (48 x 27 when strong), then scaled up with smoothing; the canvas scales the rest.
+     The photo is cut to 16:9 from its middle, as the Wallpapers layer shows it (background-size cover), so the glass lines up with it */
+  function blurred(img, strong) {
     if (!tiny)
-      tiny = [96, 192, 384].map(function (w) {
+      tiny = [48, 96, 192, 384].map(function (w) {
         var c = document.createElement('canvas');
         c.width = w;
         c.height = (w * 9) / 16;
         return c;
       });
-    for (var k = 0; k < tiny.length; k++) {
+    var iw = img.naturalWidth || img.width,
+      ih = img.naturalHeight || img.height,
+      sw = Math.min(iw, (ih * 16) / 9),
+      sh = Math.min(ih, (iw * 9) / 16);
+    for (var k = strong ? 0 : 1, first = k; k < tiny.length; k++) {
       var x = tiny[k].getContext('2d');
       x.imageSmoothingEnabled = true;
-      x.drawImage(k ? tiny[k - 1] : img, 0, 0, tiny[k].width, tiny[k].height);
+      if (k === first) x.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, tiny[k].width, tiny[k].height);
+      else x.drawImage(tiny[k - 1], 0, 0, tiny[k].width, tiny[k].height);
     }
     return tiny[tiny.length - 1];
   }

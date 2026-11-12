@@ -304,6 +304,18 @@ run(async () => {
     glassDock.dockGlass === true && glassDock.attrs.dglass === 'on' && !('dockGlass' in plain) && !('dglass' in plain.attrs),
     'dock.glass reaches the launcher, and by default the panel is a plain fill, with no new keys in the reply'
   );
+  const frosted = themeMod.resolve(
+    themeMod.normalize({ dock: { glass: true, glassFrost: 1 }, grid: { glassMilk: 0.3 }, effects: { glassBlur: 'strong' } }, 'frosted')
+  );
+  const frostOnly = themeMod.resolve(themeMod.normalize({ dock: { glassFrost: 0.5 } }, 'frostonly'));
+  ok(
+    frosted.glassFrost === 1 &&
+      frosted.glassMilk === 0.3 &&
+      frosted.glassBlur === 'strong' &&
+      !('glassFrost' in frostOnly) &&
+      ['glassFrost', 'glassMilk', 'glassBlur'].every(k => !(k in plain) && !(k in glassDock)),
+    'the frosted platter, the milky grid glass and the strong blur reach the launcher (the frost only with dock.glass); none by default'
+  );
   // grid.peek: in push mode the first row shows at the bottom of the screen at rest, and the grid opens from there
   const peeking = themeMod.resolve(
     themeMod.normalize(
