@@ -338,6 +338,21 @@ run(async () => {
       a.videos.list({ lang: 'fr-FR' })[0].title === 'Golden Gate de nuit',
     'the films are kept on the TV for the next start, with their names'
   );
+  ok(a.status().updated > 0, 'a list kept in this format counts as read when it was');
+  const oldDir = path.join(tmp, 'aerials-format1');
+  fs.mkdirSync(oldDir);
+  fs.writeFileSync(
+    path.join(oldDir, 'films.json'),
+    JSON.stringify({
+      at: Date.now(),
+      films: [{ id: 'A1', title: 'Glacier Bay', h264: 'http://sylvan.apple.com/Videos/A1_2K_AVC.mov', hevc: '', hfr: '' }],
+    })
+  );
+  const older = S.create(ctx('aerials-format1'));
+  ok(
+    older.videos.list().length === 1 && older.status().updated === 0,
+    'a list kept by an earlier version (without the names) plays meanwhile and is read again at the start'
+  );
   await a.update();
   r = await call(a, '/status');
   ok(r.j.films === 5 && /503.*503/.test(r.j.error), 'manifests that cannot be read keep the films and say why: ' + JSON.stringify(r.j));

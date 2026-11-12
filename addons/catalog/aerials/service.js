@@ -16,6 +16,8 @@ const MANIFESTS = (
   'http://sylvan.apple.com/itunes-assets/Aerials126/v4/82/2e/34/822e344c-f5d2-878c-3d56-508d5b09ed61/resources-27-0-1.tar,' +
     'http://sylvan.apple.com/Aerials/resources-16.tar'
 ).split(',');
+// 2: the films carry their names in other languages
+const FORMAT = 2;
 const WEEK = 7 * 24 * 3600 * 1000,
   RETRY = 3600 * 1000,
   TAR_MAX = 16 * 1024 * 1024;
@@ -24,10 +26,11 @@ function create(ctx) {
   const FILE = path.join(ctx.dataDir, 'films.json');
   const quality = () => ((ctx.settings.get() || {}).quality === '4k' ? '4k' : '1080');
   const state = { busy: false, tried: 0, error: '' };
+  // films.json: {v: FORMAT, at, films}; a list kept in an older format is read again at the start (at: 0), its films used meanwhile
   let kept = { at: 0, films: [] };
   try {
     const k = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-    if (k && Array.isArray(k.films)) kept = { at: +k.at || 0, films: F.films({ assets: k.films.map(raw) }) };
+    if (k && Array.isArray(k.films)) kept = { at: k.v === FORMAT ? +k.at || 0 : 0, films: F.films({ assets: k.films.map(raw) }) };
   } catch (_) {}
   // a kept film back in the manifest's shape, so it goes through the same checks when it is read again
   function raw(f) {
@@ -76,7 +79,7 @@ function create(ctx) {
       const list = F.merge(errors.length ? lists.concat([kept.films]) : lists);
       kept = { at: Date.now(), films: list };
       try {
-        fs.writeFileSync(FILE + '.tmp', JSON.stringify(kept));
+        fs.writeFileSync(FILE + '.tmp', JSON.stringify({ v: FORMAT, at: kept.at, films: kept.films }));
         fs.renameSync(FILE + '.tmp', FILE);
       } catch (e) {
         ctx.log('films.json: ' + ((e && e.message) || e));
