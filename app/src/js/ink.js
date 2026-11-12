@@ -1,13 +1,14 @@
 /* ---------- surface.ink auto and surface.tint: the glass top buttons and the pill clock follow the picture under them. The glass stays
    clear, like the dock's; with ink auto its content turns dark over a bright picture, and with a tint the glass takes some of the
    picture's colour. Measured once per picture on a 32 x 18 copy (no work per frame); the change happens while the buttons and the clock
-   are faded out. ---------- */
+   are faded out. The last result is kept in localStorage, so Home that starts again on the same picture has it at once. ---------- */
 var INK = (function () {
   var cv = null,
     seen = null,
     dark = false,
     tint = '',
-    swapT = 0;
+    swapT = 0,
+    KEPT = 'cytv.ink';
   var lin = function (c) {
     c /= 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -64,21 +65,28 @@ var INK = (function () {
       }),
     };
   }
+  function paint() {
+    var b = document.body;
+    b.classList.toggle('ink-dark', dark);
+    b.classList.toggle('tinted', !!tint);
+    if (tint) b.style.setProperty('--ink-tint', tint);
+    else b.style.removeProperty('--ink-tint');
+  }
   /* d: dark ink; col: the colour of the picture ([r, g, b]), or null when it is not known (the glass is then not tinted) */
   function show(d, col) {
     var b = document.body,
       t = col && b.hasAttribute('data-tint') ? col.map(Math.round).join(',') : '';
     if (b.getAttribute('data-inkmode') !== 'auto') d = false;
+    try {
+      localStorage.setItem(KEPT, JSON.stringify({ k: seen, d: d, t: t }));
+    } catch (e) {}
     if (d === dark && t === tint) return;
     dark = d;
     tint = t;
     b.classList.add('ink-swap');
     clearTimeout(swapT);
     swapT = setTimeout(function () {
-      b.classList.toggle('ink-dark', dark);
-      b.classList.toggle('tinted', !!tint);
-      if (tint) b.style.setProperty('--ink-tint', tint);
-      else b.style.removeProperty('--ink-tint');
+      paint();
       b.classList.remove('ink-swap');
     }, 200);
   }
@@ -97,6 +105,18 @@ var INK = (function () {
     }
     var key = [src, dim, bright ? 1 : 0, col, night, b.getAttribute('data-inkmode'), b.hasAttribute('data-tint')].join('|');
     if (key === seen) return;
+    if (seen === null) {
+      var k = null;
+      try {
+        k = JSON.parse(localStorage.getItem(KEPT) || 'null');
+      } catch (e) {}
+      if (k && k.k === key) {
+        seen = key;
+        dark = !!k.d;
+        tint = typeof k.t === 'string' ? k.t : '';
+        return paint();
+      }
+    }
     seen = key;
     if (!src) return col ? show(!!bright, col) : show(!!bright || luma(night) > INK_DARK, night);
     var i = new Image();

@@ -184,6 +184,9 @@ function create(ctx) {
     if (u === '/api/frontend-ok' && req.method === 'POST') {
       const b = await body(req);
       updates.frontendLoaded(String(b.version || ''));
+      try {
+        fs.writeFileSync(P.HOME_UP, String(b.version || ''));
+      } catch (_) {}
       return json({ returnValue: true });
     }
     if (u === '/api/undo' && req.method === 'POST') {

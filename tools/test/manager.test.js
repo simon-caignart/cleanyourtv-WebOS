@@ -67,6 +67,12 @@ run(async () => {
   ok(r.j.options.volumeTheme === 'dial' && conf.get().options.volumeTheme === 'dial', 'volumeTheme option is saved');
   r = await ask('options', 'POST', { volumeTheme: 'no-such-theme' });
   ok(r.j.options.volumeTheme === 'dial', 'a theme that does not exist is not saved');
+  // the boot script keeps a launcher that started after its mount (scripts/10-cleanyourtv-home): the page says so when it starts
+  r = await call(m, '/api/frontend-ok', 'POST', { version: '1.5.18' });
+  ok(
+    r.j.returnValue === true && fs.readFileSync(process.env.CYTV_HOME_UP, 'utf8') === '1.5.18',
+    'a launcher page that starts leaves its mark for the boot script'
+  );
 
   r = await ask('options', 'POST', { pickerMode: 'overlay' });
   ok(

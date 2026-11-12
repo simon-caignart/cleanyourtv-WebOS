@@ -107,10 +107,13 @@ else
   echo "$(up) home: mounting the launcher over LG's Home, restarting sam" >> $LOG
   # the screen saver, when switched on in the manager (off by default): its folder too, so this one restart reads both
   [ -e $L/SCREENSAVER-ON ] && sh $L/20-cleanyourtv-screensaver prepare </dev/null
+  # the launcher page touches this file (POST /api/frontend-ok) each time it starts; newer than this mark: it started after the mount
+  touch /tmp/cleanyourtv-home-mount
   mount --bind $L/home-overlay $H && { (sleep 3; pkill -9 -f /usr/palm/applications/airplay/LunaExecutable) </dev/null >/dev/null 2>&1 & systemctl restart sam; }
   echo "$(up) home: sam restarted" >> $LOG
-  # After the sam restart nothing is in the foreground (black screen). Once sam is back, start Home again
-  # unless the user already went somewhere else (e.g. an HDMI input).
+  # After the sam restart nothing may be in the foreground (black screen). Once sam is back, start Home again
+  # unless the user already went somewhere else (e.g. an HDMI input). The page Home had before the mount (LG's) is closed first; a
+  # launcher that started after the mount is ours and stays (closing it would load Home a second time at every boot).
   (
     for i in $(seq 1 60); do systemctl is-active sam >/dev/null && break; sleep 2; done
     sh $L/after-sam.sh   # webOS before 7 and the native Home: the services that keep talking to the old sam (issues 23 and 24)
@@ -118,7 +121,11 @@ else
     fg=$(luna_send -n 1 -w 5000 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' | grep '"appId"')
     case "$fg" in
       *'"appId": ""'*|*com.webos.app.home*|"")
-        pkill -f "[a]pp-id=com.webos.app.home"; sleep 2
+        if [ /tmp/cleanyourtv-home-up -nt /tmp/cleanyourtv-home-mount ]; then
+          echo "$(up) home: the launcher started after the mount; it is kept" >> $LOG
+        else
+          pkill -f "[a]pp-id=com.webos.app.home"; sleep 2
+        fi
         luna_send -n 1 -w 10000 -f luna://com.webos.applicationManager/launch '{"id":"com.webos.app.home"}' ;;
     esac
   ) </dev/null >/dev/null 2>&1 &

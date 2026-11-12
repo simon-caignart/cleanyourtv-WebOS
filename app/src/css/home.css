@@ -897,6 +897,10 @@ body[data-bar="glass"] #bar .pill.f {
 body.wpon {
   background-image: none;
 }
+/* Home starts on the photo shown last: held back until it is decoded (wall.js) */
+body.wpwait #homepage {
+  visibility: hidden;
+}
 /* the credit a photo source asks for (Unsplash: the photographer), small, in the bottom right corner */
 #wpc,
 #scredit {

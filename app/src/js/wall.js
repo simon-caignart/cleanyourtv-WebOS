@@ -2,7 +2,9 @@
    landscape photos unless Photos on Home is All) behind Home instead of the theme's
    background. The next photo of Wallpapers' order (POST /api/wallpapers/next: each photo once before any repeats, the sources in turn,
    shared with the screen saver; helper/wallmix.js) every cfg.wall.secs seconds while Home is on screen; when Home opens again, a new one only if that many
-   seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is. ---------- */
+   seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is.
+   The photo on screen is kept in localStorage: when Home starts again (a boot, a reload) it opens on that photo, before the service
+   answers and before the theme's own wallpaper or scenes could show; Home stays hidden until it is decoded (2 s at most). ---------- */
 /* seconds between photos; settings saved before 1.6.10 hold minutes in "every" */
 function wallSecs() {
   var w = cfg.wall || {};
@@ -17,7 +19,34 @@ var WALL = (function () {
     last = 0 /* when the photo on screen was put there (ms) */,
     timer = 0,
     pollT = 0,
-    els = null;
+    els = null,
+    booting = null /* the kept photo Home started on, until it is on screen */,
+    bootT = 0,
+    revealT = 0;
+  var KEPT = 'cytv.wall.shown';
+  function keep(id, url, text) {
+    try {
+      localStorage.setItem(KEPT, JSON.stringify({ id: id, url: url, credit: text }));
+    } catch (e) {}
+  }
+  function kept() {
+    try {
+      var k = JSON.parse(localStorage.getItem(KEPT) || 'null');
+      return k && typeof k.id === 'string' && typeof k.url === 'string' ? k : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function forget() {
+    try {
+      localStorage.removeItem(KEPT);
+    } catch (e) {}
+  }
+  /* Home was held back for the kept photo (body.wpwait) */
+  function reveal() {
+    clearTimeout(revealT);
+    document.body.classList.remove('wpwait');
+  }
   /* a "live" entry (l/<add-on>): a photo source that is not kept on the TV and asks its server now and then */
   var isLive = function (id) {
     return id.slice(0, 2) === 'l/';
@@ -68,10 +97,11 @@ var WALL = (function () {
       );
     load(id, API + '/api/wallpapers/photo/' + id, skip, '');
   }
-  function load(id, url, skip, text) {
+  /* boot: the kept photo of start(); a later photo has taken its place by the time it loads, then it is not shown */
+  function load(id, url, skip, text, boot) {
     var im = new Image();
     im.onerror = function () {
-      if (skip && !isLive(id)) skip();
+      if (skip && (boot || !isLive(id))) skip();
     };
     /* decoded before it is shown, so the swap does not wait for a 4K decode; the scenes and the grid glass learn of the photo */
     im.onload = function () {
@@ -79,14 +109,25 @@ var WALL = (function () {
       else put();
     };
     var put = function () {
-      if (!want()) return;
+      if (!want() || (boot && booting !== boot)) return;
       var l = layers(),
         on = l[side],
-        off = l[side ^ 1];
+        off = l[side ^ 1],
+        held = document.body.classList.contains('wpwait');
       side ^= 1;
       on.style.backgroundImage = 'url("' + url + '")';
+      /* while Home is held back the photo is there at once: Home shows with it, without a fade from the page colour */
+      if (held) on.style.transition = 'none';
       on.classList.add('on');
       off.classList.remove('on');
+      if (held) {
+        window.getComputedStyle(on).opacity;
+        on.style.transition = '';
+        reveal();
+      }
+      booting = null;
+      clearTimeout(bootT);
+      keep(id, url, text);
       dim();
       document.body.classList.add('wpon');
       cur = id;
@@ -153,6 +194,10 @@ var WALL = (function () {
   function off() {
     clearInterval(timer);
     clearInterval(pollT);
+    clearTimeout(bootT);
+    booting = null;
+    reveal();
+    forget();
     document.body.classList.remove('wpon');
     credit('');
     if (els) {
@@ -177,13 +222,55 @@ var WALL = (function () {
       function (x) {
         list = x.home || x.photos || [];
         if (!list.length) return off();
-        if (!cur || list.indexOf(cur) < 0) next();
+        /* the kept photo Home started on is still loading: it stays, and the next one comes at the interval */
+        if (!(booting && list.indexOf(booting.id) >= 0) && (!cur || list.indexOf(cur) < 0)) {
+          booting = null;
+          next();
+        }
         arm();
       },
       function () {}
     );
   }
+  /* the kept photo, when it cannot be loaded (the service is still starting): tried again for about half a minute, then Home goes on
+     without it (the theme's background, or the next photo once the list is known) */
+  function bootLoad(k, n) {
+    load(
+      k.id,
+      k.url,
+      function () {
+        if (booting !== k) return;
+        if (n < 20)
+          bootT = setTimeout(function () {
+            if (booting === k) bootLoad(k, n + 1);
+          }, 1500);
+        else {
+          booting = null;
+          reveal();
+          if (cur) return;
+          document.body.classList.remove('wpon');
+          if (typeof SCENES !== 'undefined') SCENES.wall('');
+          if (list.length) next();
+        }
+      },
+      k.credit,
+      k
+    );
+  }
   return {
+    /* Home starts with the settings it kept (start.js), before the theme is applied: the kept photo takes the theme's place at once */
+    start: function () {
+      var k = kept();
+      if (!want() || !k) return;
+      booting = k;
+      cur = '';
+      last = Date.now();
+      document.body.classList.add('wpon', 'wpwait');
+      dim();
+      if (typeof SCENES !== 'undefined') SCENES.wall(k.url);
+      revealT = setTimeout(reveal, 2000);
+      bootLoad(k, 0);
+    },
     sync: sync,
     /* Home is on screen again: a new photo when it is time for one (every time with 0 seconds; else once the interval has passed since the
        last change, so opening Home does not change the photo or decode a new one before then), and the timer runs again */

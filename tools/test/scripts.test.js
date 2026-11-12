@@ -251,6 +251,24 @@ run(async () => {
       'and not after an update of the launcher (then the slow way stages it first)'
   );
 
+  // the mount way: after the app manager restart, Home's page from before the mount (LG's) is closed and Home launched again; a launcher
+  // that already started after the mount is kept (closing it would load Home a second time at each boot)
+  {
+    const after = bootSh.slice(bootSh.indexOf('mounting the launcher over'));
+    const kill = after.indexOf('pkill -f "[a]pp-id=com.webos.app.home"'),
+      guard = after.indexOf('[ /tmp/cleanyourtv-home-up -nt /tmp/cleanyourtv-home-mount ]');
+    ok(
+      after.indexOf('touch /tmp/cleanyourtv-home-mount') >= 0 &&
+        after.indexOf('touch /tmp/cleanyourtv-home-mount') < after.indexOf('mount --bind') &&
+        guard > 0 &&
+        guard < kill &&
+        /else\n\s*pkill -f "\[a\]pp-id=com\.webos\.app\.home"; sleep 2\n\s*fi/.test(after),
+      'the boot script closes Home before launching it only when no launcher page started after its mount'
+    );
+    const paths = fs.readFileSync(path.join(root, 'helper', 'paths.js'), 'utf8');
+    ok(/'\/tmp\/cleanyourtv-home-up'/.test(paths), 'the service marks the same file the boot script reads');
+  }
+
   // the watchdog (watchdog.sh): starts a service that has stopped again, keeps the logs of the runs that ended, starts less often a
   // service that stops at once, survives its own file being replaced by an update, and ends when CleanYourTV is gone.
   // A stand-in service counts its starts and writes "run <n>" to its log; the address the watchdog asks answers nothing. Everything

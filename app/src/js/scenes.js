@@ -24,7 +24,8 @@ var SCENES = (function () {
   var addonLib = null /* the scenes of an add-on, as custom scenes, or null */,
     addonKey = '',
     addonAt = 0,
-    lastTh = null;
+    lastTh = null,
+    applied = false; /* apply() ran: the theme is known */
   /* the TV's country (its country setting, else the region of its language): an add-on can choose its scenes by it */
   function country() {
     var c = '';
@@ -390,6 +391,7 @@ var SCENES = (function () {
   /* the theme decides: scenes on or off, how long each stays, the glass clock with or without them */
   function apply(th) {
     lastTh = th;
+    applied = true;
     var wantCouch = !!(th && th.scenes && th.scenes.set === 'couch');
     var wantCustom = !!(th && th.scenes && th.scenes.set === 'custom' && th.scenes.lib && th.scenes.lib.length);
     yielded = !!(th && th.scenes && th.scenes.yield && wallUrl);
@@ -524,7 +526,7 @@ var SCENES = (function () {
       if (url === wallUrl) return;
       wallUrl = url;
       if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
-      else inkUpdate();
+      else if (applied) inkUpdate(); /* before the theme (Home's start, wall.js), apply() measures it */
     },
     shown: function () {
       arm();

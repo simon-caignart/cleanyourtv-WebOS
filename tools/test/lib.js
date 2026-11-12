@@ -21,6 +21,7 @@ process.env.CYTV_HOOK_CFG = path.join(tmp, 'hookcfg'); // the hook keybinds.json
 process.env.CYTV_HOOK_LOG = path.join(tmp, 'hook.log');
 process.env.CYTV_SYSLOG = path.join(tmp, 'messages'); // LG's system log (the names of the remote's buttons), not the TV one
 process.env.CYTV_HOME_PARAMS = path.join(tmp, 'home-params'); // what a key script asks the launcher to open
+process.env.CYTV_HOME_UP = path.join(tmp, 'home-up'); // touched when a launcher page starts
 for (const d of [process.env.CYTV_DIR, process.env.CYTV_SERVICE_DIR, process.env.CYTV_PROC]) fs.mkdirSync(d);
 
 let failed = 0;

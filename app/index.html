@@ -902,6 +902,10 @@ body[data-bar="glass"] #bar .pill.f {
 body.wpon {
   background-image: none;
 }
+/* Home starts on the photo shown last: held back until it is decoded (wall.js) */
+body.wpwait #homepage {
+  visibility: hidden;
+}
 /* the credit a photo source asks for (Unsplash: the photographer), small, in the bottom right corner */
 #wpc,
 #scredit {
@@ -5194,13 +5198,14 @@ function csFind(type, q) {
 /* ---------- surface.ink auto and surface.tint: the glass top buttons and the pill clock follow the picture under them. The glass stays
    clear, like the dock's; with ink auto its content turns dark over a bright picture, and with a tint the glass takes some of the
    picture's colour. Measured once per picture on a 32 x 18 copy (no work per frame); the change happens while the buttons and the clock
-   are faded out. ---------- */
+   are faded out. The last result is kept in localStorage, so Home that starts again on the same picture has it at once. ---------- */
 var INK = (function () {
   var cv = null,
     seen = null,
     dark = false,
     tint = '',
-    swapT = 0;
+    swapT = 0,
+    KEPT = 'cytv.ink';
   var lin = function (c) {
     c /= 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -5257,21 +5262,28 @@ var INK = (function () {
       }),
     };
   }
+  function paint() {
+    var b = document.body;
+    b.classList.toggle('ink-dark', dark);
+    b.classList.toggle('tinted', !!tint);
+    if (tint) b.style.setProperty('--ink-tint', tint);
+    else b.style.removeProperty('--ink-tint');
+  }
   /* d: dark ink; col: the colour of the picture ([r, g, b]), or null when it is not known (the glass is then not tinted) */
   function show(d, col) {
     var b = document.body,
       t = col && b.hasAttribute('data-tint') ? col.map(Math.round).join(',') : '';
     if (b.getAttribute('data-inkmode') !== 'auto') d = false;
+    try {
+      localStorage.setItem(KEPT, JSON.stringify({ k: seen, d: d, t: t }));
+    } catch (e) {}
     if (d === dark && t === tint) return;
     dark = d;
     tint = t;
     b.classList.add('ink-swap');
     clearTimeout(swapT);
     swapT = setTimeout(function () {
-      b.classList.toggle('ink-dark', dark);
-      b.classList.toggle('tinted', !!tint);
-      if (tint) b.style.setProperty('--ink-tint', tint);
-      else b.style.removeProperty('--ink-tint');
+      paint();
       b.classList.remove('ink-swap');
     }, 200);
   }
@@ -5290,6 +5302,18 @@ var INK = (function () {
     }
     var key = [src, dim, bright ? 1 : 0, col, night, b.getAttribute('data-inkmode'), b.hasAttribute('data-tint')].join('|');
     if (key === seen) return;
+    if (seen === null) {
+      var k = null;
+      try {
+        k = JSON.parse(localStorage.getItem(KEPT) || 'null');
+      } catch (e) {}
+      if (k && k.k === key) {
+        seen = key;
+        dark = !!k.d;
+        tint = typeof k.t === 'string' ? k.t : '';
+        return paint();
+      }
+    }
     seen = key;
     if (!src) return col ? show(!!bright, col) : show(!!bright || luma(night) > INK_DARK, night);
     var i = new Image();
@@ -5343,7 +5367,8 @@ var SCENES = (function () {
   var addonLib = null /* the scenes of an add-on, as custom scenes, or null */,
     addonKey = '',
     addonAt = 0,
-    lastTh = null;
+    lastTh = null,
+    applied = false; /* apply() ran: the theme is known */
   /* the TV's country (its country setting, else the region of its language): an add-on can choose its scenes by it */
   function country() {
     var c = '';
@@ -5709,6 +5734,7 @@ var SCENES = (function () {
   /* the theme decides: scenes on or off, how long each stays, the glass clock with or without them */
   function apply(th) {
     lastTh = th;
+    applied = true;
     var wantCouch = !!(th && th.scenes && th.scenes.set === 'couch');
     var wantCustom = !!(th && th.scenes && th.scenes.set === 'custom' && th.scenes.lib && th.scenes.lib.length);
     yielded = !!(th && th.scenes && th.scenes.yield && wallUrl);
@@ -5843,7 +5869,7 @@ var SCENES = (function () {
       if (url === wallUrl) return;
       wallUrl = url;
       if (lastTh && lastTh.scenes && lastTh.scenes.yield) apply(lastTh);
-      else inkUpdate();
+      else if (applied) inkUpdate(); /* before the theme (Home's start, wall.js), apply() measures it */
     },
     shown: function () {
       arm();
@@ -5858,7 +5884,9 @@ var SCENES = (function () {
    landscape photos unless Photos on Home is All) behind Home instead of the theme's
    background. The next photo of Wallpapers' order (POST /api/wallpapers/next: each photo once before any repeats, the sources in turn,
    shared with the screen saver; helper/wallmix.js) every cfg.wall.secs seconds while Home is on screen; when Home opens again, a new one only if that many
-   seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is. ---------- */
+   seconds have passed since the last change (0: a new photo each time Home opens), cross-faded between two layers (opacity only). Darkened like a theme's wallpaper. Off, or no photos: the theme as it is.
+   The photo on screen is kept in localStorage: when Home starts again (a boot, a reload) it opens on that photo, before the service
+   answers and before the theme's own wallpaper or scenes could show; Home stays hidden until it is decoded (2 s at most). ---------- */
 /* seconds between photos; settings saved before 1.6.10 hold minutes in "every" */
 function wallSecs() {
   var w = cfg.wall || {};
@@ -5873,7 +5901,34 @@ var WALL = (function () {
     last = 0 /* when the photo on screen was put there (ms) */,
     timer = 0,
     pollT = 0,
-    els = null;
+    els = null,
+    booting = null /* the kept photo Home started on, until it is on screen */,
+    bootT = 0,
+    revealT = 0;
+  var KEPT = 'cytv.wall.shown';
+  function keep(id, url, text) {
+    try {
+      localStorage.setItem(KEPT, JSON.stringify({ id: id, url: url, credit: text }));
+    } catch (e) {}
+  }
+  function kept() {
+    try {
+      var k = JSON.parse(localStorage.getItem(KEPT) || 'null');
+      return k && typeof k.id === 'string' && typeof k.url === 'string' ? k : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function forget() {
+    try {
+      localStorage.removeItem(KEPT);
+    } catch (e) {}
+  }
+  /* Home was held back for the kept photo (body.wpwait) */
+  function reveal() {
+    clearTimeout(revealT);
+    document.body.classList.remove('wpwait');
+  }
   /* a "live" entry (l/<add-on>): a photo source that is not kept on the TV and asks its server now and then */
   var isLive = function (id) {
     return id.slice(0, 2) === 'l/';
@@ -5924,10 +5979,11 @@ var WALL = (function () {
       );
     load(id, API + '/api/wallpapers/photo/' + id, skip, '');
   }
-  function load(id, url, skip, text) {
+  /* boot: the kept photo of start(); a later photo has taken its place by the time it loads, then it is not shown */
+  function load(id, url, skip, text, boot) {
     var im = new Image();
     im.onerror = function () {
-      if (skip && !isLive(id)) skip();
+      if (skip && (boot || !isLive(id))) skip();
     };
     /* decoded before it is shown, so the swap does not wait for a 4K decode; the scenes and the grid glass learn of the photo */
     im.onload = function () {
@@ -5935,14 +5991,25 @@ var WALL = (function () {
       else put();
     };
     var put = function () {
-      if (!want()) return;
+      if (!want() || (boot && booting !== boot)) return;
       var l = layers(),
         on = l[side],
-        off = l[side ^ 1];
+        off = l[side ^ 1],
+        held = document.body.classList.contains('wpwait');
       side ^= 1;
       on.style.backgroundImage = 'url("' + url + '")';
+      /* while Home is held back the photo is there at once: Home shows with it, without a fade from the page colour */
+      if (held) on.style.transition = 'none';
       on.classList.add('on');
       off.classList.remove('on');
+      if (held) {
+        window.getComputedStyle(on).opacity;
+        on.style.transition = '';
+        reveal();
+      }
+      booting = null;
+      clearTimeout(bootT);
+      keep(id, url, text);
       dim();
       document.body.classList.add('wpon');
       cur = id;
@@ -6009,6 +6076,10 @@ var WALL = (function () {
   function off() {
     clearInterval(timer);
     clearInterval(pollT);
+    clearTimeout(bootT);
+    booting = null;
+    reveal();
+    forget();
     document.body.classList.remove('wpon');
     credit('');
     if (els) {
@@ -6033,13 +6104,55 @@ var WALL = (function () {
       function (x) {
         list = x.home || x.photos || [];
         if (!list.length) return off();
-        if (!cur || list.indexOf(cur) < 0) next();
+        /* the kept photo Home started on is still loading: it stays, and the next one comes at the interval */
+        if (!(booting && list.indexOf(booting.id) >= 0) && (!cur || list.indexOf(cur) < 0)) {
+          booting = null;
+          next();
+        }
         arm();
       },
       function () {}
     );
   }
+  /* the kept photo, when it cannot be loaded (the service is still starting): tried again for about half a minute, then Home goes on
+     without it (the theme's background, or the next photo once the list is known) */
+  function bootLoad(k, n) {
+    load(
+      k.id,
+      k.url,
+      function () {
+        if (booting !== k) return;
+        if (n < 20)
+          bootT = setTimeout(function () {
+            if (booting === k) bootLoad(k, n + 1);
+          }, 1500);
+        else {
+          booting = null;
+          reveal();
+          if (cur) return;
+          document.body.classList.remove('wpon');
+          if (typeof SCENES !== 'undefined') SCENES.wall('');
+          if (list.length) next();
+        }
+      },
+      k.credit,
+      k
+    );
+  }
   return {
+    /* Home starts with the settings it kept (start.js), before the theme is applied: the kept photo takes the theme's place at once */
+    start: function () {
+      var k = kept();
+      if (!want() || !k) return;
+      booting = k;
+      cur = '';
+      last = Date.now();
+      document.body.classList.add('wpon', 'wpwait');
+      dim();
+      if (typeof SCENES !== 'undefined') SCENES.wall(k.url);
+      revealT = setTimeout(reveal, 2000);
+      bootLoad(k, 0);
+    },
     sync: sync,
     /* Home is on screen again: a new photo when it is time for one (every time with 0 seconds; else once the interval has passed since the
        last change, so opening Home does not change the photo or decode a new one before then), and the timer runs again */
@@ -9495,6 +9608,7 @@ try {
     apps = cached.apps;
     cfg = cached.cfg || {};
     useLang(cfg.lang);
+    WALL.start(); /* before the theme: its wallpaper and scenes do not show first */
     applyTheme(cfg.theme);
     usage = cached.usage || {};
     colors = cached.colors || {};
@@ -9511,5 +9625,11 @@ pagesLoaded.then(function () {
 refreshSoon();
 wantInputs(pagesLoaded);
 watchOpen();
-api('/api/frontend-ok', { version: VERSION }).catch(function () {}); // lets the manager know an updated launcher started
+/* lets the manager know an updated launcher started, and the boot script that this page is ours; at a boot the service may not be up
+   yet */
+(function started(n) {
+  api('/api/frontend-ok', { version: VERSION }).catch(function () {
+    if (n < 20) setTimeout(started, 3000, n + 1);
+  });
+})(0);
 </script></body></html>
