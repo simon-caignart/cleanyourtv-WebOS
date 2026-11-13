@@ -192,7 +192,7 @@
       "files": {
         "addon.json": "31320aa0f93fdaf8b4991166e780e5f31e2160b547d2260ba9682a435b5bdae1",
         "devicename.js": "a0ef58074f9c4ef9fd66e7c7a51259b184167304f95e0d36d4bb544db6750d14",
-        "page/index.html": "b42dcd8637c71977aa1946aea347604af6df7c3512b3bc8fe20071d4188e28cc",
+        "page/index.html": "56a45fde0a6e2ff05c001badab8dee4089fdfa0c88bce8590b6fdfc7902fd495",
         "page.js": "1bd6c98af5a81be3833d7cb14390a01ba336fdffa84025c3b65d133fb6cc88fa",
         "pwa/icon-180.png": "57040c5ec7e1dfc01918b2295df594dbc034b85df865140e27829873f02c4aff",
         "pwa/icon-512.png": "08849f214ae06fda96123a5e13ec69f9f30a6b7d13e776e20f21c669af3581e4",
@@ -286,7 +286,7 @@
       ],
       "files": {
         "addon.json": "257bb5ee9be018484e8708dd0f69c7b6991ad3af4ec541c94925168b6defa4ee",
-        "page/index.html": "f485039dab6991d054b50b9798f0f3e9809d0aba4d3ea6a3a81d30d31ba6d67e",
+        "page/index.html": "4958b404f540a216df7f289a8252d3710a8785a8e39d9cb135f5ecbaeb3fbc39",
         "service.js": "9ec8b88db4b510e9de7181f0a8b88e3aca73889e9d2c92bd94c6812753becf5a",
         "src/index.html": "a97da7e3f223e4830404f92b5184cc647777cf4934acd13a960cecddd980e560",
         "tuner.js": "8c22501e09f98da5269c2fd0451f5d769931282d058094324dd8e5e340dfbd40"
