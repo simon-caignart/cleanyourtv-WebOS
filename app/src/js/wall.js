@@ -22,7 +22,8 @@ var WALL = (function () {
     els = null,
     booting = null /* the kept photo Home started on, until it is on screen */,
     bootT = 0,
-    revealT = 0;
+    revealT = 0,
+    revealedAt = 0; /* when the hold ended (Date.now()) */
   var KEPT = 'cytv.wall.shown';
   function keep(id, url, text) {
     try {
@@ -45,6 +46,7 @@ var WALL = (function () {
   /* Home was held back for the kept photo (body.wpwait) */
   function reveal() {
     clearTimeout(revealT);
+    if (document.body.classList.contains('wpwait')) revealedAt = Date.now();
     document.body.classList.remove('wpwait');
   }
   /* a "live" entry (l/<add-on>): a photo source that is not kept on the TV and asks its server now and then */
@@ -272,6 +274,11 @@ var WALL = (function () {
       bootLoad(k, 0);
     },
     sync: sync,
+    /* how long Home was held back at its start, in ms from Date.now() at the start (t0): 0 when it was not, -1 while it still is */
+    heldFor: function (t0) {
+      if (document.body.classList.contains('wpwait')) return -1;
+      return revealedAt ? Math.max(0, revealedAt - t0) : 0;
+    },
     /* Home is on screen again: a new photo when it is time for one (every time with 0 seconds; else once the interval has passed since the
        last change, so opening Home does not change the photo or decode a new one before then), and the timer runs again */
     shown: function () {

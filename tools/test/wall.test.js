@@ -183,6 +183,7 @@ run(async () => {
     held && !w.body.classList.contains('wpwait') && w.body.classList.contains('wpon'),
     'Home is held back until the kept photo is decoded, then shows with it'
   );
+  ok(w.WALL.heldFor(1000000) === 0, 'a photo decoded at once does not count as a wait in the boot log');
   w.WALL.sync();
   ok(
     w.asked.indexOf('/api/wallpapers/next') < 0 && w.shown.length === 1 && w.intervals.length >= 1,
@@ -212,7 +213,10 @@ run(async () => {
     fail: () => !up,
   });
   w.WALL.start();
+  const stillHeld = w.WALL.heldFor(1000000);
+  w.tick(2000);
   w.runTimers();
+  ok(stillHeld === -1 && w.WALL.heldFor(1000000) === 2000, 'the boot log hears how long Home was held back for the kept photo');
   ok(
     !w.body.classList.contains('wpwait') && w.body.classList.contains('wpon') && w.walls.indexOf('') < 0 && w.shown.length === 2,
     'while the service starts, Home shows after the wait without the theme wallpaper and the kept photo is tried again'

@@ -23,9 +23,10 @@ refreshSoon();
 wantInputs(pagesLoaded);
 watchOpen();
 /* lets the manager know an updated launcher started, and the boot script that this page is ours; at a boot the service may not be up
-   yet */
+   yet. With how long ago the page started and how long Home was held back for its photo, for the boot log. */
 (function started(n) {
-  api('/api/frontend-ok', { version: VERSION }).catch(function () {
+  var age = Math.round(performance.now());
+  api('/api/frontend-ok', { version: VERSION, age: age, held: WALL.heldFor(Date.now() - age) }).catch(function () {
     if (n < 20) setTimeout(started, 3000, n + 1);
   });
 })(0);

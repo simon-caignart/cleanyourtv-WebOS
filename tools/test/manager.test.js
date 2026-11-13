@@ -73,6 +73,10 @@ run(async () => {
     r.j.returnValue === true && fs.readFileSync(process.env.CYTV_HOME_UP, 'utf8') === '1.5.18',
     'a launcher page that starts leaves its mark for the boot script'
   );
+  r = await call(m, '/api/frontend-ok', 'POST', { version: '1.5.18', age: 4000, held: 1200 });
+  const bootLine = fs.readFileSync(process.env.CYTV_BOOT_LOG, 'utf8').trim().split('\n').pop();
+  const m1 = /^(\d+\.\d\d) home: the launcher page started at (\d+\.\d\d), held back 1\.20 s for its photo$/.exec(bootLine);
+  ok(m1 && Math.abs(m1[1] - m1[2] - 4) < 0.02, 'the boot log says when the launcher page started and how long Home waited for its photo');
 
   r = await ask('options', 'POST', { pickerMode: 'overlay' });
   ok(

@@ -5,7 +5,8 @@
 // the callback runs once, so no handle is closed twice.
 const fs = require('fs'),
   cp = require('child_process');
-const FILE = require('./paths').RUNFILE,
+const P = require('./paths'),
+  FILE = P.RUNFILE,
   KEEP = 25;
 let ops = [],
   timer = null,
@@ -126,4 +127,18 @@ function execFile(cmd, args, opts, cb) {
     }, ms);
   return child;
 }
-module.exports = { start, note, execFile, ops: () => ops.slice() };
+// the time since the TV started, in seconds, as the boot scripts write it (/proc/uptime)
+function uptime() {
+  try {
+    return parseFloat(fs.readFileSync(P.PROC + '/uptime', 'utf8'));
+  } catch (_) {
+    return require('os').uptime();
+  }
+}
+// a line in the boot log after the uptime, like the boot scripts' own
+function boot(line, up) {
+  try {
+    fs.appendFileSync(P.BOOT_LOG, (up == null ? uptime() : up).toFixed(2) + ' ' + line + '\n');
+  } catch (_) {}
+}
+module.exports = { start, note, execFile, uptime, boot, ops: () => ops.slice() };

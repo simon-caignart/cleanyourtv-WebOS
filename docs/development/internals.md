@@ -65,7 +65,9 @@ card are small and stay single files.
       page touches `/tmp/cleanyourtv-home-up` when it starts (`POST /api/frontend-ok`), and newer than the script's
       `/tmp/cleanyourtv-home-mount` means it is ours. Then only the processes of Home that started before the mount are closed
       (`home-before.sh`, from their start time in `/proc`); otherwise every process of Home is. Each process is written to the boot
-      log with its start and whether it came before the mount. On webOS before 7 and with a native Home, `after-sam.sh` then restarts the services that keep talking to the old
+      log with its start and whether it came before the mount. The service adds its own lines to the boot log: when it listens, and
+      each time a launcher page starts (from the page's age when it reports, and how long Home waited for its Wallpapers photo), so one file
+      holds a boot's timeline. On webOS before 7 and with a native Home, `after-sam.sh` then restarts the services that keep talking to the old
       app manager (`afterSam`).
     - `standin` (native Home, webOS 5 to 23): `jtool.js exe` finds LG's Home program in the stock `appinfo.json` and the script
       bind-mounts `home-standin.sh` over it, then stops LG's running Home once. `sam` is not restarted and keeps LG's Home manifest,

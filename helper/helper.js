@@ -78,6 +78,7 @@ load('mcp', () => require('./toolhub').create(ctx));
 require('./server')
   .create({ features: () => loaded })
   .listen(PORT, '127.0.0.1', () => {
+    diag.boot('service: listening on port ' + PORT + ', ' + process.uptime().toFixed(2) + ' s after Node.js started');
     // the files that hold addresses and keys are for root only
     /** @type {Array<[string, number]>} */
     const secret = [

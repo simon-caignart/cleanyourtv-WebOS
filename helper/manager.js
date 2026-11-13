@@ -6,7 +6,8 @@ const P = require('./paths'),
   web = require('./web'),
   exec = require('./exec'),
   saver = require('./screensaver'),
-  debloat = require('./debloat');
+  debloat = require('./debloat'),
+  diag = require('./diag');
 
 // the TV comes back to its last app after a restart; that must not be one of ours
 function fixLastApp() {
@@ -187,6 +188,17 @@ function create(ctx) {
       try {
         fs.writeFileSync(P.HOME_UP, String(b.version || ''));
       } catch (_) {}
+      const age = Number(b.age),
+        held = Number(b.held);
+      if (age >= 0 && age < 3600000) {
+        const up = diag.uptime();
+        diag.boot(
+          'home: the launcher page started at ' +
+            (up - age / 1000).toFixed(2) +
+            (held > 0 ? ', held back ' + (held / 1000).toFixed(2) + ' s for its photo' : held < 0 ? ', still held back for its photo' : ''),
+          up
+        );
+      }
       return json({ returnValue: true });
     }
     if (u === '/api/undo' && req.method === 'POST') {
