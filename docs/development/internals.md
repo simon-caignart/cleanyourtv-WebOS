@@ -60,9 +60,12 @@ card are small and stay single files.
 3. `tvprofile.js` decides the way from the stock Home's kind (`homeTakeover`):
     - `mount` (flutter or web Home, webOS 24 and newer): the script **bind-mounts** that directory over
       `/usr/palm/applications/com.webos.app.home`, restarts the system app manager (`sam`) so it reads the new Home, and launches
-      Home again. The page Home had before the mount (LG's) is closed first, unless a launcher page already started after the mount:
-      the page touches `/tmp/cleanyourtv-home-up` when it starts (`POST /api/frontend-ok`), and newer than the script's
-      `/tmp/cleanyourtv-home-mount` means it is ours, so it is kept and Home is not loaded twice. On webOS before 7 and with a native Home, `after-sam.sh` then restarts the services that keep talking to the old
+      Home again. LG's Home that ran before the mount is closed first, since its window stays on screen while it runs (a Flutter
+      program on webOS 24 and newer). A launcher page that already started after the mount is kept, so Home is not loaded twice: the
+      page touches `/tmp/cleanyourtv-home-up` when it starts (`POST /api/frontend-ok`), and newer than the script's
+      `/tmp/cleanyourtv-home-mount` means it is ours. Then only the processes of Home that started before the mount are closed
+      (`home-before.sh`, from their start time in `/proc`); otherwise every process of Home is. Each process is written to the boot
+      log with its start and whether it came before the mount. On webOS before 7 and with a native Home, `after-sam.sh` then restarts the services that keep talking to the old
       app manager (`afterSam`).
     - `standin` (native Home, webOS 5 to 23): `jtool.js exe` finds LG's Home program in the stock `appinfo.json` and the script
       bind-mounts `home-standin.sh` over it, then stops LG's running Home once. `sam` is not restarted and keeps LG's Home manifest,
