@@ -23,7 +23,8 @@ var WALL = (function () {
     booting = null /* the kept photo Home started on, until it is on screen */,
     bootT = 0,
     revealT = 0,
-    changeT = 0; /* a change of photo that waits for Home to be idle */
+    changeT = 0 /* a change of photo that waits for Home to be idle */,
+    dropT = 0;
   var KEPT = 'cytv.wall.shown';
   function keep(id, url, text) {
     try {
@@ -121,6 +122,15 @@ var WALL = (function () {
       if (held) on.style.transition = 'none';
       on.classList.add('on');
       off.classList.remove('on');
+      /* once faded out, the hidden side lets its photo go: one 4K photo held, decoded and drawn again when Home comes back */
+      var fade = parseFloat(window.getComputedStyle(off).transitionDuration) || 0;
+      clearTimeout(dropT);
+      dropT = setTimeout(
+        function () {
+          if (!off.classList.contains('on')) off.style.backgroundImage = '';
+        },
+        fade * 1000 + 200
+      );
       if (held) {
         window.getComputedStyle(on).opacity;
         on.style.transition = '';

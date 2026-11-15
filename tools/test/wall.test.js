@@ -151,6 +151,20 @@ run(async () => {
   w.runTimers();
   ok(w.shown.length === 2, 'Home that is left before its new photo came does not change it while hidden');
 
+  // after the cross-fade only the side on screen holds a photo: Home back from an app decodes and draws one 4K photo, not two
+  w = make({ wall: { on: true, secs: 0 } }, photos);
+  w.WALL.sync();
+  w.WALL.shown();
+  w.runTimers();
+  const sides = w.created.filter(e => e.className === 'wp');
+  const during2 = sides.filter(e => e.style.backgroundImage).length;
+  w.runTimers();
+  const held2 = sides.filter(e => e.style.backgroundImage);
+  ok(
+    w.shown.length === 2 && during2 === 2 && held2.length === 1 && held2[0].classList.contains('on'),
+    'the faded-out photo is let go once the cross-fade is over; the one on screen stays'
+  );
+
   // "Each time Home opens" (0 seconds): a new photo every time
   w = make({ wall: { on: true, secs: 0 } }, photos);
   w.WALL.sync();
