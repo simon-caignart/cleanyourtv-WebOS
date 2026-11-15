@@ -17,7 +17,7 @@ In the launcher, **Customise** > **Wallpapers**:
 | Use Wallpapers | On: a photo from the library replaces the theme's background, in every theme. Off: the theme as it is. |
 | Photos on Home | **Landscape only** (the default): Home shows the photos that are clearly wider than tall, as a portrait photo would show only its middle band there; the screen saver shows them all. **All**: every photo. See [Landscape and portrait](#landscape-and-portrait). |
 | Mix | How the photo sources share the rotation: **Equal per source** (the default) or **By number of photos**. See [The order of the photos](#the-order-of-the-photos). |
-| New photo | When the photo changes: each time Home opens, or every 10 or 30 seconds, every minute, or every 3, 5, 15 or 60 minutes. With an interval, the photo changes on that interval while Home is on screen, and opening Home changes it only if that long has passed since the last change. The photos cross-fade. |
+| New photo | When the photo changes: each time Home opens, or every 10 or 30 seconds, every minute, or every 3, 5, 15 or 60 minutes. With an interval, the photo changes on that interval while Home is on screen, and opening Home changes it only if that long has passed since the last change. A new photo waits until the remote has been idle for a moment (and comes about 2 seconds after Home opens), so it never lands in a move. The photos cross-fade. |
 | Add photos... | Opens the manager app on its Wallpapers screen. |
 
 The photo comes in the [order](#the-order-of-the-photos) Home shares with the screen saver and is darkened like a theme's wallpaper, by the theme's `effects.wallpaperDim` (40 % unless the theme sets it), also when the theme has no wallpaper of its own. With

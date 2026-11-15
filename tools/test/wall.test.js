@@ -35,6 +35,7 @@ function make(cfg, photos, down, o) {
     created = [];
   const context = {
     cfg,
+    lastKey: 0,
     API: 'http://tv',
     Date: { now: () => now },
     Math,
@@ -98,6 +99,7 @@ function make(cfg, photos, down, o) {
     store,
     body: context.document.body,
     runTimers,
+    key: () => (context.lastKey = now),
     tick: ms => (now += ms),
   };
 }
@@ -125,19 +127,39 @@ run(async () => {
   ok(w.shown.length === 1, 'the first photo is shown when the wallpapers load');
   w.tick(60000);
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 1, 'opening Home after 1 minute with a 15 minute interval keeps the photo');
   w.tick(900000);
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 2, 'opening Home after the interval has passed shows a new photo');
   ok(w.intervals.length >= 2, 'the interval timer is armed again each time Home opens');
+
+  // the new photo waits until Home has been back a moment and the remote is idle: never in a move of the focus
+  w = make({ wall: { on: true, secs: 0 } }, photos);
+  w.WALL.sync();
+  w.WALL.shown();
+  w.tick(500);
+  w.key();
+  w.runTimers();
+  const during = w.shown.length;
+  w.tick(2000);
+  w.runTimers();
+  ok(during === 1 && w.shown.length === 2, 'a new photo waits while the remote is in use, then comes once it is idle');
+  w.WALL.shown();
+  w.WALL.hidden();
+  w.runTimers();
+  ok(w.shown.length === 2, 'Home that is left before its new photo came does not change it while hidden');
 
   // "Each time Home opens" (0 seconds): a new photo every time
   w = make({ wall: { on: true, secs: 0 } }, photos);
   w.WALL.sync();
   w.tick(1000);
   w.WALL.shown();
+  w.runTimers();
   w.tick(1000);
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 3, 'with "Each time Home opens" every opening shows a new photo');
 
   // the clock set back: do not wait for a time that will not come
@@ -145,12 +167,17 @@ run(async () => {
   w.WALL.sync();
   w.tick(-3600000);
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 2, 'a clock set back does not hold the photo for good');
 
   // the order is the service's (shared with the screen saver), not a random pick of the page's own
   w = make({ wall: { on: true, secs: 0 } }, photos);
   w.WALL.sync();
-  for (let i = 0; i < 5; i++) w.WALL.shown();
+  for (let i = 0; i < 5; i++) {
+    w.WALL.shown();
+    w.runTimers();
+  }
+  w.runTimers();
   ok(
     w.shown.map(u => u.split('/').pop()).join('') === 'abcabc',
     "Home shows the photos in Wallpapers' order, from POST /api/wallpapers/next"
@@ -158,6 +185,7 @@ run(async () => {
   w = make({ wall: { on: true, secs: 0 } }, photos, true);
   w.WALL.sync();
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 2, 'when the service does not answer, Home picks a photo itself');
 
   // Home starts again (a boot, a reload): it opens on the photo it showed last, before the theme and before the service answers, held back
@@ -190,7 +218,9 @@ run(async () => {
   );
   // (this stand-in's order starts again at a, the photo on screen, which Home skips)
   w.intervals[w.intervals.length - 1]();
+  w.runTimers();
   w.intervals[w.intervals.length - 1]();
+  w.runTimers();
   ok(w.shown.length === 2 && /photo\/b$/.test(w.shown[1]), "at the interval Home goes on with Wallpapers' order");
 
   // the kept photo is no longer in the library: the next one of the order, no wait
@@ -246,5 +276,6 @@ run(async () => {
   w = make({ wall: { on: false, secs: 900 } }, photos);
   w.WALL.sync();
   w.WALL.shown();
+  w.runTimers();
   ok(w.shown.length === 0, 'with Wallpapers off no photo is asked for');
 });

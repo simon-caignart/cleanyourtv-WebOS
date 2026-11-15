@@ -49,6 +49,7 @@ function applyTheme(t) {
   var st = document.documentElement.style,
     b = document.body,
     k;
+  themeSig = JSON.stringify([t || null, (typeof cfg !== 'undefined' && cfg && cfg.lang) || '']);
   for (k = 0; k < themeKeys.length; k++) st.removeProperty(themeKeys[k]);
   themeKeys = [];
   for (k = 0; k < themeAttrs.length; k++) b.removeAttribute(themeAttrs[k]);
@@ -60,6 +61,7 @@ function applyTheme(t) {
     $('gA').style.display = $('gB').style.display = '';
     updateFocusArt(null);
     if (window.SCENES) SCENES.apply(null);
+    if (typeof regrowIcons !== 'undefined') regrowIcons();
     return;
   }
   b.setAttribute('data-theme', t.id || '');
@@ -137,6 +139,7 @@ function applyTheme(t) {
     setTimeout(placeBar, 1500);
   }
   applyShelfPref();
+  if (typeof regrowIcons !== 'undefined') regrowIcons();
 }
 
 /* bar.besideClock: the buttons stand right beside the clock, bar.gap apart, centred on its row (the button row is 12 px taller than a

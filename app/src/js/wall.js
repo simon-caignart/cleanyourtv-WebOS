@@ -22,7 +22,8 @@ var WALL = (function () {
     els = null,
     booting = null /* the kept photo Home started on, until it is on screen */,
     bootT = 0,
-    revealT = 0;
+    revealT = 0,
+    changeT = 0; /* a change of photo that waits for Home to be idle */
   var KEPT = 'cytv.wall.shown';
   function keep(id, url, text) {
     try {
@@ -164,6 +165,17 @@ var WALL = (function () {
       }
     );
   }
+  /* A new photo means a 4K decode, the blur of the glass and the ink measured again. It waits until the remote has been idle for a
+     moment (wait: ms before the first look), so it never lands in a move of the focus, nor in the first seconds of Home back from an
+     app, when the TV decodes and draws every picture of the page again. */
+  function nextWhenIdle(wait) {
+    clearTimeout(changeT);
+    changeT = setTimeout(function () {
+      var since = typeof lastKey !== 'undefined' ? Date.now() - lastKey : 1e9;
+      if (since >= 0 && since < 1500) return nextWhenIdle(500); /* (a clock set back counts as idle) */
+      next();
+    }, wait);
+  }
   function hasLive() {
     return list.some(isLive);
   }
@@ -177,7 +189,7 @@ var WALL = (function () {
     var sec = wallSecs();
     if (sec > 0 && (list.length > 1 || (list.length && isLive(list[0]))))
       timer = setInterval(function () {
-        next();
+        nextWhenIdle(0);
       }, sec * 1000);
   }
   /* a live source can have a photo for Home at once (Unsplash: the one the phone page's Test key and save fetched): while Home is on
@@ -195,6 +207,7 @@ var WALL = (function () {
     clearInterval(timer);
     clearInterval(pollT);
     clearTimeout(bootT);
+    clearTimeout(changeT);
     booting = null;
     reveal();
     forget();
@@ -278,11 +291,12 @@ var WALL = (function () {
       if (want() && list.length) {
         var gone = Date.now() - last,
           sec = wallSecs();
-        if (!sec || !last || gone < 0 || gone >= sec * 1000) next();
+        if (!sec || !last || gone < 0 || gone >= sec * 1000) nextWhenIdle(2000);
         arm();
       }
     },
     hidden: function () {
+      clearTimeout(changeT);
       clearInterval(timer);
       clearInterval(pollT);
     },

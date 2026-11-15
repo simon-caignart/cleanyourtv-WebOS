@@ -46,6 +46,7 @@ run(async () => {
     hit() {},
     paint() {},
     fit() {},
+    window: { getComputedStyle: () => ({ getPropertyValue: () => '' }) },
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'app/src/js/tiles.js'), 'utf8'), context);
@@ -108,7 +109,7 @@ run(async () => {
   );
   const layout = fs.readFileSync(path.join(root, 'app/src/js/layout.js'), 'utf8');
   ok(
-    layout.indexOf('retryTileIcons();') >= 0 && layout.indexOf('retryTileIcons();') < layout.indexOf('if (sig === lastSig)'),
+    layout.indexOf('retryTileIcons();') >= 0 && layout.indexOf('retryTileIcons();') < layout.indexOf('if (sig === lastSig && gridAppIds()'),
     'helper recovery retries icons before the unchanged-layout early return'
   );
 });

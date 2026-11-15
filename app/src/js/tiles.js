@@ -55,6 +55,7 @@ function tile(a) {
       }
       if (rows[r] && rows[r][c] === d) glowNow(d);
     }
+    shrinkIcon(d, i);
   };
   i.onerror = function () {
     d._iconFailed = true;
@@ -76,6 +77,82 @@ function tile(a) {
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
   return shade(d);
+}
+/* The largest a tile's picture is drawn, in screen pixels: a dock or a grid tile grown by its focus scale. */
+function iconNeed() {
+  var cs = window.getComputedStyle(document.documentElement),
+    n = function (k, d) {
+      return parseFloat(cs.getPropertyValue(k)) || d;
+    },
+    dpr = window.devicePixelRatio || 1;
+  return {
+    w: Math.ceil(Math.max(n('--dock-w', 408) * n('--dock-fs', 1.05), n('--tile-w', 151) * n('--grid-fs', 1.12)) * dpr),
+    h: Math.ceil(Math.max(n('--dock-h', 230) * n('--dock-fs', 1.05), n('--tile-h', 151) * n('--grid-fs', 1.12)) * dpr),
+  };
+}
+/* the scale that makes a picture of w x h just cover that size, or 1 when that would not save a third of its pixels */
+function shrinkScale(w, h, need) {
+  var k = Math.max(need.w / w, need.h / h);
+  return w > 0 && h > 0 && k * k < 0.66 ? k : 1;
+}
+/* A picture larger than the tile is ever drawn (a Full tile picture of 1000 x 600) is drawn once, while the page is idle, into a copy
+   of the size it is shown at, which the tile shows from then on. The TV drops the decoded pictures of a page it sends to the
+   background, and decodes every one again when Home comes back: a picture of the right size decodes several times faster. JPEG for
+   a picture without see-through parts. A copy made for smaller tiles than a new theme's is dropped again (regrowIcons). */
+function shrinkIcon(d, i) {
+  var src = i.src,
+    need = iconNeed();
+  if (d._small || src.indexOf(API + '/icon/') !== 0 || !window.URL || !URL.createObjectURL) return;
+  var k = shrinkScale(i.naturalWidth, i.naturalHeight, need);
+  if (k >= 1) return;
+  var run = function () {
+    var j = new Image();
+    j.crossOrigin = 'anonymous';
+    j.onload = function () {
+      if (d._i !== i || i.src !== src) return;
+      try {
+        var c = document.createElement('canvas'),
+          a = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(j.naturalWidth * k));
+        c.height = Math.max(1, Math.round(j.naturalHeight * k));
+        var g = c.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(j, 0, 0, c.width, c.height);
+        a.width = 32;
+        a.height = 20;
+        var ga = a.getContext('2d');
+        ga.drawImage(j, 0, 0, 32, 20);
+        var px = ga.getImageData(0, 0, 32, 20).data,
+          clear = false;
+        for (var p = 3; p < px.length && !clear; p += 4) clear = px[p] < 250;
+        c.toBlob(
+          function (b) {
+            if (!b || d._i !== i || i.src !== src) return;
+            d._small = src;
+            d._need = need;
+            i.src = URL.createObjectURL(b);
+          },
+          clear ? 'image/png' : 'image/jpeg',
+          0.92
+        );
+      } catch (e) {}
+    };
+    j.src = src;
+  };
+  if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 1500);
+}
+/* a theme with larger tiles: the pictures made for the smaller ones load again at their own size (and are made smaller again) */
+function regrowIcons() {
+  var need = iconNeed();
+  Object.keys(tiles).forEach(function (id) {
+    var d = tiles[id];
+    if (!d._small || !d._i || (d._need.w >= need.w && d._need.h >= need.h)) return;
+    var blob = d._i.src;
+    d._i.src = d._small;
+    d._small = '';
+    if (blob.indexOf('blob:') === 0) URL.revokeObjectURL(blob);
+  });
 }
 /* the focused tile's soft shadow (tile.shadow soft): its own layer, so it fades in with the focus and grows with the tile instead of
    switching on at once. Last child, so the tile's other children keep their places (inputTile counts them). */

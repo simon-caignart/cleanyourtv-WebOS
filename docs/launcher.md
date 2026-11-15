@@ -205,6 +205,8 @@ tile of the theme in use, in one of two ways:
 A photo is sent as JPEG; a picture with see-through parts as PNG (made smaller when needed to fit in 1 MB), so it stays see-through in
 either way of showing it.
 
+Home shows a picture larger than its tile is ever drawn from a copy of that size, made once while it is idle: the TV decodes every
+picture again each time Home comes back from an app, and a smaller one decodes faster.
 The screen on the TV and the phone page give the sizes that fit best: for Full tile the size of a dock tile in the panel's own pixels
 (the grid's tiles, which are squarer, show its middle), for Icon 512 x 512. They follow the theme, and the manager measures the screen's
 scale, so a 4K TV, where Home is drawn at 3840 x 2160, gets twice the size of its CSS pixels. Back on Home the tile shows the picture in

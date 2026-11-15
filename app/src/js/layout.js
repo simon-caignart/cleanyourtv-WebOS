@@ -309,21 +309,20 @@ function load() {
         toast('The service (' + x.version + ') is older than this launcher needs: update it in the CleanYourTV manager');
       }
       usage = x.usage || {};
-      var rank = Object.keys(usage).sort(function (a, b) {
-        return usage[b] - usage[a];
-      });
       var sig = JSON.stringify([
         x.apps.map(function (a) {
           return a.input ? [a.id, a.title, a.off] : [a.id, !!a.removable, a.iv || 0, a.it ? 1 : 0];
         }),
         x.config,
-        rank,
         x.icons === true,
         x.cardPacks,
       ]);
       retryTileIcons();
       if (typeof x.stamp === 'number') appsStamp = x.stamp;
-      if (sig === lastSig) return TOPSHELF.sync(); /* a backdrop sent from the phone shows when Home opens again */
+      /* every app opened changes the usage counts, which matter only where they change the order of the grid: Home that comes back
+         from an app keeps its tiles and its theme as they are, so the TV has nothing to lay out and paint again but what it lost */
+      if (sig === lastSig && gridAppIds().join('\n') === lastOrder)
+        return TOPSHELF.sync(); /* a backdrop sent from the phone shows when Home opens again */
       lastSig = sig;
       apps = x.apps.map(function (a) {
         return a.input
@@ -337,11 +336,13 @@ function load() {
       CARD_PACKS = x.cardPacks || {};
       tunerOn = x.tuner === true; // the service found LG's own Live TV (the tuner): Customise can offer a TV button
       useLang(cfg.lang);
-      applyTheme(cfg.theme);
+      /* applying a theme sets every one of its properties again, which restyles the whole page */
+      if (JSON.stringify([cfg.theme || null, cfg.lang || '']) !== themeSig) applyTheme(cfg.theme);
       if (liveOn())
         apps.push({ id: '__live', title: t('Live TV'), iv: (x.liveIcon && x.liveIcon.iv) || 0, it: x.liveIcon && x.liveIcon.it ? 1 : 0 });
       store();
       rebuild();
+      lastOrder = gridAppIds().join('\n');
       WALL.sync();
       TOPSHELF.sync();
       if (!perfReady) {
