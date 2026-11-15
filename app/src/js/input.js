@@ -253,6 +253,7 @@ document.addEventListener('keydown', function (e) {
   } /* Back on the home screen: the running apps */
   var len = rows[r].length;
   if (k >= 37 && k <= 40) {
+    if (aheadT) endAhead();
     var tn = performance.now();
     if (e.repeat || tn - lastMove < 90) {
       document.body.classList.add('snap');
@@ -465,21 +466,27 @@ document.addEventListener('webOSRelaunch', function () {
   refreshSoon();
   wantInputs(PAGER.load());
 });
-/* Home that has been on screen and idle for a moment keeps the push grid drawn (body.warm in home.css), so the first Down only blends
-   it in; not at once, since Home back from an app has every picture to draw again first */
-var warmT = 0;
-function warmSoon(wait) {
-  clearTimeout(warmT);
-  warmT = setTimeout(function () {
+/* What shows only later (the push grid, the frosted glass behind it) is drawn ahead, invisibly: once Home has been on screen and the
+   remote idle for a moment (wait ms), body.ahead puts them at opacity 0.004 for a short while, so the TV draws them, then back to 0,
+   where they are not drawn in the frames of a move. Not at once when Home comes back from an app, which has every picture to draw
+   again first; a key ends it at once. */
+var aheadT = 0;
+function drawAhead(wait) {
+  clearTimeout(aheadT);
+  aheadT = setTimeout(function () {
     var since = Date.now() - lastKey;
-    if (since >= 0 && since < 1500) return warmSoon(500);
-    document.body.classList.add('warm');
+    if (since >= 0 && since < 1500) return drawAhead(500);
+    document.body.classList.add('ahead');
+    aheadT = setTimeout(endAhead, 800);
   }, wait);
+}
+function endAhead() {
+  clearTimeout(aheadT);
+  document.body.classList.remove('ahead');
 }
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {
-    clearTimeout(warmT);
-    document.body.classList.remove('warm');
+    endAhead();
     if (guarded()) {
       liveBlip = true;
       logLine('launcher hidden right after a Live TV launch: Live TV stays on');
@@ -505,7 +512,7 @@ document.addEventListener('visibilitychange', function () {
     refreshSoon();
     WALL.shown();
     SCENES.shown();
-    warmSoon(2000);
+    drawAhead(2000);
     if (PAGER.on) PAGER.report(); /* back on a page: the Home key is bound again at once (the service may have restarted meanwhile) */
   }
 });

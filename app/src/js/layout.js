@@ -20,6 +20,7 @@ function refreshTop() {
   }
 }
 function rebuild(animate) {
+  fpGen++; /* the tiles may sit elsewhere now (focusPieces) */
   var rects = {};
   if (animate && moving) {
     for (var k in tiles) {

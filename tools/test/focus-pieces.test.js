@@ -61,7 +61,7 @@ run(async () => {
     window: {
       getComputedStyle: el => ({
         getPropertyValue: k => vars[k] || '',
-        opacity: el.classList && el.classList.contains('on') ? '1' : el._fading ? '0.6' : '0.004',
+        opacity: el.classList && el.classList.contains('on') ? '1' : '0.004',
         transform: '',
       }),
     },
@@ -101,14 +101,11 @@ run(async () => {
     !first[0].classList.contains('on') && first[0].style.transform === 'translate(40px,40px)',
     'and the set of the tile it leaves shrinks and fades out with that tile, where it is'
   );
-  // the one reused is the least visible: the set still fading out under the tile before is left alone
-  first[0]._fading = true;
+  // the one reused is the one that left longest ago: the set still fading out under the tile before is left alone
   const second = on[0];
   context.focusPieces(dock[2]);
   on = onSet('dock');
   ok(on[0] !== first && on[0] !== second, 'quick presses do not take the set that is still fading out');
-  first[0]._fading = false;
-
   dock[2].classList.add('press');
   context.focusPieces(dock[2]);
   ok(
@@ -116,6 +113,18 @@ run(async () => {
     'OK held: the set sinks with the tile'
   );
   dock[2].classList.remove('press');
+
+  // a move reads the tiles' places once (they are kept until the tiles or the theme change)
+  let reads = 0;
+  Object.defineProperty(dock[3], 'offsetLeft', { get: () => (reads++, 40 + 3 * 298) });
+  context.focusPieces(dock[3]);
+  context.focusPieces(dock[2]);
+  context.focusPieces(dock[3]);
+  ok(reads === 1, 'a tile focused again reads no layout: ' + reads + ' reads');
+  context.fpGen++;
+  context.focusPieces(dock[2]);
+  context.focusPieces(dock[3]);
+  ok(reads === 2, 'after a rebuild or a new theme its place is read again');
 
   context.focusPieces(grid[1]);
   ok(onSet('dock').length === 0 && onSet('grid').length === 1, 'the focus going down to the grid takes its set there along');

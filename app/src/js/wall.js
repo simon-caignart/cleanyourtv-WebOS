@@ -136,6 +136,8 @@ var WALL = (function () {
       curCredit = text || '';
       credit(curCredit);
       if (typeof SCENES !== 'undefined') SCENES.wall(url);
+      /* the glass is drawn from the new photo: drawn ahead again once the remote is idle */
+      if (typeof drawAhead !== 'undefined') drawAhead(1500);
     };
     im.src = url;
   }

@@ -412,9 +412,8 @@ body[data-bar="glass"] #bar .pill.f {
 [data-grid="push"].grid-open #scroll::before {
   opacity: 1;
 }
-/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in. Once Home has been on screen and idle a
-   moment (body.warm, warmSoon) it is barely visible rather than not at all, so what it holds (the tiles, the focused tile's shadow and
-   light) is drawn ahead of the first Down; not before, so Home back from an app draws what shows first */
+/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in. Drawn ahead, invisibly, while Home is
+   idle (body.ahead, drawAhead in input.js), so the first Down only blends it in */
 [data-grid="push"] #grid {
   z-index: 3;
   will-change: opacity;
@@ -422,7 +421,7 @@ body[data-bar="glass"] #bar .pill.f {
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
 }
-[data-grid="push"].warm #grid {
+[data-grid="push"].ahead #grid {
   opacity: 0.004;
 }
 [data-grid="push"].grid-open #grid,
@@ -668,7 +667,8 @@ body[data-bar="glass"] #bar .pill.f {
 }
 /* The focused tile's deeper shadow (tile.shadow soft) and its light (tile.highlight focus): shared pieces of the dock and of the grid
    (focusPieces, tiles.js) that take turns, follow the tile's grow and shrink with its own timing and fade in and out with it. Barely
-   visible at rest rather than not at all, so they stay drawn and a move only blends and moves them. */
+   visible at rest rather than not at all, so they stay drawn and a move only blends and moves them (at 0 a layer's drawing is
+   dropped after a few seconds). */
 .fpc {
   display: none;
   position: absolute;
@@ -1787,10 +1787,14 @@ body.scenes-on {
 #sglass canvas.on {
   opacity: 1;
 }
-/* while it can show, the glass is kept as a layer of its own, barely visible, so opening the grid only blends it in */
+/* while it can show, the glass is kept as a layer of its own, drawn ahead invisibly while Home is idle (body.ahead), so opening the grid
+   only blends it in; at 0 the rest of the time, so the screen-sized layer is not drawn in every frame of a move (a canvas keeps its
+   picture while it is not drawn) */
 .glass-on #sglass {
-  opacity: 0.004;
   will-change: opacity;
+}
+.glass-on.ahead #sglass {
+  opacity: 0.004;
 }
 .glass-on.grid-open #sglass {
   opacity: 1;

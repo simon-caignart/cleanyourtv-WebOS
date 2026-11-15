@@ -20,16 +20,18 @@ run(async () => {
   };
   vm.runInNewContext(cardsSource.slice(cardsSource.indexOf('var HA_ICON'), cardsSource.indexOf("/* an entity's state")), mdiContext);
   const homePage = fs.readFileSync(path.join(root, 'app', 'index.html'), 'utf8');
-  // the focused tile's shadow and light are shared pieces (focusPieces), not one of each per tile; the push grid is barely visible at
-  // rest once Home has been idle a moment (warm), so the pieces inside it are drawn ahead of the first Down, and dropped while hidden
+  // the focused tile's shadow and light are shared pieces (focusPieces), not one of each per tile, kept barely visible; the push grid and
+  // the frosted glass are drawn ahead in a short pulse once Home has been idle a moment (ahead), ended by a key and by hiding Home
   ok(
     !/\.tsh\b/.test(homePage) &&
       /\.fpc \{[^}]*opacity: 0\.004;[^}]*will-change: transform, opacity;/.test(homePage) &&
       /\[data-grid="push"\] #grid \{[^}]*opacity: 0;/.test(homePage) &&
-      /\[data-grid="push"\]\.warm #grid \{\s*opacity: 0\.004;/.test(homePage) &&
-      /document\.body\.classList\.remove\('warm'\)/.test(homePage) &&
+      /\[data-grid="push"\]\.ahead #grid \{\s*opacity: 0\.004;/.test(homePage) &&
+      /\.glass-on #sglass \{\s*will-change: opacity;\s*\}\s*\.glass-on\.ahead #sglass \{\s*opacity: 0\.004;/.test(homePage) &&
+      /document\.body\.classList\.remove\('ahead'\)/.test(homePage) &&
+      /if \(aheadT\) endAhead\(\);/.test(homePage) &&
       /\[data-hl="focus"\] \.tile::after \{\s*display: none;/.test(homePage),
-    "the focused tile's shadow and light are shared pieces kept drawn, and the push grid is kept drawn at rest once Home is idle (warm), not while it comes back"
+    "the focused tile's shadow and light are shared pieces kept drawn; the push grid and the frosted glass are drawn ahead while Home is idle (ahead) and not drawn in the frames of a move"
   );
   // opening the grid repaints no large layer: what fades out with it (the top buttons and the clock, the chevron) keeps a layer of its
   // own, and the bottom shade stays under the frosted glass (headless Chrome: 56 raster tasks on the first Down before, 10 after)
@@ -557,8 +559,8 @@ run(async () => {
     'the glass behind the grid is drawn into a small canvas, not set as a background image'
   );
   ok(
-    /\.glass-on #sglass \{\s*opacity: 0\.004;\s*will-change: opacity;/.test(hcss),
-    'the glass stays a barely visible layer while the grid is closed, so opening only blends it in'
+    /\.glass-on #sglass \{\s*will-change: opacity;\s*\}/.test(hcss) && /\.glass-on\.ahead #sglass \{\s*opacity: 0\.004;/.test(hcss),
+    'the glass stays a layer of its own, drawn ahead while Home is idle, so opening only blends it in'
   );
   // a theme's text settings: each rule keeps its own value when the theme sets none, and a variable font is declared for every weight
   // (otherwise the browser thickens its regular for bold and shows its regular for medium)

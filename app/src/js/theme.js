@@ -52,6 +52,7 @@ function applyTheme(t) {
     k;
   themeSig = JSON.stringify([t || null, (typeof cfg !== 'undefined' && cfg && cfg.lang) || '']);
   fpVars = null;
+  fpGen++;
   for (k = 0; k < themeKeys.length; k++) st.removeProperty(themeKeys[k]);
   themeKeys = [];
   for (k = 0; k < themeAttrs.length; k++) b.removeAttribute(themeAttrs[k]);

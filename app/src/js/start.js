@@ -20,7 +20,7 @@ pagesLoaded.then(function () {
   PAGER.report();
 });
 refreshSoon();
-warmSoon(2000);
+drawAhead(2000);
 wantInputs(pagesLoaded);
 watchOpen();
 /* lets the manager know an updated launcher started, and the boot script that this page is ours; at a boot the service may not be up

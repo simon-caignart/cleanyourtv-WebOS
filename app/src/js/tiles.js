@@ -182,11 +182,14 @@ function regrowIcons() {
   });
 }
 /* tile.shadow soft and tile.highlight focus: the focused tile's deeper shadow and its light. Each row of tiles (the dock, the grid) has
-   three of each, which take turns and only ever move by transform: the next one jumps to the new tile while it is barely visible, then
-   grows and fades in with the tile; the one there shrinks and fades out with the tile it leaves. So they are drawn once, at rest,
-   where a shadow and a light of each tile's own were drawn when that tile was focused (on the TV a missed frame at every move). The
-   one reused is the least visible, so quick presses do not cut a shadow that is still fading. */
-var fpVars = null;
+   three of each, which take turns and only ever move by transform: the next one jumps to the new tile while invisible, then grows
+   and fades in with the tile; the one there shrinks and fades out with the tile it leaves. So they are drawn once, at rest (barely
+   visible, home.css), where a shadow and a light of each tile's own were drawn when that tile was focused (on the TV a missed frame
+   at every move). The one reused is the one that left longest ago, so quick presses do not cut a shadow that is still fading. A move
+   reads no layout (a tile's place is kept until the tiles or the theme change: fpGen) and makes the page work out its style once, for
+   the jump. */
+var fpVars = null,
+  fpGen = 0;
 function focusPieces(e) {
   var soft = document.body.getAttribute('data-tshadow') === 'soft',
     light = document.body.getAttribute('data-hl') === 'focus';
@@ -198,50 +201,54 @@ function focusPieces(e) {
       fp = box._fp = { on: 0, at: null, sets: [0, 1, 2].map(focusSet) };
       fpVars = null;
     }
-    var first = box.querySelector('.tile');
+    var first = box.querySelector('.tile'),
+      fresh = [];
     fp.sets.forEach(function (p) {
       if (p[0].parentNode !== box) {
         box.appendChild(p[0]);
         box.appendChild(p[1]);
       }
-      /* sized at once, on the row's first tile and grown, so they are drawn at rest at the largest scale they are shown at: a piece
-         that grows past the scale it was drawn at is drawn again, one that shrinks is not */
-      if (!p[0].style.width && first) {
-        p[0].style.transition = p[1].style.transition = 'none';
-        placeSet(p, first, true);
-        placeSet(p, null, false);
-        /* the grid waits below the screen at rest, where nothing is drawn ahead: its pieces wait on the screen (the grid is barely
-           visible, they are invisible) */
-        if (id === 'grid')
-          p[0].style.transform = p[1].style.transform = p[0].style.transform.replace(
-            /translate\([^)]*\)/,
-            'translate(' + first.offsetLeft + 'px,' + (300 - box.offsetTop) + 'px)'
-          );
-        window.getComputedStyle(p[0]).opacity;
-        p[0].style.transition = p[1].style.transition = '';
-      }
+      if (!p[0].style.width && first) fresh.push(p);
+    });
+    /* sized at once, on the row's first tile and grown, so they are drawn at rest at the largest scale they are shown at (a piece that
+       grows past the scale it was drawn at is drawn again, one that shrinks is not). The grid waits below the screen at rest, where
+       nothing is drawn ahead: its pieces wait on the screen, invisible. */
+    fresh.forEach(function (p) {
+      p[0].style.transition = p[1].style.transition = 'none';
+      placeSet(p, first, true);
+      placeSet(p, null, false);
+      if (id === 'grid')
+        p[0].style.transform = p[1].style.transform = p[0].style.transform.replace(
+          /translate\([^)]*\)/,
+          'translate(' + tileGeo(first).x + 'px,' + (300 - box.offsetTop) + 'px)'
+        );
     });
     var mine = (soft || light) && e && e.parentNode === box && !e.classList.contains('moving') ? e : null;
     if (mine && fp.at === mine) return placeSet(fp.sets[fp.on], mine, true);
-    if (fp.at) placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
+    if (fp.at) {
+      placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
+      fp.sets[fp.on].left = Date.now();
+    }
     fp.at = mine;
-    if (!mine) return;
-    var best = -1,
-      low = 2;
-    fp.sets.forEach(function (p, k) {
-      var o = k === fp.on ? 2 : parseFloat(window.getComputedStyle(p[0]).opacity) || 0;
-      if (o < low) {
-        low = o;
-        best = k;
-      }
+    var nx = null;
+    if (mine) {
+      var best = -1;
+      fp.sets.forEach(function (p, k) {
+        if (k !== fp.on && (best < 0 || (p.left || 0) < (fp.sets[best].left || 0))) best = k;
+      });
+      fp.on = best;
+      nx = fp.sets[best];
+      nx[0].style.transition = nx[1].style.transition = 'none';
+      placeSet(nx, mine, false);
+    }
+    if (fresh.length || nx) window.getComputedStyle(fresh.length ? fresh[0][0] : nx[0]).opacity;
+    fresh.forEach(function (p) {
+      p[0].style.transition = p[1].style.transition = '';
     });
-    fp.on = best;
-    var nx = fp.sets[best];
-    nx[0].style.transition = nx[1].style.transition = 'none';
-    placeSet(nx, mine, false);
-    window.getComputedStyle(nx[0]).transform;
-    nx[0].style.transition = nx[1].style.transition = '';
-    placeSet(nx, mine, true);
+    if (nx) {
+      nx[0].style.transition = nx[1].style.transition = '';
+      placeSet(nx, mine, true);
+    }
   });
 }
 function focusSet() {
@@ -250,6 +257,12 @@ function focusSet() {
     p.className = 'fpc ' + k;
     return p;
   });
+}
+/* where tile e sits in its row, read once until the tiles or the theme change */
+function tileGeo(e) {
+  var g = e._fpGeo;
+  if (!g || g.gen !== fpGen) g = e._fpGeo = { gen: fpGen, x: e.offsetLeft, y: e.offsetTop, w: e.offsetWidth, h: e.offsetHeight };
+  return g;
 }
 /* the set over tile e, grown as the focused tile (on) or at rest; with no tile it fades out where it is */
 function placeSet(p, e, on) {
@@ -267,11 +280,13 @@ function placeSet(p, e, on) {
       press: parseFloat(cs.getPropertyValue('--press-s')) || 0.96,
     };
   }
-  var dock = e.parentNode && e.parentNode.id === 'dock',
-    t = 'translate(' + e.offsetLeft + 'px,' + e.offsetTop + 'px)',
-    w = e.offsetWidth + 'px',
-    h = e.offsetHeight + 'px';
-  if (on && e.classList.contains('press')) t += ' scale(' + fpVars.press + ')';
+  var g = tileGeo(e),
+    dock = e.parentNode && e.parentNode.id === 'dock',
+    t = 'translate(' + g.x + 'px,' + g.y + 'px)',
+    w = g.w + 'px',
+    h = g.h + 'px',
+    pressed = !!on && e.classList.contains('press');
+  if (pressed) t += ' scale(' + fpVars.press + ')';
   else if (on) t += (dock ? ' translateY(' + fpVars.lift + 'px)' : '') + ' scale(' + (dock ? fpVars.dock : fpVars.grid) + ')';
   for (var k = 0; k < 2; k++) {
     var el = p[k];
@@ -280,7 +295,7 @@ function placeSet(p, e, on) {
     if (el.style.height !== h) el.style.height = h;
     el.style.transform = t;
     el.classList.toggle('on', !!on);
-    el.classList.toggle('press', !!on && e.classList.contains('press'));
+    el.classList.toggle('press', pressed);
   }
 }
 
