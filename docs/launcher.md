@@ -205,14 +205,15 @@ tile of the theme in use, in one of two ways:
 A photo is sent as JPEG; a picture with see-through parts as PNG (made smaller when needed to fit in 1 MB), so it stays see-through in
 either way of showing it.
 
-Home shows a picture larger than its tile is ever drawn from a copy of that size, made once while it is idle: the TV decodes every
-picture again each time Home comes back from an app, and a smaller one decodes faster.
+Home shows a picture larger than its tile is ever drawn from a copy of that size, made once while it is idle and then kept by the
+service beside the picture (until the picture or the size of the tiles changes): the TV decodes every picture again each time Home
+comes back from an app, and a smaller one decodes faster.
 The screen on the TV and the phone page give the sizes that fit best: for Full tile the size of a dock tile in the panel's own pixels
 (the grid's tiles, which are squarer, show its middle), for Icon 512 x 512. They follow the theme, and the manager measures the screen's
 scale, so a 4K TV, where Home is drawn at 3840 x 2160, gets twice the size of its CSS pixels. Back on Home the tile shows the picture in
 the dock, the grid and the Inputs list. **Reset icon**, on Home or on the phone page, gives the app its own icon again. The pictures (JPEG,
 PNG or WebP, at most 1 MB) are kept in `/media/developer/cleanyourtv/icons/` (Icon) and `icons/tile/` (Full tile), one per app, at most
-300; the app's own files are never touched, so the picture stays when the app or CleanYourTV updates. **More** > **App icons** in the
+300 (the launcher's copies at the tiles' size in `icons/small/`); the app's own files are never touched, so the picture stays when the app or CleanYourTV updates. **More** > **App icons** in the
 manager opens the same page.
 
 ### Top Shelf

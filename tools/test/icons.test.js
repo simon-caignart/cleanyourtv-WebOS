@@ -307,6 +307,50 @@ run(async () => {
   ok(r.j.apps[0].it === 1, 'a Full tile picture is marked with it: 1');
   g = await get(s.url + '/icon/com.example.app');
   ok(g.code === 200 && g.type === 'image/jpeg' && g.body.equals(JPEG), 'the Full tile picture is sent as well');
+
+  // the launcher's copy of the picture at the size its tiles draw it: made by the page once, kept here for this version of the picture
+  const SMALLJ = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60, 3)]);
+  const sdir = path.join(dir, 'small');
+  const ss = await serve((q, res) => ic.handle(q, res, q.url.split('?')[0], async () => ({})));
+  const postRaw = (p2, b) =>
+    new Promise((resolve, reject) => {
+      const at = require('url').parse(ss.url + p2);
+      const rq = http.request(
+        { host: at.hostname, port: at.port, path: at.path, method: 'POST', headers: { 'content-type': 'image/jpeg' } },
+        res => {
+          const c = [];
+          res.on('data', x => c.push(x));
+          res.on('end', () => resolve({ code: res.statusCode, j: JSON.parse(Buffer.concat(c).toString() || '{}') }));
+        }
+      );
+      rq.on('error', reject);
+      rq.end(b);
+    });
+  const iv = r.j.apps[0].iv;
+  let sp = await postRaw('/api/icons/small/com.example.app?v=' + (iv + 1) + '&s=610x366', SMALLJ);
+  ok(sp.code === 400 && /not the picture/.test(sp.j.error), 'a copy of another version of the picture is refused');
+  sp = await postRaw('/api/icons/small/com.example.app?v=' + iv + '&s=610', SMALLJ);
+  ok(sp.code === 400 && /size/.test(sp.j.error), 'a copy without a size is refused');
+  sp = await postRaw('/api/icons/small/com.example.app?v=' + iv + '&s=610x366', Buffer.from('<svg/>'));
+  ok(sp.code === 400 && /JPEG or PNG/.test(sp.j.error), 'a copy that is not a JPEG or PNG is refused');
+  sp = await postRaw('/api/icons/small/com.example.app?v=' + iv + '&s=500x300', SMALLJ);
+  sp = await postRaw('/api/icons/small/com.example.app?v=' + iv + '&s=610x366', SMALLJ);
+  ok(
+    sp.code === 200 && fs.readdirSync(sdir).length === 1 && I.versions()['com.example.app'].small === '610x366',
+    'the copy is kept, one per app, the last size made: ' + fs.readdirSync(sdir).join(' ')
+  );
+  r = await call(apps, '/api/apps');
+  ok(r.j.apps[0].is === '610x366' && r.j.apps[0].iv === iv, 'the app list tells the launcher which size the copy was made for (is)');
+  g = await get(s.url + '/icon/com.example.app?v=' + iv + '&s=610x366');
+  ok(g.code === 200 && g.type === 'image/jpeg' && g.body.equals(SMALLJ), 'the launcher asking for that size gets the copy');
+  g = await get(s.url + '/icon/com.example.app?v=' + iv + '&s=732x440');
+  ok(g.code === 200 && g.body.equals(JPEG), 'tiles of another size get the picture itself');
+  ss.server.close();
+  I.set('com.example.app', PNG, true);
+  ok(fs.readdirSync(sdir).length === 0 && I.versions()['com.example.app'].small === undefined, 'a new picture drops the copy');
+  I.setSmall('com.example.app', I.versions()['com.example.app'].v, '610x366', SMALLJ);
+  ok(I.remove('com.example.app') && fs.readdirSync(sdir).length === 0, 'a reset drops it too');
+  I.set('com.example.app', JPEG, true);
   I.remove('com.example.app');
   g = await get(s.url + '/icon/com.example.app');
   ok(g.code === 200 && g.body.equals(JPEG), "after a reset the app's own icon is sent again");

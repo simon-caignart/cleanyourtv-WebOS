@@ -311,7 +311,7 @@ function load() {
       usage = x.usage || {};
       var sig = JSON.stringify([
         x.apps.map(function (a) {
-          return a.input ? [a.id, a.title, a.off] : [a.id, !!a.removable, a.iv || 0, a.it ? 1 : 0];
+          return a.input ? [a.id, a.title, a.off] : [a.id, !!a.removable, a.iv || 0, a.it ? 1 : 0, a.is || ''];
         }),
         x.config,
         x.icons === true,
@@ -327,7 +327,7 @@ function load() {
       apps = x.apps.map(function (a) {
         return a.input
           ? { id: a.id, title: a.title, input: a.input, off: !!a.off }
-          : { id: a.id, title: a.title, removable: !!a.removable, iv: a.iv || 0, it: a.it ? 1 : 0 };
+          : { id: a.id, title: a.title, removable: !!a.removable, iv: a.iv || 0, it: a.it ? 1 : 0, is: a.is || '' };
       });
       cfg = x.config || {};
       var options = cfg.options || {};
@@ -339,7 +339,13 @@ function load() {
       /* applying a theme sets every one of its properties again, which restyles the whole page */
       if (JSON.stringify([cfg.theme || null, cfg.lang || '']) !== themeSig) applyTheme(cfg.theme);
       if (liveOn())
-        apps.push({ id: '__live', title: t('Live TV'), iv: (x.liveIcon && x.liveIcon.iv) || 0, it: x.liveIcon && x.liveIcon.it ? 1 : 0 });
+        apps.push({
+          id: '__live',
+          title: t('Live TV'),
+          iv: (x.liveIcon && x.liveIcon.iv) || 0,
+          it: x.liveIcon && x.liveIcon.it ? 1 : 0,
+          is: (x.liveIcon && x.liveIcon.is) || '',
+        });
       store();
       rebuild();
       lastOrder = gridAppIds().join('\n');

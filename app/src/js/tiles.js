@@ -73,10 +73,20 @@ function tile(a) {
     }
   }; /* not remembered: a failed load must not pin a made-up colour */
   /* Live TV shows its own picture once one was chosen for it (App icons) */
-  i.src = a.id === '__live' && !a.iv ? LIVE_ICON : API + '/icon/' + encodeURIComponent(a.id) + (a.iv ? '?v=' + a.iv : '');
+  i.src = a.id === '__live' && !a.iv ? LIVE_ICON : iconUrl(a);
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
   return shade(d);
+}
+/* An app's picture from the service; a picture of its own (iv) from the copy the service keeps of it at the size the tiles draw it
+   (is, sent by shrinkIcon), when that copy was made for tiles of this size */
+function iconUrl(a) {
+  var u = API + '/icon/' + encodeURIComponent(a.id) + (a.iv ? '?v=' + a.iv : '');
+  if (a.iv && a.is) {
+    var n = iconNeed();
+    if (a.is === n.w + 'x' + n.h) u += '&s=' + a.is;
+  }
+  return u;
 }
 /* The largest a tile's picture is drawn, in screen pixels: a dock or a grid tile grown by its focus scale. */
 function iconNeed() {
@@ -97,8 +107,10 @@ function shrinkScale(w, h, need) {
 }
 /* A picture larger than the tile is ever drawn (a Full tile picture of 1000 x 600) is drawn once, while the page is idle, into a copy
    of the size it is shown at, which the tile shows from then on. The TV drops the decoded pictures of a page it sends to the
-   background, and decodes every one again when Home comes back: a picture of the right size decodes several times faster. JPEG for
-   a picture without see-through parts. A copy made for smaller tiles than a new theme's is dropped again (regrowIcons). */
+   background, and decodes every one again when Home comes back: a picture of the right size decodes several times faster, and at
+   one scale for the tile at rest and grown. JPEG for a picture without see-through parts. A copy of an app's own picture (iv) goes
+   to the service, which keeps it beside the picture (POST /api/icons/small) and sends it from then on (iconUrl), so the page makes
+   it once. A copy made for smaller tiles than a new theme's is dropped again (regrowIcons). */
 function shrinkIcon(d, i) {
   var src = i.src,
     need = iconNeed();
@@ -108,6 +120,9 @@ function shrinkIcon(d, i) {
   var run = function () {
     var j = new Image();
     j.crossOrigin = 'anonymous';
+    j.onerror = function () {
+      tileLog('tile copy: ' + d._a.id + ' did not load for a copy');
+    };
     j.onload = function () {
       if (d._i !== i || i.src !== src) return;
       try {
@@ -131,16 +146,28 @@ function shrinkIcon(d, i) {
             d._small = src;
             d._need = need;
             i.src = URL.createObjectURL(b);
+            var a = d._a;
+            if (a && a.iv) {
+              var x = new XMLHttpRequest();
+              x.open('POST', API + '/api/icons/small/' + encodeURIComponent(a.id) + '?v=' + a.iv + '&s=' + need.w + 'x' + need.h);
+              x.setRequestHeader('content-type', b.type || 'image/jpeg');
+              x.send(b);
+            }
           },
           clear ? 'image/png' : 'image/jpeg',
           0.92
         );
-      } catch (e) {}
+      } catch (e) {
+        tileLog('tile copy: ' + d._a.id + ': ' + e.message);
+      }
     };
     j.src = src;
   };
   if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 4000 });
   else setTimeout(run, 1500);
+}
+function tileLog(m) {
+  if (typeof logLine !== 'undefined') logLine(m);
 }
 /* a theme with larger tiles: the pictures made for the smaller ones load again at their own size (and are made smaller again) */
 function regrowIcons() {

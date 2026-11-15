@@ -80,6 +80,13 @@ run(async () => {
     storeSoon() {},
   };
   context.window.URL = context.URL;
+  const posts = [];
+  context.XMLHttpRequest = function () {
+    let to = '';
+    this.open = (m, u) => (to = m + ' ' + u);
+    this.setRequestHeader = () => {};
+    this.send = b => posts.push({ to, type: b && b.type });
+  };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'app/src/js/tiles.js'), 'utf8'), context);
 
@@ -95,6 +102,19 @@ run(async () => {
     /^blob:/.test(full._i.src) && blobs.length === 1 && blobs[0].type === 'image/jpeg' && blobs[0].w === 610 && blobs[0].h === 366,
     'a 1000 x 600 Full tile picture is shown from a 610 x 366 JPEG copy: ' + JSON.stringify(blobs)
   );
+
+  ok(
+    posts.length === 1 && posts[0].to === 'POST http://127.0.0.1:8765/api/icons/small/full?v=3&s=610x366' && posts[0].type === 'image/jpeg',
+    "the copy of an app's own picture goes to the service, for this version and tile size: " + JSON.stringify(posts)
+  );
+  ok(
+    context.iconUrl({ id: 'full', iv: 3, is: '610x366' }) === 'http://127.0.0.1:8765/icon/full?v=3&s=610x366' &&
+      context.iconUrl({ id: 'full', iv: 3, is: '500x300' }) === 'http://127.0.0.1:8765/icon/full?v=3',
+    "the next start asks for the service's copy, when it was made for tiles of this size"
+  );
+  pictures['http://127.0.0.1:8765/icon/kept'] = { w: 610, h: 366 };
+  const kept = context.tile({ id: 'kept', title: 'Kept', iv: 4, it: 1, is: '610x366' });
+  ok(kept._i.src === 'http://127.0.0.1:8765/icon/kept?v=4&s=610x366' && blobs.length === 1, 'a copy from the service is shown as it is');
 
   pictures['http://127.0.0.1:8765/icon/clear'] = { w: 1200, h: 720, alpha: true };
   const clear = context.tile({ id: 'clear', title: 'Clear', iv: 1 });

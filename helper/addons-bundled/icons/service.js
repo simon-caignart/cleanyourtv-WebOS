@@ -9,6 +9,7 @@
 // It also keeps a backdrop per app for Home's Top Shelf (setBackdrop below): a 16:9 picture shown behind the dock while the app is
 // focused there, with a blurred copy for behind the app grid.
 // API (loopback, our apps): GET /api/icons/status, POST /api/icons/pair {app, scale, stop}, POST /api/icons/reset {id},
+// POST /api/icons/small/<app id>?v=<version>&s=<w>x<h> (the launcher's copy of the picture at the size its tiles draw it),
 // GET /api/icons/backdrops {backdrops: {<app id>: {v, g}}}, GET /api/icons/backdrop/<app id>[/glass], POST /api/icons/backdrop/reset {id}.
 // The phone page (POST pair) is a short-lived server on the LAN, port 8794, that needs the code shown on the TV; its API is under /api/
 // on that port.
@@ -25,9 +26,10 @@ const P = require('../../paths'),
 
 const DIR = P.D + '/icons',
   TILE = DIR + '/tile',
+  SMALL = DIR + '/small',
   BACK = DIR + '/backdrop',
   GLASS = BACK + '/glass';
-const LIMITS = { file: 1024 * 1024, icons: 300, backdrop: 1536 * 1024, glass: 256 * 1024, backdrops: 300 };
+const LIMITS = { file: 1024 * 1024, icons: 300, backdrop: 1536 * 1024, glass: 256 * 1024, backdrops: 300, small: 512 * 1024 };
 const PAIR_PORT = 8794, // after the Android box page (8793)
   PAIR_MS = 15 * 60 * 1000;
 const LIVE = '__live';
@@ -47,7 +49,55 @@ function find(id) {
 }
 const isTile = f => f.indexOf(TILE + '/') === 0;
 const mime = f => MIME[f.split('.').pop()] || 'image/png';
-// {app id: {v, tile}} of every custom picture; the version is the file's time, so a new picture gets a new one
+// The launcher's copy of a picture at the size its tiles draw it (app/src/js/tiles.js shrinkIcon), one per app: after each return
+// to Home the TV decodes every picture again, and a picture of the drawn size decodes several times faster than the 1000 x 600 one.
+// The page makes it with the browser's own codecs and sends it here; the name holds the picture's version and the size it was made
+// for (<app id>.<version>.<w>x<h>.<jpg|png>), so a new picture or a theme with other tiles makes it stale.
+const SIZE = /^(\d{2,4})x(\d{2,4})$/;
+function dropSmall(id) {
+  let names = [];
+  try {
+    names = fs.readdirSync(SMALL);
+  } catch (_) {}
+  names.forEach(n => {
+    if (n.slice(0, id.length + 1) === id + '.')
+      try {
+        fs.unlinkSync(SMALL + '/' + n);
+      } catch (_) {}
+  });
+}
+// the copy of the app's picture made for tiles of that size (WxH), or ''
+function findSmall(id, size) {
+  if (!ID.test(String(id || '')) || !SIZE.test(String(size || ''))) return '';
+  const x = versions()[id];
+  if (!x || x.small !== size) return '';
+  for (const t of ['jpg', 'png']) {
+    const f = SMALL + '/' + id + '.' + x.v + '.' + size + '.' + t;
+    if (fs.existsSync(f)) return f;
+  }
+  return '';
+}
+// keep the launcher's copy of the app's picture version v, made for tiles of size (WxH): '' when it worked, else why not
+function setSmall(id, v, size, b) {
+  if (!ID.test(String(id || ''))) return 'not an app';
+  const x = versions()[id];
+  if (!x || x.v !== +v) return 'not the picture of this app';
+  const m = SIZE.exec(String(size || ''));
+  if (!m || +m[1] > 4096 || +m[2] > 4096) return 'not a size';
+  if (!b || !b.length || b.length > LIMITS.small) return 'the copy is larger than 512 KB';
+  const t = imageType(b);
+  if (t !== 'jpg' && t !== 'png') return 'only JPEG or PNG';
+  if (!fs.existsSync(DIR)) fs.mkdirSync(DIR);
+  if (!fs.existsSync(SMALL)) fs.mkdirSync(SMALL);
+  dropSmall(id);
+  const f = SMALL + '/' + id + '.' + x.v + '.' + size + '.' + t;
+  fs.writeFileSync(f + '.part', b);
+  fs.renameSync(f + '.part', f);
+  return '';
+}
+
+// {app id: {v, tile, small?}} of every custom picture; the version is the file's time, so a new picture gets a new one; small: the
+// size the launcher's copy was made for
 function versions() {
   const out = {};
   [DIR, TILE].forEach(d => {
@@ -63,6 +113,14 @@ function versions() {
       } catch (_) {}
     });
   });
+  let small = [];
+  try {
+    small = fs.readdirSync(SMALL);
+  } catch (_) {}
+  small.forEach(n => {
+    const m = /^(.+)\.(\d+)\.(\d+x\d+)\.(?:jpg|png)$/.exec(n);
+    if (m && out[m[1]] && out[m[1]].v === +m[2]) out[m[1]].small = m[3];
+  });
   return out;
 }
 // the app's own icon again; true when there was a picture
@@ -77,6 +135,7 @@ function remove(id) {
       } catch (_) {}
     })
   );
+  dropSmall(id);
   return gone;
 }
 // keep a picture for an app, as Full tile (tile) or as Icon: '' when it worked, else why not
@@ -358,6 +417,13 @@ function create(ctx) {
     const bm = /^\/api\/icons\/backdrop\/([\w.-]+?)(\/glass)?$/.exec(u);
     if (bm && req.method === 'GET') return sendFile(res, bm[2] ? findGlass(bm[1]) : findBackdrop(bm[1]));
     if (req.method !== 'POST') return web.notFound(res);
+    // the launcher's copy of a picture at the size its tiles draw it: POST /api/icons/small/<app id>?v=<version>&s=<w>x<h>, the JPEG or PNG
+    const sm = /^\/api\/icons\/small\/([\w.-]+)$/.exec(u);
+    if (sm) {
+      const q = require('url').parse(req.url, true).query;
+      const why = setSmall(sm[1], q.v, q.s, await rawBody(req, LIMITS.small, 'the copy is larger than 512 KB'));
+      return why ? json({ error: why }, 400) : json({ ok: true });
+    }
     const b = await body(req);
     if (u === '/api/icons/pair') return json(b.stop ? (stopPair(), {}) : await startPair(String(b.app || ''), b.scale));
     if (u === '/api/icons/reset') {
@@ -395,7 +461,7 @@ function create(ctx) {
     const list = Object.keys(v).map(id => ({ id, name: names[id] || id, tile: v[id].tile }));
     return { content: [{ type: 'text', text: JSON.stringify(list.length ? list : 'no app has a picture of its own') }], isError: false };
   }
-  return { handle, phone, find, versions, mime, backdrops, tools: { list: () => [TOOL], call: callTool } };
+  return { handle, phone, find, findSmall, versions, mime, backdrops, tools: { list: () => [TOOL], call: callTool } };
 }
 
 // the phone page: the apps with their icons, Change and Reset. Change shows a preview of the picture in a dock tile and a grid tile
@@ -534,6 +600,8 @@ module.exports = {
   set,
   remove,
   mime,
+  findSmall,
+  setSmall,
   findBackdrop,
   findGlass,
   backdrops,

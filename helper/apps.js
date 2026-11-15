@@ -2,7 +2,8 @@
 // settings (dock, hidden apps, sort order, clock, top buttons).
 //   GET /api/apps  GET /api/inputs  GET /api/foreground  POST /api/launch {id, params}  POST /api/config {...}  GET /icon/<app id>
 //   GET /api/apps/stamp: a number that changes whenever the list of apps changes (the launcher checks it every few seconds)
-//   GET /icon/<app id> sends the app's custom picture first (the App icons add-on); /api/apps marks such an app with iv, the picture's version,
+//   GET /icon/<app id> sends the app's custom picture first (the App icons add-on; ?s=<w>x<h>: the launcher's copy made for tiles of
+//   that size, when it has one); /api/apps marks such an app with iv, the picture's version, is: the size of that copy,
 //   and with it: 1 when the picture is shown as Full tile
 //   GET /api/inputs: the HDMI ports, plus LG's own Live TV (the tuner) while its app is installed ({appId, tuner: true})
 //   POST /api/power/off   switch the TV off completely (the cold-boot power-off, not the standby of the remote)
@@ -314,7 +315,7 @@ function create(ctx) {
     return (await installed())
       .map(a => {
         const x = own[a.id];
-        return x ? Object.assign({}, a, { iv: x.v }, x.tile ? { it: 1 } : {}) : a;
+        return x ? Object.assign({}, a, { iv: x.v }, x.tile ? { it: 1 } : {}, x.small ? { is: x.small } : {}) : a;
       })
       .concat(pinned());
   }
@@ -508,7 +509,7 @@ function create(ctx) {
         reply.icons = true;
         // the Live TV tile's own picture (it is not an app, so it is not in apps): its version, and Full tile
         const lv = icons().versions().__live;
-        if (lv) reply.liveIcon = Object.assign({ iv: lv.v }, lv.tile ? { it: 1 } : {});
+        if (lv) reply.liveIcon = Object.assign({ iv: lv.v }, lv.tile ? { it: 1 } : {}, lv.small ? { is: lv.small } : {});
       }
       return web.json(res, reply);
     }
@@ -542,7 +543,9 @@ function create(ctx) {
     const m = u.match(/^\/icon\/([\w.\-]+)$/);
     if (m) {
       const ic = icons();
-      const own = ic ? ic.find(m[1]) : '';
+      // ?s=<w>x<h>: the launcher's copy made for tiles of that size, when it has one for this picture
+      const size = require('url').parse(req.url, true).query.s;
+      const own = ic ? (size && ic.findSmall && ic.findSmall(m[1], size)) || ic.find(m[1]) : '';
       if (own) {
         res.writeHead(200, { 'content-type': ic.mime(own), 'cache-control': 'max-age=3600' });
         return fs.createReadStream(own).pipe(res);
