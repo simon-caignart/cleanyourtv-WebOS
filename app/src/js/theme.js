@@ -33,6 +33,7 @@ var TH0 = {
     'data-motion',
     'data-hl',
     'data-tshadow',
+    'data-noring',
     'data-launch',
     'data-peek',
     'data-gscroll',
@@ -50,6 +51,7 @@ function applyTheme(t) {
     b = document.body,
     k;
   themeSig = JSON.stringify([t || null, (typeof cfg !== 'undefined' && cfg && cfg.lang) || '']);
+  fpVars = null;
   for (k = 0; k < themeKeys.length; k++) st.removeProperty(themeKeys[k]);
   themeKeys = [];
   for (k = 0; k < themeAttrs.length; k++) b.removeAttribute(themeAttrs[k]);
@@ -222,6 +224,7 @@ function setFocus(nr, nc, first) {
   c = Math.min(nc, rows[r].length - 1);
   var e = rows[r][c];
   e.classList.add('f');
+  focusPieces(e);
   updateFocusArt(e);
   moonTileFocus(e);
   tileLabel(e);

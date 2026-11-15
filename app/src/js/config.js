@@ -95,6 +95,7 @@ function act(e) {
   if (a) {
     if (!a.sys) {
       e.classList.add('launching');
+      focusPieces(null); /* the tile zooms away without its shadow and light */
       setTimeout(function () {
         e.classList.remove('launching');
       }, 4000);

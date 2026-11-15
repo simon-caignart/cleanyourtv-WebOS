@@ -417,13 +417,18 @@ body[data-bar="glass"] #bar .pill.f {
 [data-grid="push"].grid-open #scroll::before {
   opacity: 1;
 }
-/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in */
+/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in. Once Home has been on screen and idle a
+   moment (body.warm, warmSoon) it is barely visible rather than not at all, so what it holds (the tiles, the focused tile's shadow and
+   light) is drawn ahead of the first Down; not before, so Home back from an app draws what shows first */
 [data-grid="push"] #grid {
   z-index: 3;
   will-change: opacity;
   opacity: 0;
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
+}
+[data-grid="push"].warm #grid {
+  opacity: 0.004;
 }
 [data-grid="push"].grid-open #grid,
 [data-grid="push"][data-peek] #grid {
@@ -666,34 +671,61 @@ body[data-bar="glass"] #bar .pill.f {
 [data-motion="smooth"].snap .pill {
   transition-duration: calc(0.08s * var(--spd));
 }
-/* tile.shadow soft: a faint shadow under every tile, and the focused tile's deeper one on its own layer (.tsh, tiles.js) that fades in
-   while the tile grows, so it grows with it. The layer sits under the tile's content; an outer shadow is never drawn under its own box. */
-.tsh {
+/* The focused tile's deeper shadow (tile.shadow soft) and its light (tile.highlight focus): shared pieces of the dock and of the grid
+   (focusPieces, tiles.js) that take turns, follow the tile's grow and shrink with its own timing and fade in and out with it. Barely
+   visible at rest rather than not at all, so they stay drawn and a move only blends and moves them. */
+.fpc {
   display: none;
-}
-[data-tshadow="soft"] .tsh {
-  display: block;
   position: absolute;
   left: 0;
   top: 0;
-  right: 0;
-  bottom: 0;
   margin: 0 !important;
-  z-index: -1;
-  border-radius: inherit;
   pointer-events: none;
-  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
-  opacity: 0;
-  will-change: opacity;
-  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+  opacity: 0.004;
+  will-change: transform, opacity;
+  transition:
+    transform calc(0.12s * var(--spd)) cubic-bezier(0.3, 1.35, 0.5, 1),
+    opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
-[data-tshadow="soft"] .tile.f .tsh {
+[data-tshadow="soft"] .fpc.sh,
+[data-hl="focus"] .fpc.li {
+  display: block;
+}
+#dock .fpc {
+  border-radius: var(--dock-rad);
+}
+#grid .fpc {
+  border-radius: var(--tile-r);
+}
+/* over the tiles at rest and under the focused one (z-index 3), as it falls from the raised tile; an outer shadow is never drawn
+   under its own box */
+[data-tshadow="soft"] .fpc.sh {
+  z-index: 1;
+  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
+}
+.fpc.on {
   opacity: 1;
-  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+  transition-duration: calc(0.12s * var(--spd)), calc(var(--t-grow, 0.12s) * var(--spd));
 }
 /* pressed: the tile comes closer to the surface, its shadow gets shorter */
-[data-tshadow="soft"] .tile.f.press .tsh {
+[data-tshadow="soft"] .fpc.sh.on.press {
   opacity: 0.55;
+}
+.fpc.on.press {
+  transition-duration: calc(0.06s * var(--spd));
+}
+[data-motion="smooth"] .fpc {
+  transition:
+    transform calc(var(--t-shrink) * var(--spd)) cubic-bezier(0.4, 0, 0.3, 1),
+    opacity calc(var(--t-shrink) * var(--spd)) linear;
+}
+[data-motion="smooth"] .fpc.on {
+  transition-duration: calc(var(--t-grow) * var(--spd));
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1), linear;
+}
+[data-motion="smooth"] .fpc.on.press {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: ease-out, linear;
 }
 [data-tshadow="soft"] .tile,
 [data-tshadow="soft"] .tile.f {
@@ -714,23 +746,28 @@ body[data-bar="glass"] #bar .pill.f {
   border-radius: inherit;
 }
 /* tile.highlight focus: the gloss only on the focused tile, a soft light spot centred a third of the way along its top edge, and a thin
-   bright rim strongest at the top and left; it fades in with the focus. */
+   bright rim strongest at the top and left; it fades in with the focus (the light piece above, over the tile). */
 [data-hl="focus"] .tile::after {
-  opacity: 0;
+  display: none;
+}
+[data-hl="focus"] .fpc.li {
+  z-index: 4;
   background: radial-gradient(circle at 33% 0%, rgba(255, 255, 255, var(--gloss)), rgba(255, 255, 255, 0) 100%);
   box-shadow:
     inset 1px 2px 0 rgba(255, 255, 255, var(--rim, 0.5)),
     inset 0 0 0 1px rgba(255, 255, 255, calc(0.3 * var(--rim, 0.5)));
-  will-change: opacity;
-  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
-[data-hl="focus"] .tile.f::after {
-  opacity: 1;
-  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
-}
-.snap .tsh,
-.snap .tile::after {
+.snap .fpc {
   transition: none;
+}
+/* tile.ringWidth 0 with the soft shadow: the focused tile keeps the box-shadow it has at rest, and no empty ring box is made */
+[data-noring] .tile.f::before {
+  display: none;
+}
+[data-noring][data-tshadow="soft"] .tile.fill.f {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--tile-border)),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
 }
 /* Moon uses one warm glass frame that slides between the focused dock and grid tiles. */
 [data-theme="moon"] #dock .tile.f::before,
@@ -3374,13 +3411,13 @@ function tile(a) {
   hit(d);
   if (a.sys) {
     d.innerHTML = svg(a.icon) + '<div class="slab">' + 'LG Home' + '</div>';
-    return shade(d);
+    return d;
   }
   if (a.input) {
     d.innerHTML = svg('hdmi') + '<div class="slab"></div><div class="slab sub"></div>';
     var f = hsl2rgb(hashHue(a.id), 0.3, 0.3);
     paint(d, { c: f, b: hsl2rgb(hashHue(a.id), 0.3, 0.16) });
-    return inputTile(shade(d), a);
+    return inputTile(d, a);
   }
   var known = colors[a.id];
   if (known) {
@@ -3431,7 +3468,7 @@ function tile(a) {
   i.src = a.id === '__live' && !a.iv ? LIVE_ICON : iconUrl(a);
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
-  return shade(d);
+  return d;
 }
 /* An app's picture from the service; a picture of its own (iv) from the copy the service keeps of it at the size the tiles draw it
    (is, sent by shrinkIcon), when that copy was made for tiles of this size */
@@ -3536,13 +3573,107 @@ function regrowIcons() {
     if (blob.indexOf('blob:') === 0) URL.revokeObjectURL(blob);
   });
 }
-/* the focused tile's soft shadow (tile.shadow soft): its own layer, so it fades in with the focus and grows with the tile instead of
-   switching on at once. Last child, so the tile's other children keep their places (inputTile counts them). */
-function shade(d) {
-  var s = document.createElement('i');
-  s.className = 'tsh';
-  d.appendChild(s);
-  return d;
+/* tile.shadow soft and tile.highlight focus: the focused tile's deeper shadow and its light. Each row of tiles (the dock, the grid) has
+   three of each, which take turns and only ever move by transform: the next one jumps to the new tile while it is barely visible, then
+   grows and fades in with the tile; the one there shrinks and fades out with the tile it leaves. So they are drawn once, at rest,
+   where a shadow and a light of each tile's own were drawn when that tile was focused (on the TV a missed frame at every move). The
+   one reused is the least visible, so quick presses do not cut a shadow that is still fading. */
+var fpVars = null;
+function focusPieces(e) {
+  var soft = document.body.getAttribute('data-tshadow') === 'soft',
+    light = document.body.getAttribute('data-hl') === 'focus';
+  ['dock', 'grid'].forEach(function (id) {
+    var box = $(id),
+      fp = box && box._fp;
+    if (!box || (!fp && !soft && !light)) return;
+    if (!fp) {
+      fp = box._fp = { on: 0, at: null, sets: [0, 1, 2].map(focusSet) };
+      fpVars = null;
+    }
+    var first = box.querySelector('.tile');
+    fp.sets.forEach(function (p) {
+      if (p[0].parentNode !== box) {
+        box.appendChild(p[0]);
+        box.appendChild(p[1]);
+      }
+      /* sized at once, on the row's first tile and grown, so they are drawn at rest at the largest scale they are shown at: a piece
+         that grows past the scale it was drawn at is drawn again, one that shrinks is not */
+      if (!p[0].style.width && first) {
+        p[0].style.transition = p[1].style.transition = 'none';
+        placeSet(p, first, true);
+        placeSet(p, null, false);
+        /* the grid waits below the screen at rest, where nothing is drawn ahead: its pieces wait on the screen (the grid is barely
+           visible, they are invisible) */
+        if (id === 'grid')
+          p[0].style.transform = p[1].style.transform = p[0].style.transform.replace(
+            /translate\([^)]*\)/,
+            'translate(' + first.offsetLeft + 'px,' + (300 - box.offsetTop) + 'px)'
+          );
+        window.getComputedStyle(p[0]).opacity;
+        p[0].style.transition = p[1].style.transition = '';
+      }
+    });
+    var mine = (soft || light) && e && e.parentNode === box && !e.classList.contains('moving') ? e : null;
+    if (mine && fp.at === mine) return placeSet(fp.sets[fp.on], mine, true);
+    if (fp.at) placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
+    fp.at = mine;
+    if (!mine) return;
+    var best = -1,
+      low = 2;
+    fp.sets.forEach(function (p, k) {
+      var o = k === fp.on ? 2 : parseFloat(window.getComputedStyle(p[0]).opacity) || 0;
+      if (o < low) {
+        low = o;
+        best = k;
+      }
+    });
+    fp.on = best;
+    var nx = fp.sets[best];
+    nx[0].style.transition = nx[1].style.transition = 'none';
+    placeSet(nx, mine, false);
+    window.getComputedStyle(nx[0]).transform;
+    nx[0].style.transition = nx[1].style.transition = '';
+    placeSet(nx, mine, true);
+  });
+}
+function focusSet() {
+  return ['sh', 'li'].map(function (k) {
+    var p = document.createElement('i');
+    p.className = 'fpc ' + k;
+    return p;
+  });
+}
+/* the set over tile e, grown as the focused tile (on) or at rest; with no tile it fades out where it is */
+function placeSet(p, e, on) {
+  if (!e) {
+    p[0].classList.remove('on');
+    p[1].classList.remove('on');
+    return;
+  }
+  if (!fpVars) {
+    var cs = window.getComputedStyle(document.documentElement);
+    fpVars = {
+      lift: parseFloat(cs.getPropertyValue('--dock-lift')) || 0,
+      dock: parseFloat(cs.getPropertyValue('--dock-fs')) || 1,
+      grid: parseFloat(cs.getPropertyValue('--grid-fs')) || 1,
+      press: parseFloat(cs.getPropertyValue('--press-s')) || 0.96,
+    };
+  }
+  var dock = e.parentNode && e.parentNode.id === 'dock',
+    t = 'translate(' + e.offsetLeft + 'px,' + e.offsetTop + 'px)',
+    w = e.offsetWidth + 'px',
+    h = e.offsetHeight + 'px';
+  if (on && e.classList.contains('press')) t += ' scale(' + fpVars.press + ')';
+  else if (on) t += (dock ? ' translateY(' + fpVars.lift + 'px)' : '') + ' scale(' + (dock ? fpVars.dock : fpVars.grid) + ')';
+  for (var k = 0; k < 2; k++) {
+    var el = p[k];
+    /* the size only when it changes: a new size would draw the piece again */
+    if (el.style.width !== w) el.style.width = w;
+    if (el.style.height !== h) el.style.height = h;
+    el.style.transform = t;
+    el.classList.toggle('on', !!on);
+    el.classList.toggle('press', !!on && e.classList.contains('press'));
+  }
 }
 
 // Cached first paint can beat the helper. Retry failed helper icons only after
@@ -3645,6 +3776,7 @@ var TH0 = {
     'data-motion',
     'data-hl',
     'data-tshadow',
+    'data-noring',
     'data-launch',
     'data-peek',
     'data-gscroll',
@@ -3662,6 +3794,7 @@ function applyTheme(t) {
     b = document.body,
     k;
   themeSig = JSON.stringify([t || null, (typeof cfg !== 'undefined' && cfg && cfg.lang) || '']);
+  fpVars = null;
   for (k = 0; k < themeKeys.length; k++) st.removeProperty(themeKeys[k]);
   themeKeys = [];
   for (k = 0; k < themeAttrs.length; k++) b.removeAttribute(themeAttrs[k]);
@@ -3834,6 +3967,7 @@ function setFocus(nr, nc, first) {
   c = Math.min(nc, rows[r].length - 1);
   var e = rows[r][c];
   e.classList.add('f');
+  focusPieces(e);
   updateFocusArt(e);
   moonTileFocus(e);
   tileLabel(e);
@@ -6912,6 +7046,7 @@ function act(e) {
   if (a) {
     if (!a.sys) {
       e.classList.add('launching');
+      focusPieces(null); /* the tile zooms away without its shadow and light */
       setTimeout(function () {
         e.classList.remove('launching');
       }, 4000);
@@ -9484,9 +9619,11 @@ document.addEventListener('keydown', function (e) {
       clearTimeout(downT);
       var t = rows[r][c];
       t.classList.add('press');
+      focusPieces(t);
       downT = setTimeout(function () {
         held = true;
         t.classList.remove('press');
+        focusPieces(t);
         options(t);
       }, 650);
     }
@@ -9499,7 +9636,10 @@ document.addEventListener('keyup', function (e) {
   lastKey = Date.now();
   clearTimeout(downT);
   var pr = document.querySelector('.press');
-  if (pr) pr.classList.remove('press');
+  if (pr) {
+    pr.classList.remove('press');
+    focusPieces(pr);
+  }
   if (menuHold) {
     var was = held;
     menuHold = null;
@@ -9669,8 +9809,21 @@ document.addEventListener('webOSRelaunch', function () {
   refreshSoon();
   wantInputs(PAGER.load());
 });
+/* Home that has been on screen and idle for a moment keeps the push grid drawn (body.warm in home.css), so the first Down only blends
+   it in; not at once, since Home back from an app has every picture to draw again first */
+var warmT = 0;
+function warmSoon(wait) {
+  clearTimeout(warmT);
+  warmT = setTimeout(function () {
+    var since = Date.now() - lastKey;
+    if (since >= 0 && since < 1500) return warmSoon(500);
+    document.body.classList.add('warm');
+  }, wait);
+}
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {
+    clearTimeout(warmT);
+    document.body.classList.remove('warm');
     if (guarded()) {
       liveBlip = true;
       logLine('launcher hidden right after a Live TV launch: Live TV stays on');
@@ -9696,6 +9849,7 @@ document.addEventListener('visibilitychange', function () {
     refreshSoon();
     WALL.shown();
     SCENES.shown();
+    warmSoon(2000);
     if (PAGER.on) PAGER.report(); /* back on a page: the Home key is bound again at once (the service may have restarted meanwhile) */
   }
 });
@@ -10071,6 +10225,7 @@ pagesLoaded.then(function () {
   PAGER.report();
 });
 refreshSoon();
+warmSoon(2000);
 wantInputs(pagesLoaded);
 watchOpen();
 /* lets the manager know an updated launcher started, and the boot script that this page is ours; at a boot the service may not be up

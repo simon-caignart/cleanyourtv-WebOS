@@ -815,6 +815,8 @@ function resolve(t, accent) {
   if (v['tile.shadow'] !== 'focus') {
     attrs.tshadow = v['tile.shadow'];
     vars['--shadow-k'] = String(v['tile.shadowStrength']);
+    // no focus ring: then focusing a tile changes nothing the tile itself paints
+    if (v['tile.ringWidth'] === 0) attrs.noring = 'on';
   }
   if (peek) attrs.peek = 'on';
   if (v['surface.ink'] !== 'light') attrs.inkmode = v['surface.ink'];

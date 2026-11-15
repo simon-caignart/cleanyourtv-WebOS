@@ -275,9 +275,11 @@ document.addEventListener('keydown', function (e) {
       clearTimeout(downT);
       var t = rows[r][c];
       t.classList.add('press');
+      focusPieces(t);
       downT = setTimeout(function () {
         held = true;
         t.classList.remove('press');
+        focusPieces(t);
         options(t);
       }, 650);
     }
@@ -290,7 +292,10 @@ document.addEventListener('keyup', function (e) {
   lastKey = Date.now();
   clearTimeout(downT);
   var pr = document.querySelector('.press');
-  if (pr) pr.classList.remove('press');
+  if (pr) {
+    pr.classList.remove('press');
+    focusPieces(pr);
+  }
   if (menuHold) {
     var was = held;
     menuHold = null;
@@ -460,8 +465,21 @@ document.addEventListener('webOSRelaunch', function () {
   refreshSoon();
   wantInputs(PAGER.load());
 });
+/* Home that has been on screen and idle for a moment keeps the push grid drawn (body.warm in home.css), so the first Down only blends
+   it in; not at once, since Home back from an app has every picture to draw again first */
+var warmT = 0;
+function warmSoon(wait) {
+  clearTimeout(warmT);
+  warmT = setTimeout(function () {
+    var since = Date.now() - lastKey;
+    if (since >= 0 && since < 1500) return warmSoon(500);
+    document.body.classList.add('warm');
+  }, wait);
+}
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {
+    clearTimeout(warmT);
+    document.body.classList.remove('warm');
     if (guarded()) {
       liveBlip = true;
       logLine('launcher hidden right after a Live TV launch: Live TV stays on');
@@ -487,6 +505,7 @@ document.addEventListener('visibilitychange', function () {
     refreshSoon();
     WALL.shown();
     SCENES.shown();
+    warmSoon(2000);
     if (PAGER.on) PAGER.report(); /* back on a page: the Home key is bound again at once (the service may have restarted meanwhile) */
   }
 });

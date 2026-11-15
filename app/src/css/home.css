@@ -412,13 +412,18 @@ body[data-bar="glass"] #bar .pill.f {
 [data-grid="push"].grid-open #scroll::before {
   opacity: 1;
 }
-/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in */
+/* push: the grid sits under the dock; focusing it scrolls the dock up and fades the grid in. Once Home has been on screen and idle a
+   moment (body.warm, warmSoon) it is barely visible rather than not at all, so what it holds (the tiles, the focused tile's shadow and
+   light) is drawn ahead of the first Down; not before, so Home back from an app draws what shows first */
 [data-grid="push"] #grid {
   z-index: 3;
   will-change: opacity;
   opacity: 0;
   pointer-events: none;
   transition: opacity calc(0.25s * var(--spd)) linear;
+}
+[data-grid="push"].warm #grid {
+  opacity: 0.004;
 }
 [data-grid="push"].grid-open #grid,
 [data-grid="push"][data-peek] #grid {
@@ -661,34 +666,61 @@ body[data-bar="glass"] #bar .pill.f {
 [data-motion="smooth"].snap .pill {
   transition-duration: calc(0.08s * var(--spd));
 }
-/* tile.shadow soft: a faint shadow under every tile, and the focused tile's deeper one on its own layer (.tsh, tiles.js) that fades in
-   while the tile grows, so it grows with it. The layer sits under the tile's content; an outer shadow is never drawn under its own box. */
-.tsh {
+/* The focused tile's deeper shadow (tile.shadow soft) and its light (tile.highlight focus): shared pieces of the dock and of the grid
+   (focusPieces, tiles.js) that take turns, follow the tile's grow and shrink with its own timing and fade in and out with it. Barely
+   visible at rest rather than not at all, so they stay drawn and a move only blends and moves them. */
+.fpc {
   display: none;
-}
-[data-tshadow="soft"] .tsh {
-  display: block;
   position: absolute;
   left: 0;
   top: 0;
-  right: 0;
-  bottom: 0;
   margin: 0 !important;
-  z-index: -1;
-  border-radius: inherit;
   pointer-events: none;
-  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
-  opacity: 0;
-  will-change: opacity;
-  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
+  opacity: 0.004;
+  will-change: transform, opacity;
+  transition:
+    transform calc(0.12s * var(--spd)) cubic-bezier(0.3, 1.35, 0.5, 1),
+    opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
-[data-tshadow="soft"] .tile.f .tsh {
+[data-tshadow="soft"] .fpc.sh,
+[data-hl="focus"] .fpc.li {
+  display: block;
+}
+#dock .fpc {
+  border-radius: var(--dock-rad);
+}
+#grid .fpc {
+  border-radius: var(--tile-r);
+}
+/* over the tiles at rest and under the focused one (z-index 3), as it falls from the raised tile; an outer shadow is never drawn
+   under its own box */
+[data-tshadow="soft"] .fpc.sh {
+  z-index: 1;
+  box-shadow: 0 50px 70px rgba(0, 0, 0, calc(0.3 * var(--shadow-k, 1)));
+}
+.fpc.on {
   opacity: 1;
-  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
+  transition-duration: calc(0.12s * var(--spd)), calc(var(--t-grow, 0.12s) * var(--spd));
 }
 /* pressed: the tile comes closer to the surface, its shadow gets shorter */
-[data-tshadow="soft"] .tile.f.press .tsh {
+[data-tshadow="soft"] .fpc.sh.on.press {
   opacity: 0.55;
+}
+.fpc.on.press {
+  transition-duration: calc(0.06s * var(--spd));
+}
+[data-motion="smooth"] .fpc {
+  transition:
+    transform calc(var(--t-shrink) * var(--spd)) cubic-bezier(0.4, 0, 0.3, 1),
+    opacity calc(var(--t-shrink) * var(--spd)) linear;
+}
+[data-motion="smooth"] .fpc.on {
+  transition-duration: calc(var(--t-grow) * var(--spd));
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1), linear;
+}
+[data-motion="smooth"] .fpc.on.press {
+  transition-duration: calc(0.1s * var(--spd));
+  transition-timing-function: ease-out, linear;
 }
 [data-tshadow="soft"] .tile,
 [data-tshadow="soft"] .tile.f {
@@ -709,23 +741,28 @@ body[data-bar="glass"] #bar .pill.f {
   border-radius: inherit;
 }
 /* tile.highlight focus: the gloss only on the focused tile, a soft light spot centred a third of the way along its top edge, and a thin
-   bright rim strongest at the top and left; it fades in with the focus. */
+   bright rim strongest at the top and left; it fades in with the focus (the light piece above, over the tile). */
 [data-hl="focus"] .tile::after {
-  opacity: 0;
+  display: none;
+}
+[data-hl="focus"] .fpc.li {
+  z-index: 4;
   background: radial-gradient(circle at 33% 0%, rgba(255, 255, 255, var(--gloss)), rgba(255, 255, 255, 0) 100%);
   box-shadow:
     inset 1px 2px 0 rgba(255, 255, 255, var(--rim, 0.5)),
     inset 0 0 0 1px rgba(255, 255, 255, calc(0.3 * var(--rim, 0.5)));
-  will-change: opacity;
-  transition: opacity calc(var(--t-shrink, 0.12s) * var(--spd)) linear;
 }
-[data-hl="focus"] .tile.f::after {
-  opacity: 1;
-  transition-duration: calc(var(--t-grow, 0.12s) * var(--spd));
-}
-.snap .tsh,
-.snap .tile::after {
+.snap .fpc {
   transition: none;
+}
+/* tile.ringWidth 0 with the soft shadow: the focused tile keeps the box-shadow it has at rest, and no empty ring box is made */
+[data-noring] .tile.f::before {
+  display: none;
+}
+[data-noring][data-tshadow="soft"] .tile.fill.f {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--tile-border)),
+    0 4px 24px rgba(0, 0, 0, calc(0.4 * var(--shadow-k, 1)));
 }
 /* Moon uses one warm glass frame that slides between the focused dock and grid tiles. */
 [data-theme="moon"] #dock .tile.f::before,

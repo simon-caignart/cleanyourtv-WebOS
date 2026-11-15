@@ -261,6 +261,11 @@ run(async () => {
       !('--shadow-k' in plain.vars),
     'by default the spring motion, the gloss on every tile and the focus shadow, with no new keys in the reply'
   );
+  const ringless = themeMod.resolve(themeMod.normalize({ tile: { shadow: 'soft', ringWidth: 0 } }, 'box'));
+  ok(
+    ringless.attrs.noring === 'on' && !('noring' in box.attrs) && !('noring' in plain.attrs),
+    'soft shadows without a focus ring tell the launcher (noring), so focusing a tile repaints nothing of it; not otherwise'
+  );
   // tile.press and tile.launch: how deep a held tile sinks, and a launch that zooms the tile away
   const pressed = themeMod.resolve(
     themeMod.normalize({ tile: { press: 1.11, launch: 'zoom' }, grid: { focusScale: 1.22 }, dock: { focusScale: 1.2 } }, 'pressed')

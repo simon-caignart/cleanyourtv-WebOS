@@ -20,6 +20,17 @@ run(async () => {
   };
   vm.runInNewContext(cardsSource.slice(cardsSource.indexOf('var HA_ICON'), cardsSource.indexOf("/* an entity's state")), mdiContext);
   const homePage = fs.readFileSync(path.join(root, 'app', 'index.html'), 'utf8');
+  // the focused tile's shadow and light are shared pieces (focusPieces), not one of each per tile; the push grid is barely visible at
+  // rest once Home has been idle a moment (warm), so the pieces inside it are drawn ahead of the first Down, and dropped while hidden
+  ok(
+    !/\.tsh\b/.test(homePage) &&
+      /\.fpc \{[^}]*opacity: 0\.004;[^}]*will-change: transform, opacity;/.test(homePage) &&
+      /\[data-grid="push"\] #grid \{[^}]*opacity: 0;/.test(homePage) &&
+      /\[data-grid="push"\]\.warm #grid \{\s*opacity: 0\.004;/.test(homePage) &&
+      /document\.body\.classList\.remove\('warm'\)/.test(homePage) &&
+      /\[data-hl="focus"\] \.tile::after \{\s*display: none;/.test(homePage),
+    "the focused tile's shadow and light are shared pieces kept drawn, and the push grid is kept drawn at rest once Home is idle (warm), not while it comes back"
+  );
   // opening the grid repaints no large layer: what fades out with it (the top buttons and the clock, the chevron) keeps a layer of its
   // own, and the bottom shade stays under the frosted glass (headless Chrome: 56 raster tasks on the first Down before, 10 after)
   ok(

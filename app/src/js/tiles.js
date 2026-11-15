@@ -19,13 +19,13 @@ function tile(a) {
   hit(d);
   if (a.sys) {
     d.innerHTML = svg(a.icon) + '<div class="slab">' + 'LG Home' + '</div>';
-    return shade(d);
+    return d;
   }
   if (a.input) {
     d.innerHTML = svg('hdmi') + '<div class="slab"></div><div class="slab sub"></div>';
     var f = hsl2rgb(hashHue(a.id), 0.3, 0.3);
     paint(d, { c: f, b: hsl2rgb(hashHue(a.id), 0.3, 0.16) });
-    return inputTile(shade(d), a);
+    return inputTile(d, a);
   }
   var known = colors[a.id];
   if (known) {
@@ -76,7 +76,7 @@ function tile(a) {
   i.src = a.id === '__live' && !a.iv ? LIVE_ICON : iconUrl(a);
   d.appendChild(i);
   if (i.decode) i.decode().catch(function () {});
-  return shade(d);
+  return d;
 }
 /* An app's picture from the service; a picture of its own (iv) from the copy the service keeps of it at the size the tiles draw it
    (is, sent by shrinkIcon), when that copy was made for tiles of this size */
@@ -181,13 +181,107 @@ function regrowIcons() {
     if (blob.indexOf('blob:') === 0) URL.revokeObjectURL(blob);
   });
 }
-/* the focused tile's soft shadow (tile.shadow soft): its own layer, so it fades in with the focus and grows with the tile instead of
-   switching on at once. Last child, so the tile's other children keep their places (inputTile counts them). */
-function shade(d) {
-  var s = document.createElement('i');
-  s.className = 'tsh';
-  d.appendChild(s);
-  return d;
+/* tile.shadow soft and tile.highlight focus: the focused tile's deeper shadow and its light. Each row of tiles (the dock, the grid) has
+   three of each, which take turns and only ever move by transform: the next one jumps to the new tile while it is barely visible, then
+   grows and fades in with the tile; the one there shrinks and fades out with the tile it leaves. So they are drawn once, at rest,
+   where a shadow and a light of each tile's own were drawn when that tile was focused (on the TV a missed frame at every move). The
+   one reused is the least visible, so quick presses do not cut a shadow that is still fading. */
+var fpVars = null;
+function focusPieces(e) {
+  var soft = document.body.getAttribute('data-tshadow') === 'soft',
+    light = document.body.getAttribute('data-hl') === 'focus';
+  ['dock', 'grid'].forEach(function (id) {
+    var box = $(id),
+      fp = box && box._fp;
+    if (!box || (!fp && !soft && !light)) return;
+    if (!fp) {
+      fp = box._fp = { on: 0, at: null, sets: [0, 1, 2].map(focusSet) };
+      fpVars = null;
+    }
+    var first = box.querySelector('.tile');
+    fp.sets.forEach(function (p) {
+      if (p[0].parentNode !== box) {
+        box.appendChild(p[0]);
+        box.appendChild(p[1]);
+      }
+      /* sized at once, on the row's first tile and grown, so they are drawn at rest at the largest scale they are shown at: a piece
+         that grows past the scale it was drawn at is drawn again, one that shrinks is not */
+      if (!p[0].style.width && first) {
+        p[0].style.transition = p[1].style.transition = 'none';
+        placeSet(p, first, true);
+        placeSet(p, null, false);
+        /* the grid waits below the screen at rest, where nothing is drawn ahead: its pieces wait on the screen (the grid is barely
+           visible, they are invisible) */
+        if (id === 'grid')
+          p[0].style.transform = p[1].style.transform = p[0].style.transform.replace(
+            /translate\([^)]*\)/,
+            'translate(' + first.offsetLeft + 'px,' + (300 - box.offsetTop) + 'px)'
+          );
+        window.getComputedStyle(p[0]).opacity;
+        p[0].style.transition = p[1].style.transition = '';
+      }
+    });
+    var mine = (soft || light) && e && e.parentNode === box && !e.classList.contains('moving') ? e : null;
+    if (mine && fp.at === mine) return placeSet(fp.sets[fp.on], mine, true);
+    if (fp.at) placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
+    fp.at = mine;
+    if (!mine) return;
+    var best = -1,
+      low = 2;
+    fp.sets.forEach(function (p, k) {
+      var o = k === fp.on ? 2 : parseFloat(window.getComputedStyle(p[0]).opacity) || 0;
+      if (o < low) {
+        low = o;
+        best = k;
+      }
+    });
+    fp.on = best;
+    var nx = fp.sets[best];
+    nx[0].style.transition = nx[1].style.transition = 'none';
+    placeSet(nx, mine, false);
+    window.getComputedStyle(nx[0]).transform;
+    nx[0].style.transition = nx[1].style.transition = '';
+    placeSet(nx, mine, true);
+  });
+}
+function focusSet() {
+  return ['sh', 'li'].map(function (k) {
+    var p = document.createElement('i');
+    p.className = 'fpc ' + k;
+    return p;
+  });
+}
+/* the set over tile e, grown as the focused tile (on) or at rest; with no tile it fades out where it is */
+function placeSet(p, e, on) {
+  if (!e) {
+    p[0].classList.remove('on');
+    p[1].classList.remove('on');
+    return;
+  }
+  if (!fpVars) {
+    var cs = window.getComputedStyle(document.documentElement);
+    fpVars = {
+      lift: parseFloat(cs.getPropertyValue('--dock-lift')) || 0,
+      dock: parseFloat(cs.getPropertyValue('--dock-fs')) || 1,
+      grid: parseFloat(cs.getPropertyValue('--grid-fs')) || 1,
+      press: parseFloat(cs.getPropertyValue('--press-s')) || 0.96,
+    };
+  }
+  var dock = e.parentNode && e.parentNode.id === 'dock',
+    t = 'translate(' + e.offsetLeft + 'px,' + e.offsetTop + 'px)',
+    w = e.offsetWidth + 'px',
+    h = e.offsetHeight + 'px';
+  if (on && e.classList.contains('press')) t += ' scale(' + fpVars.press + ')';
+  else if (on) t += (dock ? ' translateY(' + fpVars.lift + 'px)' : '') + ' scale(' + (dock ? fpVars.dock : fpVars.grid) + ')';
+  for (var k = 0; k < 2; k++) {
+    var el = p[k];
+    /* the size only when it changes: a new size would draw the piece again */
+    if (el.style.width !== w) el.style.width = w;
+    if (el.style.height !== h) el.style.height = h;
+    el.style.transform = t;
+    el.classList.toggle('on', !!on);
+    el.classList.toggle('press', !!on && e.classList.contains('press'));
+  }
 }
 
 // Cached first paint can beat the helper. Retry failed helper icons only after
