@@ -20,6 +20,15 @@ run(async () => {
   };
   vm.runInNewContext(cardsSource.slice(cardsSource.indexOf('var HA_ICON'), cardsSource.indexOf("/* an entity's state")), mdiContext);
   const homePage = fs.readFileSync(path.join(root, 'app', 'index.html'), 'utf8');
+  // opening the grid repaints no large layer: what fades out with it (the top buttons and the clock, the chevron) keeps a layer of its
+  // own, and the bottom shade stays under the frosted glass (headless Chrome: 56 raster tasks on the first Down before, 10 after)
+  ok(
+    /\[data-gtop="hide"\] #bar,\s*\[data-gtop="hide"\] #clock \{[^}]*will-change: opacity;/.test(homePage) &&
+      /\[data-chev\] #dock::after \{[^}]*will-change: opacity;/.test(homePage) &&
+      /\[data-bshade\]:not\(\.glass-on\)\.grid-open #bshade \{\s*opacity: 0;/.test(homePage) &&
+      !/\[data-bshade\]\.grid-open #bshade/.test(homePage),
+    'what fades when the grid opens has a layer of its own, and the bottom shade stays under the glass'
+  );
   ok(!/<script[^>]+src=["']mdi-glyphs\.js/.test(homePage), 'the launcher does not load the MDI map at startup');
   mdiContext.haGlyph();
   ok(!mdiScripts.length, 'an entity without an icon does not request the MDI map');

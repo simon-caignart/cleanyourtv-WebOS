@@ -1851,6 +1851,8 @@ body.scenes-on {
 [data-gtop="hide"] #bar,
 [data-gtop="hide"] #clock {
   transition: opacity calc(0.3s * var(--spd)) ease;
+  /* a layer of its own at all times: fading in and out of one repainted the page's root layer at each opening of the grid */
+  will-change: opacity;
 }
 [data-gtop="hide"].grid-open #bar,
 [data-gtop="hide"].grid-open #clock {
@@ -1881,7 +1883,9 @@ body[data-late="off"] .scene .late {
   );
   transition: opacity calc(0.5s * var(--spd)) ease;
 }
-[data-bshade].grid-open #bshade {
+/* hidden under the dark layer of the open grid; the frosted glass (glass-on) covers it anyway, so there it stays, and opening the grid
+   does not repaint the half of the screen it is part of */
+[data-bshade]:not(.glass-on).grid-open #bshade {
   opacity: 0;
 }
 /* dock.chevron: a thin chevron above the platter at rest */
@@ -1897,6 +1901,7 @@ body[data-late="off"] .scene .late {
     no-repeat;
   opacity: 0.6;
   transition: opacity calc(0.3s * var(--spd)) ease;
+  will-change: opacity; /* its fade does not repaint the layer of the dock and the page it moves with */
   pointer-events: none;
 }
 [data-chev].grid-open #dock::after {
