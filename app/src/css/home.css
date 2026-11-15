@@ -666,9 +666,8 @@ body[data-bar="glass"] #bar .pill.f {
   transition-duration: calc(0.08s * var(--spd));
 }
 /* The focused tile's deeper shadow (tile.shadow soft) and its light (tile.highlight focus): shared pieces of the dock and of the grid
-   (focusPieces, tiles.js) that take turns, follow the tile's grow and shrink with its own timing and fade in and out with it. Barely
-   visible at rest rather than not at all, so they stay drawn and a move only blends and moves them (at 0 a layer's drawing is
-   dropped after a few seconds). */
+   (focusPieces, tiles.js) that take turns, follow the tile's grow and shrink with its own timing and fade in and out with it. The ones
+   that wait are at 0, not drawn in the frames of a move (measured on the TV: the first move after a long idle is no slower). */
 .fpc {
   display: none;
   position: absolute;
@@ -676,7 +675,7 @@ body[data-bar="glass"] #bar .pill.f {
   top: 0;
   margin: 0 !important;
   pointer-events: none;
-  opacity: 0.004;
+  opacity: 0;
   will-change: transform, opacity;
   transition:
     transform calc(0.12s * var(--spd)) cubic-bezier(0.3, 1.35, 0.5, 1),

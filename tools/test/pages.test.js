@@ -20,18 +20,18 @@ run(async () => {
   };
   vm.runInNewContext(cardsSource.slice(cardsSource.indexOf('var HA_ICON'), cardsSource.indexOf("/* an entity's state")), mdiContext);
   const homePage = fs.readFileSync(path.join(root, 'app', 'index.html'), 'utf8');
-  // the focused tile's shadow and light are shared pieces (focusPieces), not one of each per tile, kept barely visible; the push grid and
+  // the focused tile's shadow and light are shared pieces (focusPieces), not one of each per tile, the waiting ones at 0; the push grid and
   // the frosted glass are drawn ahead in a short pulse once Home has been idle a moment (ahead), ended by a key and by hiding Home
   ok(
     !/\.tsh\b/.test(homePage) &&
-      /\.fpc \{[^}]*opacity: 0\.004;[^}]*will-change: transform, opacity;/.test(homePage) &&
+      /\.fpc \{[^}]*opacity: 0;[^}]*will-change: transform, opacity;/.test(homePage) &&
       /\[data-grid="push"\] #grid \{[^}]*opacity: 0;/.test(homePage) &&
       /\[data-grid="push"\]\.ahead #grid \{\s*opacity: 0\.004;/.test(homePage) &&
       /\.glass-on #sglass \{\s*will-change: opacity;\s*\}\s*\.glass-on\.ahead #sglass \{\s*opacity: 0\.004;/.test(homePage) &&
       /document\.body\.classList\.remove\('ahead'\)/.test(homePage) &&
       /if \(aheadT\) endAhead\(\);/.test(homePage) &&
       /\[data-hl="focus"\] \.tile::after \{\s*display: none;/.test(homePage),
-    "the focused tile's shadow and light are shared pieces kept drawn; the push grid and the frosted glass are drawn ahead while Home is idle (ahead) and not drawn in the frames of a move"
+    "the focused tile's shadow and light are shared pieces, the waiting ones not drawn; the push grid and the frosted glass are drawn ahead while Home is idle (ahead) and not drawn in the frames of a move"
   );
   // opening the grid repaints no large layer: what fades out with it (the top buttons and the clock, the chevron) keeps a layer of its
   // own, and the bottom shade stays under the frosted glass (headless Chrome: 56 raster tasks on the first Down before, 10 after)

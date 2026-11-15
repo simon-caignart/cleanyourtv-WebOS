@@ -183,11 +183,11 @@ function regrowIcons() {
 }
 /* tile.shadow soft and tile.highlight focus: the focused tile's deeper shadow and its light. Each row of tiles (the dock, the grid) has
    three of each, which take turns and only ever move by transform: the next one jumps to the new tile while invisible, then grows
-   and fades in with the tile; the one there shrinks and fades out with the tile it leaves. So they are drawn once, at rest (barely
-   visible, home.css), where a shadow and a light of each tile's own were drawn when that tile was focused (on the TV a missed frame
-   at every move). The one reused is the one that left longest ago, so quick presses do not cut a shadow that is still fading. A move
-   reads no layout (a tile's place is kept until the tiles or the theme change: fpGen) and makes the page work out its style once, for
-   the jump. */
+   and fades in with the tile; the one there shrinks and fades out with the tile it leaves. Where a shadow and a light of each tile's
+   own were drawn when that tile was focused (on the TV a missed frame at every move), these are drawn when a set is first used and
+   then only blended and moved. The one reused is the one that left longest ago, so quick presses do not cut a shadow that is still
+   fading. A move reads no layout (a tile's place is kept until the tiles or the theme change: fpGen) and makes the page work out its
+   style once, for the jump. */
 var fpVars = null,
   fpGen = 0;
 function focusPieces(e) {
@@ -210,9 +210,8 @@ function focusPieces(e) {
       }
       if (!p[0].style.width && first) fresh.push(p);
     });
-    /* sized at once, on the row's first tile and grown, so they are drawn at rest at the largest scale they are shown at (a piece that
-       grows past the scale it was drawn at is drawn again, one that shrinks is not). The grid waits below the screen at rest, where
-       nothing is drawn ahead: its pieces wait on the screen, invisible. */
+    /* sized at once, on the row's first tile and grown, so they are drawn at the largest scale they are shown at (a piece that grows
+       past the scale it was drawn at is drawn again, one that shrinks is not). The grid's wait on the screen, invisible. */
     fresh.forEach(function (p) {
       p[0].style.transition = p[1].style.transition = 'none';
       placeSet(p, first, true);
