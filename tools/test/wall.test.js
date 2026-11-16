@@ -15,7 +15,15 @@ function classes() {
   };
 }
 function layerEl() {
-  return { style: {}, id: '', className: '', parentNode: null, classList: classes() };
+  const e = { style: {}, id: '', className: '', parentNode: null, firstChild: null, classList: classes() };
+  e.appendChild = c => (e.firstChild = c);
+  return e;
+}
+// a canvas that records what is drawn into it
+function canvasEl() {
+  const c = { width: 300, height: 150, className: '', draws: [] };
+  c.getContext = () => ({ drawImage: (...a) => c.draws.push(a.slice(1)) });
+  return c;
 }
 
 // the service's order (POST /api/wallpapers/next) is the photos in turn; down: it does not answer. o.store: localStorage (kept
@@ -56,10 +64,12 @@ function make(cfg, photos, down, o) {
       setItem: (k, v) => (store[k] = String(v)),
       removeItem: k => delete store[k],
     },
-    window: { getComputedStyle: () => ({ opacity: '1' }) },
+    window: { getComputedStyle: () => ({ opacity: '1' }), devicePixelRatio: o.dpr || 1 },
     SCENES: { wall: u => walls.push(u) },
     Image: function () {
       const im = this;
+      im.naturalWidth = (o.size || [0, 0])[0];
+      im.naturalHeight = (o.size || [0, 0])[1];
       Object.defineProperty(im, 'src', {
         set(v) {
           shown.push(v);
@@ -70,8 +80,8 @@ function make(cfg, photos, down, o) {
       });
     },
     document: {
-      createElement: () => {
-        const e = layerEl();
+      createElement: tag => {
+        const e = tag === 'canvas' ? canvasEl() : layerEl();
         created.push(e);
         return e;
       },
@@ -163,6 +173,38 @@ run(async () => {
   ok(
     w.shown.length === 2 && during2 === 2 && held2.length === 1 && held2[0].classList.contains('on'),
     'the faded-out photo is let go once the cross-fade is over; the one on screen stays'
+  );
+
+  // a photo that covers the screen pixel for pixel is kept in a canvas at the screen's resolution (no JPEG decode on a return); any
+  // other size stays a CSS background
+  const sidesOf = (size, dpr) => {
+    const v = make({ wall: { on: true, secs: 0 } }, photos, false, { size, dpr });
+    v.WALL.sync();
+    return v.created.filter(e => e.className === 'wp');
+  };
+  let sd = sidesOf([3840, 2560], 2);
+  let cv = sd[0].firstChild;
+  ok(
+    cv && cv.width === 3840 && cv.height === 2160 && !sd[0].style.backgroundImage && cv.draws[0].join() === '0,200,3840,2160,0,0,3840,2160',
+    'a 4K photo on a 4K TV is drawn 1:1 into a canvas of the screen size, cropped by whole pixels, with no CSS background'
+  );
+  sd = sidesOf([1920, 1080], 2);
+  ok(!sd[0].firstChild && /photo\/a/.test(sd[0].style.backgroundImage), 'a Full HD photo on a 4K TV stays a CSS background (scaled)');
+  sd = sidesOf([2160, 3840], 2);
+  ok(!sd[0].firstChild && sd[0].style.backgroundImage, 'a portrait photo stays a CSS background');
+  sd = sidesOf([3841, 2160], 2);
+  ok(!sd[0].firstChild && sd[0].style.backgroundImage, 'a crop by half a pixel stays a CSS background');
+  sd = sidesOf([1920, 1080], 1);
+  ok(sd[0].firstChild && sd[0].firstChild.width === 1920, 'a Full HD photo on a Full HD screen is drawn into the canvas');
+  w = make({ wall: { on: true, secs: 0 } }, photos, false, { size: [3840, 2160], dpr: 2 });
+  w.WALL.sync();
+  w.WALL.shown();
+  w.runTimers();
+  w.runTimers();
+  const cvs = w.created.filter(e => e.className === 'wp').map(e => e.firstChild);
+  ok(
+    cvs[0] && cvs[1] && cvs.filter(c => c.width === 3840).length === 1 && cvs.filter(c => c.width === 0).length === 1,
+    'after the cross-fade the faded-out canvas is emptied: one 4K photo held'
   );
 
   // "Each time Home opens" (0 seconds): a new photo every time

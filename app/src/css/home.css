@@ -1094,6 +1094,13 @@ body[data-bar="glass"] #bar .pill.f {
   background-position: center;
   transition: opacity calc(1.2s * var(--spd)) linear;
 }
+.wpcv {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+}
 .wp.on,
 .wpon .wpd {
   opacity: 1;

@@ -99,6 +99,35 @@ var WALL = (function () {
       );
     load(id, API + '/api/wallpapers/photo/' + id, skip, '');
   }
+  /* A photo that covers the screen pixel for pixel (a 4K photo of the Wallpapers size on a 4K TV, cropped by whole pixels) is drawn once
+     into a canvas at the screen's own resolution that keeps its pixels in memory: the same pixels as the CSS background, but Home back
+     from an app no longer decodes the JPEG again (the TV drops decoded images while Home is hidden, and decoded the photo twice on
+     return). Any other size stays a CSS background, scaled by the browser as before. No photo (im absent): the side is emptied. */
+  function paint(el, im, url) {
+    var cv = el.firstChild,
+      dpr = window.devicePixelRatio || 1,
+      W = Math.round(1920 * dpr),
+      H = Math.round(1080 * dpr),
+      iw = im ? im.naturalWidth : 0,
+      ih = im ? im.naturalHeight : 0,
+      ox = (iw - W) / 2,
+      oy = (ih - H) / 2,
+      exact = ((iw === W && ih >= H) || (ih === H && iw >= W)) && ox % 1 === 0 && oy % 1 === 0;
+    if (exact) {
+      if (!cv) {
+        cv = document.createElement('canvas');
+        cv.className = 'wpcv';
+        el.appendChild(cv);
+      }
+      cv.width = W;
+      cv.height = H;
+      cv.getContext('2d', { willReadFrequently: true }).drawImage(im, ox, oy, W, H, 0, 0, W, H);
+      el.style.backgroundImage = '';
+      return;
+    }
+    if (cv) cv.width = cv.height = 0;
+    el.style.backgroundImage = im ? 'url("' + url + '")' : '';
+  }
   /* boot: the kept photo of start(); a later photo has taken its place by the time it loads, then it is not shown */
   function load(id, url, skip, text, boot) {
     var im = new Image();
@@ -117,7 +146,7 @@ var WALL = (function () {
         off = l[side ^ 1],
         held = document.body.classList.contains('wpwait');
       side ^= 1;
-      on.style.backgroundImage = 'url("' + url + '")';
+      paint(on, im, url);
       /* while Home is held back the photo is there at once: Home shows with it, without a fade from the page colour */
       if (held) on.style.transition = 'none';
       on.classList.add('on');
@@ -127,7 +156,7 @@ var WALL = (function () {
       clearTimeout(dropT);
       dropT = setTimeout(
         function () {
-          if (!off.classList.contains('on')) off.style.backgroundImage = '';
+          if (!off.classList.contains('on')) paint(off);
         },
         fade * 1000 + 200
       );
