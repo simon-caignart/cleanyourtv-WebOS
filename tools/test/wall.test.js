@@ -29,6 +29,7 @@ function make(cfg, photos, down, o) {
     timers = [],
     asked = [],
     walls = [],
+    lowqs = [],
     store = o.store || {};
   const holder = { insertBefore() {} };
   const els = {},
@@ -56,10 +57,15 @@ function make(cfg, photos, down, o) {
       setItem: (k, v) => (store[k] = String(v)),
       removeItem: k => delete store[k],
     },
-    window: { getComputedStyle: () => ({ opacity: '1' }) },
+    window: { getComputedStyle: () => ({ opacity: '1' }), devicePixelRatio: o.dpr || 1 },
     SCENES: { wall: u => walls.push(u) },
+    lowq: (el, k) => lowqs.push([el, k]),
     Image: function () {
       const im = this;
+      if (o.size) {
+        im.naturalWidth = o.size[0];
+        im.naturalHeight = o.size[1];
+      }
       Object.defineProperty(im, 'src', {
         set(v) {
           shown.push(v);
@@ -96,6 +102,7 @@ function make(cfg, photos, down, o) {
     created,
     asked,
     walls,
+    lowqs,
     store,
     body: context.document.body,
     runTimers,
@@ -292,4 +299,16 @@ run(async () => {
   w.WALL.shown();
   w.runTimers();
   ok(w.shown.length === 0, 'with Wallpapers off no photo is asked for');
+
+  // the scale the photo covers the screen at decides whether it may be drawn at low quality (tiles.js, lowq): screen pixels per photo pixel
+  const coverScale = (size, dpr) => {
+    const m = make({ wall: { on: true, secs: 900 } }, photos, false, { size, dpr });
+    m.WALL.sync();
+    const l = m.lowqs[m.lowqs.length - 1];
+    return l && l[0].classList.contains('on') ? l[1] : -1;
+  };
+  ok(coverScale([3840, 2160], 2) === 1, 'a 4K photo on a 4K TV is drawn pixel for pixel');
+  ok(coverScale([3840, 2560], 2) === 1 && coverScale([2160, 3840], 2) === 16 / 9, 'cover: the side that fills the screen sets the scale');
+  ok(coverScale([3840, 2160], 1) === 0.5 && coverScale([1920, 1080], 2) === 2, 'the same photo on a Full HD TV is drawn at half its size');
+  ok(coverScale(null, 2) < 0.01, 'a photo of unknown size counts as drawn very small (default quality)');
 });

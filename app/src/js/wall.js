@@ -118,6 +118,10 @@ var WALL = (function () {
         held = document.body.classList.contains('wpwait');
       side ^= 1;
       on.style.backgroundImage = 'url("' + url + '")';
+      /* the scale it covers the 1920 x 1080 layer at, in screen pixels (tiles.js, lowq: decoded once when Home comes back) */
+      var dpr = window.devicePixelRatio || 1;
+      if (typeof lowq !== 'undefined')
+        lowq(on, Math.max((1920 * dpr) / (im.naturalWidth || 1e9), (1080 * dpr) / (im.naturalHeight || 1e9)));
       /* while Home is held back the photo is there at once: Home shows with it, without a fade from the page colour */
       if (held) on.style.transition = 'none';
       on.classList.add('on');

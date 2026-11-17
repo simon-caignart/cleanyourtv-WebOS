@@ -78,6 +78,8 @@ function rebuild(animate) {
     fit(t, false);
     return t;
   });
+  /* after every tile is placed: one layout for all of them */
+  d.concat(g).forEach(tileLowq);
   TOPBAR = tb;
   var top = tb.concat(cardTargets());
   placeShelf(d.length);

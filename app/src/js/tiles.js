@@ -55,6 +55,7 @@ function tile(a) {
       }
       if (rows[r] && rows[r][c] === d) glowNow(d);
     }
+    if (d.parentNode) tileLowq(d);
     shrinkIcon(d, i);
   };
   i.onerror = function () {
@@ -165,6 +166,23 @@ function shrinkIcon(d, i) {
   };
   if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 4000 });
   else setTimeout(run, 1500);
+}
+/* Chromium 120 (the WebAppManager of webOS 25) decodes a picture twice whenever it is drawn again, as when Home comes back from an app
+   (the TV lets go of a hidden page's decoded pictures): once ahead of the drawing and once more while drawing, because the two look
+   for it in the decode cache under different filter qualities, unless the picture is drawn at low quality (bilinear, no mipmaps). A
+   picture drawn at half its own size or more has the very same pixels at low quality as at the default one, so only those are marked
+   (lowq); a smaller one keeps the default, which uses mipmaps there. The margin covers the press (0.96) and a tile drawn while shrunk. */
+function lowq(el, scale) {
+  el.classList.toggle('lowq', scale >= 0.55);
+}
+/* a tile picture's drawn scale at rest, in screen pixels: a Full tile picture covers the tile, any other fits inside it */
+function tileLowq(d) {
+  var i = d._i;
+  if (!i || !i.naturalWidth || !i.naturalHeight) return;
+  var dpr = window.devicePixelRatio || 1,
+    kw = (i.offsetWidth * dpr) / i.naturalWidth,
+    kh = (i.offsetHeight * dpr) / i.naturalHeight;
+  lowq(i, d.classList.contains('fill') ? Math.max(kw, kh) : Math.min(kw, kh));
 }
 function tileLog(m) {
   if (typeof logLine !== 'undefined') logLine(m);

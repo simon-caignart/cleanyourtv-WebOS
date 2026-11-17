@@ -549,6 +549,10 @@ body[data-bar="glass"] #bar .pill.f {
 .tile img {
   object-fit: contain;
 }
+/* drawn at low quality: the same pixels at half size or more, and decoded once instead of twice on webOS 25 (tiles.js, lowq) */
+.lowq {
+  image-rendering: -webkit-optimize-contrast;
+}
 .tile svg {
   fill: none;
   stroke: var(--ink);
