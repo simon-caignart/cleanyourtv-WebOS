@@ -1,7 +1,8 @@
 // Home back from an app (load() in app/src/js/layout.js): the usage counts change with every app opened, and they matter only where
 // they change the order of the grid. Then Home keeps its tiles and its theme as they are (no rebuild, no theme applied again), so
 // the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A tile launched (tile.launch zoom
-// or dim) is at rest before Home shows again, not shrinking back from its launch size on the first frames.
+// or dim) is at rest before Home shows again, not shrinking back from its launch size on the first frames. What shows only after a move
+// (the frosted glass of the grid, the focus pieces that wait) is out of the page while Home is hidden and back before any fade of theirs.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -134,5 +135,45 @@ run(async () => {
   ok(
     seen.join() === 'removed with tile f launching' && tile.cls.join(' ') === 'tile f',
     'on screen (the app did not open in 4 s) it goes back with its transitions: ' + seen.join()
+  );
+
+  // body.away: set while Home is hidden, taken off with the style read at once, so a fade that follows starts from where they rest
+  const order = [];
+  const body = { cls: ['glass-on', 'away'] };
+  body.classList = {
+    contains: c => body.cls.indexOf(c) >= 0,
+    remove: c => {
+      order.push('remove ' + c);
+      body.cls = body.cls.filter(x => x !== c);
+    },
+  };
+  const glass = {};
+  const back = {
+    document: { body },
+    $: id => (id === 'sglass' ? glass : null),
+    window: {
+      getComputedStyle: e => ({
+        get opacity() {
+          order.push('style of ' + (e === glass ? 'the glass' : 'the page') + ' read with ' + body.cls.join(' '));
+          return '0';
+        },
+      }),
+    },
+  };
+  vm.createContext(back);
+  vm.runInContext(fn('input.js', 'putBack'), back);
+  back.putBack();
+  back.putBack();
+  ok(
+    order.join() === 'remove away,style of the glass read with glass-on',
+    'the layers left out while Home was hidden are back, their style taken in at once, and only once: ' + order.join()
+  );
+  const hide = fs.readFileSync(path.join(root, 'app/src/js/input.js'), 'utf8');
+  const tilesJs = fs.readFileSync(path.join(root, 'app/src/js/tiles.js'), 'utf8');
+  ok(
+    /if \(document\.hidden\) \{[\s\S]*?classList\.add\('away'\)[\s\S]*?\} else/.test(hide) &&
+      /putBack\(\);\s*document\.body\.classList\.add\('ahead'\)/.test(hide) &&
+      /function focusPieces\(e\) \{\s*putBack\(\);/.test(tilesJs),
+    'body.away is set when Home hides, and taken off by the drawing ahead and by any move of the focus pieces'
   );
 });

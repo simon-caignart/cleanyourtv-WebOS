@@ -476,6 +476,7 @@ function drawAhead(wait) {
   aheadT = setTimeout(function () {
     var since = Date.now() - lastKey;
     if (since >= 0 && since < 1500) return drawAhead(500);
+    putBack();
     document.body.classList.add('ahead');
     aheadT = setTimeout(endAhead, 800);
   }, wait);
@@ -483,6 +484,16 @@ function drawAhead(wait) {
 function endAhead() {
   clearTimeout(aheadT);
   document.body.classList.remove('ahead');
+}
+/* What shows only after a move (the frosted glass of the grid, the focus shadows and lights that wait for the next tile) is left out
+   of the page while Home is hidden (body.away): a hidden page loses all it had drawn, and Home back from an app then has only what is
+   on screen to draw again before its first frame. It is back with the drawing ahead, or at the first move of the focus. */
+function putBack() {
+  var b = document.body;
+  if (!b.classList.contains('away')) return;
+  b.classList.remove('away');
+  /* the style taken in at once, so a fade that starts now (the grid opening, a piece coming in) starts from where they rest */
+  window.getComputedStyle($('sglass') || b).opacity;
 }
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {
@@ -493,6 +504,7 @@ document.addEventListener('visibilitychange', function () {
       return;
     }
     WALL.hidden();
+    document.body.classList.add('away');
     stopMoving(); /* leaving Home while a tile is moved keeps where it is now */
     /* a tile that zoomed away or dimmed for a launch is at rest in its place before Home is shown again */
     var lz = document.querySelectorAll('.tile.launching');

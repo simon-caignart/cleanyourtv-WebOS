@@ -302,6 +302,7 @@ function regrowIcons() {
 var fpVars = null,
   fpGen = 0;
 function focusPieces(e) {
+  putBack();
   var soft = document.body.getAttribute('data-tshadow') === 'soft',
     light = document.body.getAttribute('data-hl') === 'focus';
   ['dock', 'grid'].forEach(function (id) {

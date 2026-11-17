@@ -761,6 +761,10 @@ body[data-bar="glass"] #bar .pill.f {
 .snap .fpc {
   transition: none;
 }
+/* while Home is hidden the waiting ones are out of the page (putBack, input.js) */
+.away .fpc:not(.on) {
+  display: none;
+}
 /* tile.ringWidth 0 with the soft shadow: the focused tile keeps the box-shadow it has at rest, and no empty ring box is made */
 [data-noring] .tile.f::before {
   display: none;
@@ -1801,6 +1805,10 @@ body.scenes-on {
 }
 .glass-on.ahead #sglass {
   opacity: 0.004;
+}
+/* and out of the page while Home is hidden with the grid closed (putBack, input.js) */
+.away:not(.grid-open) #sglass {
+  display: none;
 }
 .glass-on.grid-open #sglass {
   opacity: 1;

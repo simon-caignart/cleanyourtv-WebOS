@@ -58,6 +58,8 @@ run(async () => {
   const context = {
     document: { body, createElement: element, documentElement: {} },
     $: id => boxes[id] || null,
+    // input.js: puts back the pieces left out of the page while Home was hidden
+    putBack() {},
     window: {
       getComputedStyle: el => ({
         getPropertyValue: k => vars[k] || '',
