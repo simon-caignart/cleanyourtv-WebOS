@@ -100,16 +100,27 @@ function unlaunch(e) {
   window.getComputedStyle(e).transform;
   e.classList.remove('still');
 }
+/* The tile of an app that opens zooms away (or dims) without its shadow and light. An app that is already running comes to the front
+   at once, before a frame of the zoom reaches the screen (LG C4, webOS 25), while Home goes on drawing the zoom until it is hidden;
+   the TV keeps Home's last frame and shows it again when Home comes back, until Home has drawn a new one. So for a running app the
+   zoom waits: Home is hidden by then and it never starts, and the frame kept is Home at rest. */
+var launchT = 0;
+function zoomAway(e, wait) {
+  clearTimeout(launchT);
+  if (wait)
+    return (launchT = setTimeout(function () {
+      if (!document.hidden && e.classList.contains('f')) zoomAway(e, 0);
+    }, wait));
+  e.classList.add('launching');
+  focusPieces(null);
+  launchT = setTimeout(function () {
+    unlaunch(e);
+  }, 4000);
+}
 function act(e) {
   var a = e._a;
   if (a) {
-    if (!a.sys) {
-      e.classList.add('launching');
-      focusPieces(null); /* the tile zooms away without its shadow and light */
-      setTimeout(function () {
-        unlaunch(e);
-      }, 4000);
-    }
+    if (!a.sys) zoomAway(e, running[a.id] ? 500 : 0);
     return launch(a.id);
   }
   var o = e._o || {};

@@ -266,7 +266,7 @@ when the focus moves down into it (Back or Up closes it); a dock at the top leav
 | `tile.rim` | 0 to 1 | `0.5` | Opacity of the bright rim of the focused tile (`tile.highlight` `focus`). |
 | `tile.shadow` | `focus`, `soft` | `focus` | `focus`: a dark shadow under the focused tile; `soft`: every tile casts a faint shadow, and a deeper one under the focused tile fades in as it grows. |
 | `tile.press` | 0.8 to 1.3 | `0.96` | Scale of a tile while OK is held down, of its resting size; above 1 it sinks from its focused size without shrinking below rest. |
-| `tile.launch` | `dim`, `zoom` | `dim` | `dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens. |
+| `tile.launch` | `dim`, `zoom` | `dim` | `dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens. An app that is already running comes to the front at once: its tile zooms or dims only if Home is still on screen half a second later. |
 | `tile.shadowStrength` | 0 to 1 | `1` | Strength of the `soft` shadows (`tile.shadow`). |
 | `tile.border` | 0 to 0.6 | `0` | Opacity of a thin outline on every tile. |
 | `tile.ringWidth` | 0 to 10 | `4` | Width of the focus ring, in px; 0 for none. |

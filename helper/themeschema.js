@@ -391,7 +391,7 @@ const SCHEMA = [
     'enum',
     ['dim', 'zoom'],
     'dim',
-    '`dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens.',
+    '`dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens. An app that is already running comes to the front at once: its tile zooms or dims only if Home is still on screen half a second later.',
   ],
   ['tile.shadowStrength', 'num', [0, 1], 1, 'Strength of the `soft` shadows (`tile.shadow`).'],
   ['tile.border', 'num', [0, 0.6], 0, 'Opacity of a thin outline on every tile.'],
