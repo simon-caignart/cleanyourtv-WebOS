@@ -1,13 +1,15 @@
 // Tile pictures (app/src/js/tiles.js): a picture larger than its tile is ever drawn is replaced, once and while idle, by a copy of the
 // size it is shown at (JPEG, or PNG for one with see-through parts); a theme with larger tiles loads the picture at its own size again.
 // On a TV that draws Home at half its devicePixelRatio (webOS 25 on an LG C4: 2, on a 1920 x 1080 surface) the copy is halved: each
-// 2 x 2 block averaged, as PNG, the picture the browser itself draws there.
+// 2 x 2 block averaged, as PNG, the picture the browser itself draws there. The page tells by its layout: Chromium 108 and up keep a
+// width of 1/128 CSS pixel only where a CSS pixel is two screen pixels.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const { root, ok, run } = require('./lib');
 
-function setup(win) {
+// engine: the browser's user agent and the width it lays out a 1/128 CSS pixel wide box at (none: no user agent)
+function setup(win, engine) {
   // Lounge on a 4K TV: dock and grid tiles 250 x 150, focus 1.22, drawn at 2 screen pixels per CSS pixel
   let vars = {
     '--dock-w': '250px',
@@ -66,7 +68,19 @@ function setup(win) {
     API: 'http://127.0.0.1:8765',
     LIVE_ICON: 'data:image/svg+xml;base64,PHN2Zy8+',
     Image: image,
-    document: { createElement: n => (n === 'canvas' ? canvas() : { appendChild() {}, remove() {}, classList: { add() {} } }) },
+    document: {
+      documentElement: { appendChild() {}, removeChild() {} },
+      createElement: n =>
+        n === 'canvas'
+          ? canvas()
+          : {
+              style: {},
+              appendChild() {},
+              remove() {},
+              classList: { add() {} },
+              getBoundingClientRect: () => ({ width: engine ? engine.w : 0 }),
+            },
+    },
     URL: {
       createObjectURL: b => {
         const u = 'blob:' + Object.keys(made).length;
@@ -78,6 +92,7 @@ function setup(win) {
     window: Object.assign(
       {
         devicePixelRatio: 2,
+        navigator: { userAgent: engine ? engine.ua : '' },
         getComputedStyle: () => ({ getPropertyValue: k => vars[k] || '' }),
         requestIdleCallback: fn => fn(),
       },
@@ -159,8 +174,9 @@ run(async () => {
     'a theme with larger tiles shows the picture from its own file again'
   );
 
-  // the TV draws Home at half its devicePixelRatio: webOS gives the app a 1920 pixel wide screen, the page is 1920 CSS pixels wide
-  const tv = setup({ innerWidth: 1920, webOSSystem: { deviceInfo: JSON.stringify({ screenWidth: 1920, screenHeight: 1080 }) } });
+  // the TV draws Home at half its devicePixelRatio: Chromium 120 lays the page out at one screen pixel per CSS pixel
+  const c120 = 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const tv = setup({}, { ua: c120, w: 0 });
   const hn = tv.context.iconNeed();
   ok(
     hn.half && hn.w === 610 && hn.h === 366 && hn.key === '305x183',
@@ -200,8 +216,10 @@ run(async () => {
   tv.pictures['http://127.0.0.1:8765/icon/mid'] = { w: 500, h: 300 };
   tv.context.tile({ id: 'mid', title: 'Mid' });
   ok(tv.blobs.length === 3, 'not one with see-through parts, nor one less than twice the drawn size');
-  const plain = setup({ innerWidth: 1920, webOSSystem: { deviceInfo: JSON.stringify({ screenWidth: 3840 }) } }).context.iconNeed();
+  const plain = setup({}, { ua: c120, w: 0.0078125 }).context.iconNeed();
   ok(!plain.half && plain.key === '610x366', 'a TV that draws Home at its devicePixelRatio keeps copies as before');
+  const old = setup({}, { ua: c120.replace('120.0', '94.0'), w: 0 }).context.iconNeed();
+  ok(!old.half && old.key === '610x366', 'an older Chromium, which may lay a page out in CSS pixels at any scale, keeps copies as before');
 
   // the halving itself
   const src = new Uint8ClampedArray(3 * 3 * 4);

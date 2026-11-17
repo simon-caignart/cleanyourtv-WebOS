@@ -86,18 +86,23 @@ function iconUrl(a) {
   if (a.iv && a.is && a.is === iconNeed().key) u += '&s=' + a.is;
   return u;
 }
-/* Screen pixels per CSS pixel as Home is drawn: the devicePixelRatio, unless webOS gives the app a narrower screen
-   (deviceInfo.screenWidth). webOS 25 on a 4K LG C4 reports a devicePixelRatio of 2 and draws Home on a 1920 x 1080 surface. */
+/* Screen pixels per CSS pixel as Home is drawn: the devicePixelRatio, or 1 where the page is laid out at one screen pixel per CSS
+   pixel. webOS 25 on a 4K LG C4 tells the page a devicePixelRatio of 2 and draws Home on a 1920 x 1080 surface. Chromium 108 and up
+   lay a page out in screen pixels, to 1/64 of one: a width of 1/128 CSS pixel is kept only where a CSS pixel is two screen pixels. */
+var drawn = 0;
 function drawnScale() {
   var dpr = window.devicePixelRatio || 1,
-    css = window.innerWidth || 0,
-    w = 0;
-  try {
-    var s = (window.webOSSystem || window.PalmSystem || {}).deviceInfo,
-      i = typeof s === 'string' ? JSON.parse(s) : s;
-    w = (i && +i.screenWidth) || 0;
-  } catch (e) {}
-  return w > 0 && css > 0 && w / css < dpr ? w / css : dpr;
+    v = /Chrome\/(\d+)/.exec((window.navigator || {}).userAgent || ''),
+    r = document.documentElement;
+  if (dpr < 2 || !v || +v[1] < 108 || !r) return dpr;
+  if (!drawn) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:0;top:0;width:0.0078125px;height:1px;visibility:hidden';
+    r.appendChild(d);
+    drawn = d.getBoundingClientRect().width > 0 ? dpr : 1;
+    r.removeChild(d);
+  }
+  return drawn;
 }
 /* The largest a tile's picture is drawn, in screen pixels: a dock or a grid tile grown by its focus scale; key: the size its copy is
    kept at. On a TV that draws Home at half its devicePixelRatio the copy is made at twice that size and then halved (half, halfCopy). */
