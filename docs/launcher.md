@@ -208,6 +208,9 @@ either way of showing it.
 Home shows a picture larger than its tile is ever drawn from a copy of that size, made once while it is idle and then kept by the
 service beside the picture (until the picture or the size of the tiles changes): the TV decodes every picture again each time Home
 comes back from an app, and a smaller one decodes faster.
+On a TV that draws Home at half its device pixel ratio (webOS 25 on an LG C4 reports 2 and draws Home at 1920 x 1080), the copy is
+halved once more, each 2 x 2 block of pixels averaged and kept as PNG: the same picture the browser draws there, which it would
+otherwise decode at full size and halve on the CPU each time Home comes back.
 A picture drawn at half its size or more (the tile pictures, the Wallpapers photo on a 4K TV) is drawn at low quality, which gives the
 same pixels at those sizes: webOS 25's browser then decodes it once instead of twice when Home comes back.
 The screen on the TV and the phone page give the sizes that fit best: for Full tile the size of a dock tile in the panel's own pixels

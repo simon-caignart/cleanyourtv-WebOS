@@ -83,23 +83,41 @@ function tile(a) {
    (is, sent by shrinkIcon), when that copy was made for tiles of this size */
 function iconUrl(a) {
   var u = API + '/icon/' + encodeURIComponent(a.id) + (a.iv ? '?v=' + a.iv : '');
-  if (a.iv && a.is) {
-    var n = iconNeed();
-    if (a.is === n.w + 'x' + n.h) u += '&s=' + a.is;
-  }
+  if (a.iv && a.is && a.is === iconNeed().key) u += '&s=' + a.is;
   return u;
 }
-/* The largest a tile's picture is drawn, in screen pixels: a dock or a grid tile grown by its focus scale. */
+/* Screen pixels per CSS pixel as Home is drawn: the devicePixelRatio, unless webOS gives the app a narrower screen
+   (deviceInfo.screenWidth). webOS 25 on a 4K LG C4 reports a devicePixelRatio of 2 and draws Home on a 1920 x 1080 surface. */
+function drawnScale() {
+  var dpr = window.devicePixelRatio || 1,
+    css = window.innerWidth || 0,
+    w = 0;
+  try {
+    var s = (window.webOSSystem || window.PalmSystem || {}).deviceInfo,
+      i = typeof s === 'string' ? JSON.parse(s) : s;
+    w = (i && +i.screenWidth) || 0;
+  } catch (e) {}
+  return w > 0 && css > 0 && w / css < dpr ? w / css : dpr;
+}
+/* The largest a tile's picture is drawn, in screen pixels: a dock or a grid tile grown by its focus scale; key: the size its copy is
+   kept at. On a TV that draws Home at half its devicePixelRatio the copy is made at twice that size and then halved (half, halfCopy). */
 function iconNeed() {
   var cs = window.getComputedStyle(document.documentElement),
     n = function (k, d) {
       return parseFloat(cs.getPropertyValue(k)) || d;
     },
-    dpr = window.devicePixelRatio || 1;
-  return {
-    w: Math.ceil(Math.max(n('--dock-w', 408) * n('--dock-fs', 1.05), n('--tile-w', 151) * n('--grid-fs', 1.12)) * dpr),
-    h: Math.ceil(Math.max(n('--dock-h', 230) * n('--dock-fs', 1.05), n('--tile-h', 151) * n('--grid-fs', 1.12)) * dpr),
-  };
+    dpr = window.devicePixelRatio || 1,
+    ds = drawnScale(),
+    w = Math.max(n('--dock-w', 408) * n('--dock-fs', 1.05), n('--tile-w', 151) * n('--grid-fs', 1.12)),
+    h = Math.max(n('--dock-h', 230) * n('--dock-fs', 1.05), n('--tile-h', 151) * n('--grid-fs', 1.12));
+  if (Math.abs(dpr - 2 * ds) < 0.01) {
+    var hw = Math.ceil(w * ds),
+      hh = Math.ceil(h * ds);
+    return { w: 2 * hw, h: 2 * hh, half: true, key: hw + 'x' + hh };
+  }
+  w = Math.ceil(w * dpr);
+  h = Math.ceil(h * dpr);
+  return { w: w, h: h, key: w + 'x' + h };
 }
 /* the scale that makes a picture of w x h just cover that size, or 1 when that would not save a third of its pixels */
 function shrinkScale(w, h, need) {
@@ -116,8 +134,12 @@ function shrinkIcon(d, i) {
   var src = i.src,
     need = iconNeed();
   if (d._small || src.indexOf(API + '/icon/') !== 0 || !window.URL || !URL.createObjectURL) return;
-  var k = shrinkScale(i.naturalWidth, i.naturalHeight, need);
-  if (k >= 1) return;
+  var w = i.naturalWidth,
+    h = i.naturalHeight,
+    k = shrinkScale(w, h, need),
+    /* on a TV that draws Home at half its devicePixelRatio, a picture at least twice the drawn size is shown from its half (halfOf) */
+    halfOnly = k >= 1 && need.half && w > 0 && h > 0 && Math.max(need.w / w, need.h / h) <= 1;
+  if (k >= 1 && !halfOnly) return;
   var run = function () {
     var j = new Image();
     j.crossOrigin = 'anonymous';
@@ -127,13 +149,7 @@ function shrinkIcon(d, i) {
     j.onload = function () {
       if (d._i !== i || i.src !== src) return;
       try {
-        var c = document.createElement('canvas'),
-          a = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(j.naturalWidth * k));
-        c.height = Math.max(1, Math.round(j.naturalHeight * k));
-        var g = c.getContext('2d');
-        g.imageSmoothingQuality = 'high';
-        g.drawImage(j, 0, 0, c.width, c.height);
+        var a = document.createElement('canvas');
         a.width = 32;
         a.height = 20;
         var ga = a.getContext('2d');
@@ -141,19 +157,33 @@ function shrinkIcon(d, i) {
         var px = ga.getImageData(0, 0, 32, 20).data,
           clear = false;
         for (var p = 3; p < px.length && !clear; p += 4) clear = px[p] < 250;
+        var keep = function (b) {
+          if (!b || d._i !== i || i.src !== src) return;
+          d._small = src;
+          d._need = need;
+          i.src = URL.createObjectURL(b);
+          var a = d._a;
+          if (a && a.iv) {
+            var x = new XMLHttpRequest();
+            x.open('POST', API + '/api/icons/small/' + encodeURIComponent(a.id) + '?v=' + a.iv + '&s=' + need.key);
+            x.setRequestHeader('content-type', b.type || 'image/jpeg');
+            x.send(b);
+          }
+        };
+        if (halfOnly) {
+          if (!clear) halfOf(j, keep);
+          return;
+        }
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(j.naturalWidth * k));
+        c.height = Math.max(1, Math.round(j.naturalHeight * k));
+        var g = c.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(j, 0, 0, c.width, c.height);
         c.toBlob(
           function (b) {
-            if (!b || d._i !== i || i.src !== src) return;
-            d._small = src;
-            d._need = need;
-            i.src = URL.createObjectURL(b);
-            var a = d._a;
-            if (a && a.iv) {
-              var x = new XMLHttpRequest();
-              x.open('POST', API + '/api/icons/small/' + encodeURIComponent(a.id) + '?v=' + a.iv + '&s=' + need.w + 'x' + need.h);
-              x.setRequestHeader('content-type', b.type || 'image/jpeg');
-              x.send(b);
-            }
+            if (b && need.half && !clear) halfCopy(b, keep);
+            else keep(b);
           },
           clear ? 'image/png' : 'image/jpeg',
           0.92
@@ -166,6 +196,64 @@ function shrinkIcon(d, i) {
   };
   if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 4000 });
   else setTimeout(run, 1500);
+}
+/* The copy for a TV that draws Home at half its devicePixelRatio: the JPEG copy decoded and halved (halfOf). A copy that cannot be
+   halved is kept as it is. */
+function halfCopy(b, done) {
+  var u = URL.createObjectURL(b),
+    j = new Image();
+  j.onerror = function () {
+    URL.revokeObjectURL(u);
+    done(b);
+  };
+  j.onload = function () {
+    URL.revokeObjectURL(u);
+    halfOf(j, function (p) {
+      done(p || b);
+    });
+  };
+  j.src = u;
+}
+/* A loaded picture at half its size, each 2 x 2 block of pixels averaged, as PNG (done(null) when it cannot be made). It is the
+   picture the browser draws on a TV that draws Home at half its devicePixelRatio: there it shows a picture drawn at half its size or
+   less from its half, which it makes again each time Home comes back, and when the picture is a JPEG whose sides are not whole
+   16-pixel blocks it decodes it at full size and halves it on the CPU, ~20 ms a picture on webOS 25, where this PNG decodes in ~1 ms. */
+function halfOf(j, done) {
+  try {
+    var w = j.naturalWidth,
+      h = j.naturalHeight,
+      c = document.createElement('canvas'),
+      o = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    var g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(j, 0, 0);
+    o.width = (w + 1) >> 1;
+    o.height = (h + 1) >> 1;
+    var go = o.getContext('2d'),
+      out = go.createImageData(o.width, o.height);
+    halve(g.getImageData(0, 0, w, h).data, w, h, out.data);
+    go.putImageData(out, 0, 0);
+    o.toBlob(done, 'image/png');
+  } catch (e) {
+    done(null);
+  }
+}
+/* an RGBA picture of w x h into d at half its size: each 2 x 2 block averaged and rounded (the last row or column of an odd size
+   with itself) */
+function halve(s, w, h, d) {
+  var W = (w + 1) >> 1,
+    H = (h + 1) >> 1;
+  for (var y = 0; y < H; y++) {
+    var r0 = 2 * y * w * 4,
+      r1 = Math.min(2 * y + 1, h - 1) * w * 4;
+    for (var x = 0; x < W; x++) {
+      var c0 = 8 * x,
+        c1 = Math.min(2 * x + 1, w - 1) * 4,
+        t = (y * W + x) * 4;
+      for (var k = 0; k < 4; k++) d[t + k] = (s[r0 + c0 + k] + s[r0 + c1 + k] + s[r1 + c0 + k] + s[r1 + c1 + k] + 2) >> 2;
+    }
+  }
 }
 /* Chromium 120 (the WebAppManager of webOS 25) decodes a picture twice whenever it is drawn again, as when Home comes back from an app
    (the TV lets go of a hidden page's decoded pictures): once ahead of the drawing and once more while drawing, because the two look
