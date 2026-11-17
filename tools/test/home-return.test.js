@@ -1,6 +1,7 @@
 // Home back from an app (load() in app/src/js/layout.js): the usage counts change with every app opened, and they matter only where
 // they change the order of the grid. Then Home keeps its tiles and its theme as they are (no rebuild, no theme applied again), so
-// the TV has nothing to lay out and paint again but what it dropped while Home was in the background.
+// the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A tile launched (tile.launch zoom
+// or dim) is at rest before Home shows again, not shrinking back from its launch size on the first frames.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -96,4 +97,42 @@ run(async () => {
   reply = list({ b: 6, c: 3, d: 9 }, { theme: { id: 'moon', vars: { '--x': '2' } }, lang: 'fr' });
   context.load();
   ok(calls.join() === 'theme,rebuild', 'and the theme again in another language: ' + calls.join());
+
+  // a launched tile put back in its place: what the style is when its launch class goes, and whether the browser takes it in then
+  const seen = [];
+  const tile = { cls: ['tile', 'f', 'launching'] };
+  tile.classList = {
+    contains: c => tile.cls.indexOf(c) >= 0,
+    add: c => tile.cls.push(c),
+    remove: c => {
+      if (c === 'launching') seen.push('removed with ' + tile.cls.join(' '));
+      tile.cls = tile.cls.filter(x => x !== c);
+    },
+  };
+  const page = {
+    document: { hidden: true },
+    window: {
+      getComputedStyle: e => ({
+        get transform() {
+          seen.push('style read with ' + e.cls.join(' '));
+          return 'none';
+        },
+      }),
+    },
+  };
+  vm.createContext(page);
+  vm.runInContext(fn('config.js', 'unlaunch'), page);
+  page.unlaunch(tile);
+  ok(
+    seen.join() === 'removed with tile f launching still,style read with tile f still' && tile.cls.join(' ') === 'tile f',
+    'while Home is hidden, a launched tile is put back with its transitions off and the style taken in at once: ' + seen.join()
+  );
+  seen.length = 0;
+  tile.cls = ['tile', 'f', 'launching'];
+  page.document.hidden = false;
+  page.unlaunch(tile);
+  ok(
+    seen.join() === 'removed with tile f launching' && tile.cls.join(' ') === 'tile f',
+    'on screen (the app did not open in 4 s) it goes back with its transitions: ' + seen.join()
+  );
 });

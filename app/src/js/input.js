@@ -494,11 +494,9 @@ document.addEventListener('visibilitychange', function () {
     }
     WALL.hidden();
     stopMoving(); /* leaving Home while a tile is moved keeps where it is now */
-    /* a tile that zoomed away for a launch (tile.launch zoom) is back in its place when Home shows again */
-    if (document.body.getAttribute('data-launch') === 'zoom') {
-      var lz = document.querySelectorAll('.tile.launching');
-      for (var li = 0; li < lz.length; li++) lz[li].classList.remove('launching');
-    }
+    /* a tile that zoomed away or dimmed for a launch is at rest in its place before Home is shown again */
+    var lz = document.querySelectorAll('.tile.launching');
+    for (var li = 0; li < lz.length; li++) unlaunch(lz[li]);
     SCENES.hidden();
     if (LIVE.on) LIVE.exit();
     closeRunningMenu();

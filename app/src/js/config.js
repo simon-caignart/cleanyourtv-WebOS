@@ -90,6 +90,16 @@ function title(id) {
 }
 
 /* ---------- actions ---------- */
+/* a launched tile back in its place. While Home is hidden it is put there at once, without its transitions: a hidden page draws no
+   frames, so a shrink back started then would play only once Home is on screen again, from the grown tile (tile.launch zoom). */
+function unlaunch(e) {
+  if (!e.classList.contains('launching')) return;
+  if (!document.hidden) return e.classList.remove('launching');
+  e.classList.add('still');
+  e.classList.remove('launching');
+  window.getComputedStyle(e).transform;
+  e.classList.remove('still');
+}
 function act(e) {
   var a = e._a;
   if (a) {
@@ -97,7 +107,7 @@ function act(e) {
       e.classList.add('launching');
       focusPieces(null); /* the tile zooms away without its shadow and light */
       setTimeout(function () {
-        e.classList.remove('launching');
+        unlaunch(e);
       }, 4000);
     }
     return launch(a.id);
