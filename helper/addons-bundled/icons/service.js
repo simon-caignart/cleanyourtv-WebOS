@@ -14,7 +14,7 @@
 // The phone page (POST pair) is a short-lived server on the LAN, port 8794, that needs the code shown on the TV; its API is under /api/
 // on that port.
 // It and the manager show the picture sizes that fit the tiles of the theme in use (sizes()): scale is the screen's pixels per CSS
-// pixel, measured by the manager (2 on a 4K TV, where Home is drawn at 3840 x 2160).
+// pixel, measured by the manager (2 on a 4K TV: its devicePixelRatio).
 const fs = require('fs'),
   http = require('http'),
   path = require('path');
@@ -261,7 +261,7 @@ function create(ctx) {
     const th = ctx.feature && ctx.feature('theme');
     const v = (th && th.resolved && th.resolved().vars) || {};
     const n = (k, d) => Math.round((parseFloat(v[k]) || d) * scale);
-    // a backdrop fills the screen: as wide as Wallpapers' Picture size (Home is drawn at 3840 x 2160 on a 4K TV)
+    // a backdrop fills the screen: as wide as Wallpapers' Picture size
     const bw = (config.get().wallpapers || {}).size === 'hd' ? 1920 : 3840;
     return {
       tile: { w: n('--dock-w', 408), h: n('--dock-h', 230) },

@@ -215,7 +215,7 @@ A picture drawn at half its size or more (the tile pictures, the Wallpapers phot
 same pixels at those sizes: webOS 25's browser then decodes it once instead of twice when Home comes back.
 The screen on the TV and the phone page give the sizes that fit best: for Full tile the size of a dock tile in the panel's own pixels
 (the grid's tiles, which are squarer, show its middle), for Icon 512 x 512. They follow the theme, and the manager measures the screen's
-scale, so a 4K TV, where Home is drawn at 3840 x 2160, gets twice the size of its CSS pixels. Back on Home the tile shows the picture in
+scale, so a 4K TV, which reports two screen pixels per CSS pixel, gets twice the size of its CSS pixels. Back on Home the tile shows the picture in
 the dock, the grid and the Inputs list. **Reset icon**, on Home or on the phone page, gives the app its own icon again. The pictures (JPEG,
 PNG or WebP, at most 1 MB) are kept in `/media/developer/cleanyourtv/icons/` (Icon) and `icons/tile/` (Full tile), one per app, at most
 300 (the launcher's copies at the tiles' size in `icons/small/`); the app's own files are never touched, so the picture stays when the app or CleanYourTV updates. **More** > **App icons** in the

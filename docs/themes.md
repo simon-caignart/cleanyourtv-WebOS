@@ -338,7 +338,7 @@ shows photos for the time of year in place of the five landscapes. See [Add-ons]
 | Key | Required | What it does |
 |---|---|---|
 | `id` | yes | Short identifier (`a–z`, `0–9`, `-`). Must be unique within the list. |
-| `image` | yes | Main landscape file (`.jpg` or `.webp`, up to 3 MB). 1920 × 1080 is the native size; a 4K TV renders Home at 3840 × 2160 (device pixel ratio 2), so 2560 × 1440 or higher gives a sharper result. |
+| `image` | yes | Main landscape file (`.jpg` or `.webp`, up to 3 MB). 1920 × 1080 is the native size. A 4K TV reports a device pixel ratio of 2; one that draws Home at 3840 × 2160 shows 2560 × 1440 or higher sharper, while webOS 25 on an LG C4 draws Home at 1920 × 1080. |
 | `glass` | yes | A blurred copy of the same image, used as the fill of the glass clock and glass cards. |
 | `front` | no | A foreground cut-out (`.webp` with transparency) drawn over the clock, so scenery stands in front of the digits. |
 | `clock.top` | no | Distance from the top of the screen to the clock, in px (default 150). |

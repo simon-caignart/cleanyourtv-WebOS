@@ -6089,8 +6089,8 @@ var SCENES = (function () {
   }
   /* frosted glass behind the app grid (cards.style glass): the blurred scene, or the Wallpapers photo the scenes yield to, instead of the
      dark layer. It is drawn into small canvases the compositor scales up: a full-screen background image would be decoded only when the
-     grid opens and rastered again at the TV's 3840 x 2160 on every opening (frozen frames on an LG C4), while a 960 x 540 canvas texture
-     stays resident. Two canvases take turns, so a new picture fades in over the old one. */
+     grid opens and rastered again on every opening (frozen frames on an LG C4), while a 960 x 540 canvas texture
+     stays resident while Home is on screen. Two canvases take turns, so a new picture fades in over the old one. */
   function frostEl() {
     if (frost) return frost;
     frost = document.createElement('div');

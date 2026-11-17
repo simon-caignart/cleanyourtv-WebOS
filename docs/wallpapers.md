@@ -49,7 +49,7 @@ and closes when you leave the QR screen. It is not encrypted: photos travel over
 | Photos on Home | Landscape only (the default) or All, as in Customise > Wallpapers. |
 | Mix | Equal per source (the default) or By number of photos, as in Customise > Wallpapers. |
 | Share of (a source) | Only with a photo source installed: one row for the uploads and one per source, **Less** (half), **Normal**, **More** (twice) or **Much more** (four times as many turns). |
-| Picture size | 4K (3840 pixels, the default) or Full HD (1920). Applies to new uploads and to what photo sources download next. On a 4K TV, Home is laid out at 1920 x 1080 but drawn at 3840 x 2160, so a 4K photo is shown pixel for pixel; Full HD fits about four times as many photos in 150 MB. |
+| Picture size | 4K (3840 pixels, the default) or Full HD (1920). Applies to new uploads and to what photo sources download next. Home is laid out at 1920 x 1080; a 4K TV reports two screen pixels for each of those, but webOS 25 on an LG C4 draws Home at 1920 x 1080, so there a 4K photo is shown at 1920 x 1080 too. Full HD fits about four times as many photos in 150 MB. |
 | Remove all uploads | Deletes every uploaded photo, after a confirmation. |
 | Immich is an add-on now, Remove old Immich data | Only on a TV that used Immich before it became an add-on: the old settings and photos wait until you install the Immich add-on, which takes them over once. **Remove old Immich data** deletes them instead, after a confirmation. |
 
