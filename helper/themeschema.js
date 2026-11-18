@@ -386,13 +386,6 @@ const SCHEMA = [
     0.96,
     'Scale of a tile while OK is held down, of its resting size; above 1 it sinks from its focused size without shrinking below rest.',
   ],
-  [
-    'tile.launch',
-    'enum',
-    ['dim', 'zoom'],
-    'dim',
-    '`dim`: the tile of an app that is opening dims a little; `zoom`: it grows and fades out in about 0.4 s, while the app opens. An app that is already running comes to the front at once: its tile zooms or dims only if Home is still on screen half a second later.',
-  ],
   ['tile.shadowStrength', 'num', [0, 1], 1, 'Strength of the `soft` shadows (`tile.shadow`).'],
   ['tile.border', 'num', [0, 0.6], 0, 'Opacity of a thin outline on every tile.'],
   ['tile.ringWidth', 'int', [0, 10], 4, 'Width of the focus ring, in px; 0 for none.'],
@@ -875,11 +868,6 @@ function resolve(t, accent) {
   if (v['type.opsz'] === 'display') {
     vars['--fvs'] = '"opsz" 32';
     vars['--fvs-s'] = '"opsz" 14';
-  }
-  if (v['tile.launch'] !== 'dim') {
-    attrs.launch = v['tile.launch'];
-    vars['--launch-sd'] = String(Math.round(v['dock.focusScale'] * 130) / 100);
-    vars['--launch-sg'] = String(Math.round(v['grid.focusScale'] * 130) / 100);
   }
   // only a theme that names the focused app under its tile carries this, so the replies for the other themes stay as they were
   if (v['tile.label'] !== 'none') {

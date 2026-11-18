@@ -1,9 +1,9 @@
 // Home back from an app (load() in app/src/js/layout.js): the usage counts change with every app opened, and they matter only where
 // they change the order of the grid. Then Home keeps its tiles and its theme as they are (no rebuild, no theme applied again), so
-// the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A tile launched (tile.launch zoom
-// or dim) is at rest before Home shows again, not shrinking back from its launch size on the first frames. What shows only after a move
+// the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A launched tile, dimmed, is at
+// rest before Home shows again, not fading back on the first frames. What shows only after a move
 // (the frosted glass of the grid, the focus pieces that wait) is out of the page while Home is hidden and back before any fade of theirs.
-// The zoom of an app already running waits, so the frame the TV keeps of Home when the app comes to the front is Home at rest.
+// The dim of an app already running waits, so the frame the TV keeps of Home when the app comes to the front is Home at rest.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -138,18 +138,18 @@ run(async () => {
     'on screen (the app did not open in 4 s) it goes back with its transitions: ' + seen.join()
   );
 
-  // the launch zoom of an app already running waits, and does not start once Home is hidden: the TV keeps Home's last frame
+  // the launch dim of an app already running waits, and does not start once Home is hidden: the TV keeps Home's last frame
   const timers = [],
     pieces = [];
-  const zoom = {
+  const dim = {
     document: { hidden: false },
     window: page.window,
     focusPieces: e => pieces.push(e),
     setTimeout: (f, ms) => timers.push({ f, ms }) && timers.length,
     clearTimeout() {},
   };
-  vm.createContext(zoom);
-  vm.runInContext(fn('config.js', 'unlaunch') + 'var launchT = 0;' + fn('config.js', 'zoomAway'), zoom);
+  vm.createContext(dim);
+  vm.runInContext(fn('config.js', 'unlaunch') + 'var launchT = 0;' + fn('config.js', 'launchDim'), dim);
   const fresh = () => {
     const el = { cls: ['tile', 'f'] };
     el.classList = {
@@ -160,23 +160,23 @@ run(async () => {
     return el;
   };
   const cold = fresh();
-  zoom.zoomAway(cold, 0);
+  dim.launchDim(cold, 0);
   ok(
     cold.cls.indexOf('launching') >= 0 && pieces.length === 1 && pieces[0] === null && timers[0].ms === 4000,
-    'an app not running: the tile zooms away at once, without its shadow and light, and is put back after 4 s'
+    'an app not running: the tile dims at once, without its shadow and light, and is put back after 4 s'
   );
   const warm = fresh();
   timers.length = pieces.length = 0;
-  zoom.zoomAway(warm, 500);
+  dim.launchDim(warm, 500);
   ok(warm.cls.indexOf('launching') < 0 && !pieces.length && timers[0].ms === 500, 'an app already running: Home stays at rest for 500 ms');
-  zoom.document.hidden = true;
+  dim.document.hidden = true;
   timers[0].f();
-  ok(warm.cls.indexOf('launching') < 0 && !pieces.length, 'the app in front and Home hidden by then: the zoom never starts');
-  zoom.document.hidden = false;
+  ok(warm.cls.indexOf('launching') < 0 && !pieces.length, 'the app in front and Home hidden by then: the dim never starts');
+  dim.document.hidden = false;
   timers.length = 0;
-  zoom.zoomAway(warm, 500);
+  dim.launchDim(warm, 500);
   timers[0].f();
-  ok(warm.cls.indexOf('launching') >= 0 && pieces.length === 1, 'still on screen (an app slow to come back): it zooms away then');
+  ok(warm.cls.indexOf('launching') >= 0 && pieces.length === 1, 'still on screen (an app slow to come back): it dims then');
 
   // body.away: set while Home is hidden, taken off with the style read at once, so a fade that follows starts from where they rest
   const order = [];

@@ -493,17 +493,6 @@ body[data-bar="glass"] #bar .pill.f {
   transform: scale(var(--press-s, 0.96)) !important;
   transition-duration: calc(0.06s * var(--spd));
 }
-/* tile.launch zoom: the tile grows past its focused size and fades out while the app opens (input.js puts it back when Home hides) */
-[data-launch="zoom"] .tile.launching {
-  transform: scale(var(--launch-sg)) !important;
-  opacity: 0;
-  transition:
-    transform calc(0.4s * var(--spd)) cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity calc(0.4s * var(--spd)) cubic-bezier(0.4, 0, 1, 1) !important;
-}
-[data-launch="zoom"] #dock .tile.launching {
-  transform: scale(var(--launch-sd)) !important;
-}
 .tile.moving {
   z-index: 10;
   transform: scale(1.08);
@@ -513,6 +502,7 @@ body[data-bar="glass"] #bar .pill.f {
   border-style: dashed;
   border-color: var(--accent);
 }
+/* the tile of an app that is opening (launchDim() in config.js; input.js puts it back when Home hides) */
 .tile.launching {
   opacity: 0.82;
 }

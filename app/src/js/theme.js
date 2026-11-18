@@ -34,7 +34,6 @@ var TH0 = {
     'data-hl',
     'data-tshadow',
     'data-noring',
-    'data-launch',
     'data-peek',
     'data-gscroll',
     'data-inkmode',

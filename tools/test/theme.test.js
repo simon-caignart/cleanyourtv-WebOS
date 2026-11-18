@@ -266,21 +266,15 @@ run(async () => {
     ringless.attrs.noring === 'on' && !('noring' in box.attrs) && !('noring' in plain.attrs),
     'soft shadows without a focus ring tell the launcher (noring), so focusing a tile repaints nothing of it; not otherwise'
   );
-  // tile.press and tile.launch: how deep a held tile sinks, and a launch that zooms the tile away
+  // tile.press: how deep a held tile sinks. A launched tile always dims, whatever a theme sets as tile.launch (not a setting)
   const pressed = themeMod.resolve(
     themeMod.normalize({ tile: { press: 1.11, launch: 'zoom' }, grid: { focusScale: 1.22 }, dock: { focusScale: 1.2 } }, 'pressed')
   );
   ok(
-    pressed.vars['--press-s'] === '1.11' &&
-      pressed.attrs.launch === 'zoom' &&
-      pressed.vars['--launch-sg'] === '1.59' &&
-      pressed.vars['--launch-sd'] === '1.56',
-    'tile.press sets the held scale and tile.launch zoom grows the tile to 1.3 times its focused size'
+    pressed.vars['--press-s'] === '1.11' && !('launch' in pressed.attrs) && !Object.keys(pressed.vars).some(k => /launch/.test(k)),
+    'tile.press sets the held scale; tile.launch is ignored'
   );
-  ok(
-    !('--press-s' in plain.vars) && !('launch' in plain.attrs) && !('--launch-sg' in plain.vars),
-    'by default a held tile sinks to 0.96 and a launch dims it, with no new keys in the reply'
-  );
+  ok(!('--press-s' in plain.vars), 'by default a held tile sinks to 0.96, with no new key in the reply');
   const tinted = themeMod.resolve(themeMod.normalize({ surface: { tint: 0.35 } }, 'tinted'));
   ok(
     tinted.attrs.tint === 'on' && tinted.vars['--tint-a'] === '0.35' && !('tint' in plain.attrs) && !('--tint-a' in plain.vars),

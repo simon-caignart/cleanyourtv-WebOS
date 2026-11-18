@@ -114,7 +114,6 @@
     "shadow": "soft",
     "shadowStrength": 0.65,
     "press": 1.11,
-    "launch": "zoom",
     "label": "focus",
     "labelSize": 29
   },
