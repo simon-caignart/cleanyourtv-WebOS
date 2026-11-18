@@ -1379,6 +1379,42 @@ function build() {
     rows.push({ label: 'Back', fn: pop });
     return;
   }
+  if (view === 'sunplace') {
+    /* the one lookup of the scenes that leaves the TV: off by default, said plainly, done once, forgotten when switched off */
+    var sunOn = !!st.options.sunPlace,
+      sunP = st.sunPlace;
+    rows.push({
+      label: 'What this does',
+      sub: 'Couch scenes and the Seasons photos follow the sun: the evening photos show when it is dark where you live. Without this the clock decides.',
+      fn: function () {},
+    });
+    rows.push({
+      label: 'What leaves the TV',
+      sub: 'Once, the name of the city your TV\u2019s time zone names (for example Amsterdam), sent to Open-Meteo, the weather service of the weather card. Nothing else. Not needed when a weather card is set up.',
+      fn: function () {},
+    });
+    rows.push({
+      label: 'Look up my city',
+      sub: onoff(sunOn),
+      fn: function () {
+        opt({ sunPlace: !sunOn });
+      },
+    });
+    if (sunOn)
+      rows.push({
+        label: 'Place kept on the TV',
+        sub:
+          sunP && sunP.name
+            ? sunP.name + ' \u00B7 ' + sunP.lat + ', ' + sunP.lon
+            : sunP
+              ? 'no city found: the clock decides'
+              : 'not looked up yet',
+        fn: function () {},
+      });
+    rows.push({ sep: true });
+    rows.push({ label: 'Back', fn: pop });
+    return;
+  }
   if (view === 'cardsidledim') {
     var dimEnabled = st.options.cardsIdleDim !== false;
     var dimMinutes = st.options.cardsIdleMinutes || 3;
@@ -2081,6 +2117,13 @@ function build() {
       });
     rows.push({ label: 'Cards', sub: 'small widgets on Home', fn: openCards });
     rows.push({
+      label: 'Sun-aware scenes',
+      sub: onoff(!!st.options.sunPlace) + ' \u00B7 looks up your city once, for the sun\u2019s hours',
+      fn: function () {
+        push('sunplace');
+      },
+    });
+    rows.push({
       label: 'Dim inactive cards',
       sub: onoff(st.options.cardsIdleDim !== false),
       fn: function () {
@@ -2294,6 +2337,14 @@ function addonRows() {
         push('confirm-addon');
       },
     });
+  if (ad.restartPending) {
+    rows.push({ sep: true });
+    rows.push({
+      label: 'Restart the service',
+      sub: 'an add-on was updated, switched on or off \u00B7 its new version runs after this',
+      fn: restartService,
+    });
+  }
   if (ad.reposOk) {
     rows.push({ sep: true });
     rows.push({
@@ -2450,6 +2501,39 @@ function zramLoad(stay) {
   );
 }
 /* "last 2 Nov, 470 MB" or "not run yet" */
+/* an add-on of kind "service" keeps its old code until the service starts again: this does that, without turning the TV off and on.
+   The service answers first and stops a second later; its watchdog starts it again within ten seconds. Home stays where it is. */
+function restartService() {
+  banner('Restarting the service\u2026', 'work');
+  api('/api/addons/restart', {}).then(
+    function (r) {
+      if (r.error) return banner(r.error, 'err');
+      var until = Date.now() + 60000;
+      (function wait() {
+        setTimeout(function () {
+          api('/api/addons').then(
+            function (a) {
+              if (a && !a.restartPending) {
+                banner('The service is running again', 'ok');
+                loadAddons();
+                return;
+              }
+              if (Date.now() < until) return wait();
+              banner('The service did not come back; turn the TV off and on', 'err');
+            },
+            function () {
+              if (Date.now() < until) return wait();
+              banner('The service did not come back; turn the TV off and on', 'err');
+            }
+          );
+        }, 3000);
+      })();
+    },
+    function () {
+      banner('The service did not answer', 'err');
+    }
+  );
+}
 function trimLast(t) {
   var l = t && t.last;
   if (!l) return 'not run yet';
