@@ -1,9 +1,8 @@
 // Home back from an app (load() in app/src/js/layout.js): the usage counts change with every app opened, and they matter only where
 // they change the order of the grid. Then Home keeps its tiles and its theme as they are (no rebuild, no theme applied again), so
-// the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A launched tile, dimmed, is at
-// rest before Home shows again, not fading back on the first frames. What shows only after a move
-// (the frosted glass of the grid, the focus pieces that wait) is out of the page while Home is hidden and back before any fade of theirs.
-// The dim of an app already running waits, so the frame the TV keeps of Home when the app comes to the front is Home at rest.
+// the TV has nothing to lay out and paint again but what it dropped while Home was in the background. A launched tile stays as it is,
+// so Home comes back as it was left. What shows only after a move (the frosted glass of the grid, the focus pieces that wait) is out
+// of the page while Home is hidden and back before any fade of theirs.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -100,83 +99,26 @@ run(async () => {
   context.load();
   ok(calls.join() === 'theme,rebuild', 'and the theme again in another language: ' + calls.join());
 
-  // a launched tile put back in its place: what the style is when its launch class goes, and whether the browser takes it in then
-  const seen = [];
-  const tile = { cls: ['tile', 'f', 'launching'] };
-  tile.classList = {
-    contains: c => tile.cls.indexOf(c) >= 0,
-    add: c => tile.cls.push(c),
-    remove: c => {
-      if (c === 'launching') seen.push('removed with ' + tile.cls.join(' '));
-      tile.cls = tile.cls.filter(x => x !== c);
-    },
-  };
-  const page = {
-    document: { hidden: true },
-    window: {
-      getComputedStyle: e => ({
-        get transform() {
-          seen.push('style read with ' + e.cls.join(' '));
-          return 'none';
-        },
-      }),
-    },
-  };
-  vm.createContext(page);
-  vm.runInContext(fn('config.js', 'unlaunch'), page);
-  page.unlaunch(tile);
-  ok(
-    seen.join() === 'removed with tile f launching still,style read with tile f still' && tile.cls.join(' ') === 'tile f',
-    'while Home is hidden, a launched tile is put back with its transitions off and the style taken in at once: ' + seen.join()
-  );
-  seen.length = 0;
-  tile.cls = ['tile', 'f', 'launching'];
-  page.document.hidden = false;
-  page.unlaunch(tile);
-  ok(
-    seen.join() === 'removed with tile f launching' && tile.cls.join(' ') === 'tile f',
-    'on screen (the app did not open in 4 s) it goes back with its transitions: ' + seen.join()
-  );
-
-  // the launch dim of an app already running waits, and does not start once Home is hidden: the TV keeps Home's last frame
-  const timers = [],
+  // OK on an app tile: the app opens and the tile stays as it is, its focus shadow and light on, so the frames the TV keeps of Home
+  // while the app takes over are Home at rest
+  const launched = [],
     pieces = [];
-  const dim = {
-    document: { hidden: false },
-    window: page.window,
+  const okPage = {
+    launch: id => launched.push(id),
     focusPieces: e => pieces.push(e),
-    setTimeout: (f, ms) => timers.push({ f, ms }) && timers.length,
-    clearTimeout() {},
+    setTimeout() {
+      throw new Error('no timer on a launch');
+    },
   };
-  vm.createContext(dim);
-  vm.runInContext(fn('config.js', 'unlaunch') + 'var launchT = 0;' + fn('config.js', 'launchDim'), dim);
-  const fresh = () => {
-    const el = { cls: ['tile', 'f'] };
-    el.classList = {
-      contains: c => el.cls.indexOf(c) >= 0,
-      add: c => el.cls.push(c),
-      remove: c => (el.cls = el.cls.filter(x => x !== c)),
-    };
-    return el;
-  };
-  const cold = fresh();
-  dim.launchDim(cold, 0);
+  vm.createContext(okPage);
+  vm.runInContext(fn('config.js', 'act'), okPage);
+  const tileCls = ['tile', 'f'];
+  const appTile = { _a: { id: 'com.stremio' }, classList: { add: c => tileCls.push(c), remove() {} } };
+  okPage.act(appTile);
   ok(
-    cold.cls.indexOf('launching') >= 0 && pieces.length === 1 && pieces[0] === null && timers[0].ms === 4000,
-    'an app not running: the tile dims at once, without its shadow and light, and is put back after 4 s'
+    launched.join() === 'com.stremio' && tileCls.join(' ') === 'tile f' && !pieces.length,
+    'OK on an app tile opens the app and changes nothing of the tile or its focus pieces'
   );
-  const warm = fresh();
-  timers.length = pieces.length = 0;
-  dim.launchDim(warm, 500);
-  ok(warm.cls.indexOf('launching') < 0 && !pieces.length && timers[0].ms === 500, 'an app already running: Home stays at rest for 500 ms');
-  dim.document.hidden = true;
-  timers[0].f();
-  ok(warm.cls.indexOf('launching') < 0 && !pieces.length, 'the app in front and Home hidden by then: the dim never starts');
-  dim.document.hidden = false;
-  timers.length = 0;
-  dim.launchDim(warm, 500);
-  timers[0].f();
-  ok(warm.cls.indexOf('launching') >= 0 && pieces.length === 1, 'still on screen (an app slow to come back): it dims then');
 
   // body.away: set while Home is hidden, taken off with the style read at once, so a fade that follows starts from where they rest
   const order = [];

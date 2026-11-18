@@ -339,27 +339,35 @@ function focusPieces(e) {
     if (fp.at) {
       placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
       fp.sets[fp.on].left = Date.now();
+      fp.sets[fp.on].was = fp.at;
+      fp.sets[fp.on].gen = fpGen;
     }
     fp.at = mine;
-    var nx = null;
+    var nx = null,
+      jump = false;
     if (mine) {
-      var best = -1;
+      var best = -1,
+        back = -1;
       fp.sets.forEach(function (p, k) {
         if (k !== fp.on && (best < 0 || (p.left || 0) < (fp.sets[best].left || 0))) best = k;
+        if (k !== fp.on && p.was === mine && p.gen === fpGen && (back < 0 || p.left > fp.sets[back].left)) back = k;
       });
-      fp.on = best;
-      nx = fp.sets[best];
-      nx[0].style.transition = nx[1].style.transition = 'none';
-      placeSet(nx, mine, false);
+      /* back on a tile it just left: the set still over it turns round with the tile, from where it is, as the tile does; a set
+         that grew from rest there would be smaller than the tile, with the one leaving, until both are done */
+      fp.on = back >= 0 ? back : best;
+      nx = fp.sets[fp.on];
+      jump = back < 0;
+      if (jump) {
+        nx[0].style.transition = nx[1].style.transition = 'none';
+        placeSet(nx, mine, false);
+      }
     }
-    if (fresh.length || nx) window.getComputedStyle(fresh.length ? fresh[0][0] : nx[0]).opacity;
+    if (fresh.length || jump) window.getComputedStyle(fresh.length ? fresh[0][0] : nx[0]).opacity;
     fresh.forEach(function (p) {
       p[0].style.transition = p[1].style.transition = '';
     });
-    if (nx) {
-      nx[0].style.transition = nx[1].style.transition = '';
-      placeSet(nx, mine, true);
-    }
+    if (jump) nx[0].style.transition = nx[1].style.transition = '';
+    if (nx) placeSet(nx, mine, true);
   });
 }
 function focusSet() {

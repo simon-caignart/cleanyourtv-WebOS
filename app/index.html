@@ -507,13 +507,6 @@ body[data-bar="glass"] #bar .pill.f {
   border-style: dashed;
   border-color: var(--accent);
 }
-/* the tile of an app that is opening (launchDim() in config.js; input.js puts it back when Home hides) */
-.tile.launching {
-  opacity: 0.82;
-}
-.tile.still {
-  transition: none !important;
-} /* unlaunch() in config.js */
 .tile.disintegrate-prep {
   transform: scale(0.92) !important;
   transition: transform calc(0.06s * var(--spd)) ease-out !important;
@@ -3739,27 +3732,35 @@ function focusPieces(e) {
     if (fp.at) {
       placeSet(fp.sets[fp.on], fp.at.parentNode === box ? fp.at : null, false);
       fp.sets[fp.on].left = Date.now();
+      fp.sets[fp.on].was = fp.at;
+      fp.sets[fp.on].gen = fpGen;
     }
     fp.at = mine;
-    var nx = null;
+    var nx = null,
+      jump = false;
     if (mine) {
-      var best = -1;
+      var best = -1,
+        back = -1;
       fp.sets.forEach(function (p, k) {
         if (k !== fp.on && (best < 0 || (p.left || 0) < (fp.sets[best].left || 0))) best = k;
+        if (k !== fp.on && p.was === mine && p.gen === fpGen && (back < 0 || p.left > fp.sets[back].left)) back = k;
       });
-      fp.on = best;
-      nx = fp.sets[best];
-      nx[0].style.transition = nx[1].style.transition = 'none';
-      placeSet(nx, mine, false);
+      /* back on a tile it just left: the set still over it turns round with the tile, from where it is, as the tile does; a set
+         that grew from rest there would be smaller than the tile, with the one leaving, until both are done */
+      fp.on = back >= 0 ? back : best;
+      nx = fp.sets[fp.on];
+      jump = back < 0;
+      if (jump) {
+        nx[0].style.transition = nx[1].style.transition = 'none';
+        placeSet(nx, mine, false);
+      }
     }
-    if (fresh.length || nx) window.getComputedStyle(fresh.length ? fresh[0][0] : nx[0]).opacity;
+    if (fresh.length || jump) window.getComputedStyle(fresh.length ? fresh[0][0] : nx[0]).opacity;
     fresh.forEach(function (p) {
       p[0].style.transition = p[1].style.transition = '';
     });
-    if (nx) {
-      nx[0].style.transition = nx[1].style.transition = '';
-      placeSet(nx, mine, true);
-    }
+    if (jump) nx[0].style.transition = nx[1].style.transition = '';
+    if (nx) placeSet(nx, mine, true);
   });
 }
 function focusSet() {
@@ -7191,37 +7192,12 @@ function title(id) {
 }
 
 /* ---------- actions ---------- */
-/* a launched tile back in its place. While Home is hidden it is put there at once, without its transitions: a hidden page draws no
-   frames, so a fade back started then would play only once Home is on screen again, from the dimmed tile. */
-function unlaunch(e) {
-  if (!e.classList.contains('launching')) return;
-  if (!document.hidden) return e.classList.remove('launching');
-  e.classList.add('still');
-  e.classList.remove('launching');
-  window.getComputedStyle(e).transform;
-  e.classList.remove('still');
-}
-/* The tile of an app that opens dims, without its shadow and light, and stays as it is otherwise: what Home shows while an app
-   opens is what the TV shows again when Home comes back, until Home has drawn a new frame (LG C4, webOS 25: a picture of Home from
-   the moment the app takes over, then Home's last frame). An app that is already running comes to the front at once, before Home is
-   hidden, so for a running app the dim waits: Home is hidden by then and it never starts, and Home comes back as it was left. */
-var launchT = 0;
-function launchDim(e, wait) {
-  clearTimeout(launchT);
-  if (wait)
-    return (launchT = setTimeout(function () {
-      if (!document.hidden && e.classList.contains('f')) launchDim(e, 0);
-    }, wait));
-  e.classList.add('launching');
-  focusPieces(null);
-  launchT = setTimeout(function () {
-    unlaunch(e);
-  }, 4000);
-}
+/* An app tile opens its app and stays as it is, focus shadow and light on: what Home shows while an app opens is what the TV shows
+   again when Home comes back, until Home has drawn a new frame (LG C4, webOS 25: a picture of Home from the moment the app takes
+   over, then Home's last frame), so Home comes back exactly as it was left. */
 function act(e) {
   var a = e._a;
   if (a) {
-    if (!a.sys) launchDim(e, running[a.id] ? 500 : 0);
     return launch(a.id);
   }
   var o = e._o || {};
@@ -10024,10 +10000,6 @@ document.addEventListener('visibilitychange', function () {
     WALL.hidden();
     document.body.classList.add('away');
     stopMoving(); /* leaving Home while a tile is moved keeps where it is now */
-    /* a tile dimmed for a launch is at rest in its place before Home is shown again, and one waiting to dim (launchDim) does not */
-    clearTimeout(launchT);
-    var lz = document.querySelectorAll('.tile.launching');
-    for (var li = 0; li < lz.length; li++) unlaunch(lz[li]);
     SCENES.hidden();
     if (LIVE.on) LIVE.exit();
     closeRunningMenu();

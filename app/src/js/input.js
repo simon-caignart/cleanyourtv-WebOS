@@ -506,10 +506,6 @@ document.addEventListener('visibilitychange', function () {
     WALL.hidden();
     document.body.classList.add('away');
     stopMoving(); /* leaving Home while a tile is moved keeps where it is now */
-    /* a tile dimmed for a launch is at rest in its place before Home is shown again, and one waiting to dim (launchDim) does not */
-    clearTimeout(launchT);
-    var lz = document.querySelectorAll('.tile.launching');
-    for (var li = 0; li < lz.length; li++) unlaunch(lz[li]);
     SCENES.hidden();
     if (LIVE.on) LIVE.exit();
     closeRunningMenu();

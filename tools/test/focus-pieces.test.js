@@ -115,6 +115,23 @@ run(async () => {
     'OK held: the set sinks with the tile'
   );
   dock[2].classList.remove('press');
+  // back on a tile it just left (quick Left and Right): the set still over it turns round with the tile, from where it is, with no jump
+  // to rest; a set grown from rest there would be smaller than the tile, a frame inside it, with the one still leaving
+  const jumps = [];
+  second.forEach(p => {
+    let v = p.style.transition;
+    Object.defineProperty(p.style, 'transition', { get: () => v, set: x => (jumps.push(x), (v = x)) });
+  });
+  context.focusPieces(dock[1]);
+  on = onSet('dock');
+  ok(
+    on.length === 1 &&
+      on[0][0] === second[0] &&
+      !jumps.length &&
+      second[0].style.transform === 'translate(338px,40px) translateY(0px) scale(1.22)',
+    'focus back on the tile before: its own set grows again from where it is: ' + jumps.join()
+  );
+  context.focusPieces(dock[2]);
 
   // a move reads the tiles' places once (they are kept until the tiles or the theme change)
   let reads = 0;
@@ -131,7 +148,7 @@ run(async () => {
   context.focusPieces(grid[1]);
   ok(onSet('dock').length === 0 && onSet('grid').length === 1, 'the focus going down to the grid takes its set there along');
   context.focusPieces(null);
-  ok(onSet('dock').length === 0 && onSet('grid').length === 0, 'a launch (no tile) fades them all out');
+  ok(onSet('dock').length === 0 && onSet('grid').length === 0, 'no focused tile fades them all out');
 
   // a theme without them: no pieces are made
   attrs['data-tshadow'] = attrs['data-hl'] = null;

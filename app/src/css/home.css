@@ -502,13 +502,6 @@ body[data-bar="glass"] #bar .pill.f {
   border-style: dashed;
   border-color: var(--accent);
 }
-/* the tile of an app that is opening (launchDim() in config.js; input.js puts it back when Home hides) */
-.tile.launching {
-  opacity: 0.82;
-}
-.tile.still {
-  transition: none !important;
-} /* unlaunch() in config.js */
 .tile.disintegrate-prep {
   transform: scale(0.92) !important;
   transition: transform calc(0.06s * var(--spd)) ease-out !important;
